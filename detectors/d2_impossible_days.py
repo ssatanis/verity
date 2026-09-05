@@ -257,7 +257,7 @@ SELECT CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT), 'D2', servicin
                            mn_capped_hours_cons := mn_capped_hours_cons, mn_cap_allowance_hours := mn_cap_allowance_hours)),
        now()
 FROM d2_scored WHERE label IS NOT NULL
-QUALIFY row_number() OVER (PARTITION BY CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT) ORDER BY score DESC NULLS LAST) = 1""")
+QUALIFY row_number() OVER (PARTITION BY CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT) ORDER BY test_hours_per_day DESC NULLS LAST, paid DESC NULLS LAST) = 1""")
 con.execute("""INSERT INTO flags
 SELECT CAST(hash('D2G' || billing_npi || year) >> 1 AS BIGINT), 'D2', billing_npi, billing_npi, state, CAST(year || '-01-01' AS DATE), dominant_code,
        'growth_and_concentration', dollars_per_patient_month, ref_median, 0.5 + LEAST(GREATEST(COALESCE(intensity_z, 0), 0), 20) / 20.0, paid_year, 'C',

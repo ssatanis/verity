@@ -27,6 +27,18 @@ def clean_text(x):
     if isinstance(x, dict): return {k: clean_text(v) for k, v in x.items()}
     return x
 
+def parse(schema: Type[T], system: str, user: str, model: str = None, effort: str = "high", max_tokens: int = 16000) -> T:
+    """Structured output: returns an instance of the Pydantic schema. Raises RuntimeError on refusal or empty output."""
+    r = client().messages.parse(model=model or MODEL, max_tokens=max_tokens, system=system, messages=[{"role": "user", "content": user}],
+                                output_config={"effort": effort}, output_format=schema)
+    if r.stop_reason == "refusal" or r.parsed_output is None: raise RuntimeError(f"model returned no structured output (stop_reason={r.stop_reason})")
+    return r.parsed_output
+
+def text(system: str, user: str, model: str = None, effort: str = "medium", max_tokens: int = 8000) -> str:
+    """Plain text completion with the house dash rule applied."""
+    r = client().messages.create(model=model or MODEL, max_tokens=max_tokens, system=system, messages=[{"role": "user", "content": user}], output_config={"effort": effort})
+    return clean_text("".join(b.text for b in r.content if getattr(b, "type", "") == "text"))
+
 def strict_schema(schema: dict) -> dict:
     """The structured-output endpoint requires additionalProperties=false on every object; Pydantic's model_json_schema omits it."""
     def walk(node):

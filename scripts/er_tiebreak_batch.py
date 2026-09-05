@@ -22,12 +22,12 @@ if len(c) < 50:
     c = con.execute(f"""SELECT * FROM d1_er_candidates ORDER BY abs(posterior - 0.95) LIMIT {a.limit}""").df()
     print("band nearly empty; using the pairs closest to the 0.95 threshold")
 print(f"borderline pairs sampled: {len(c):,}")
-items = [(f"{int(r.i)}|{int(r.j)}", json.dumps({"record_a": dict(last=r.p_last_i, first=r.p_first_i, middle=r.p_mi_i, zip=r.zip5_i, city=r.city_i, state=r.state_i, street_number=r.street_i),
+items = [(f"{int(r.i)}__{int(r.j)}", json.dumps({"record_a": dict(last=r.p_last_i, first=r.p_first_i, middle=r.p_mi_i, zip=r.zip5_i, city=r.city_i, state=r.state_i, street_number=r.street_i),
                                                  "record_b": dict(last=r.p_last_j, first=r.p_first_j, middle=r.p_mi_j, zip=r.zip5_j, city=r.city_j, state=r.state_j, street_number=r.street_j)})) for r in c.itertuples(index=False)]
 results, batch_id = llm.batch_run(llm.batch_requests(items, Verdict, SYS, effort="low", max_tokens=400), poll_seconds=30)
-c["model_same"] = [results.get(f"{int(r.i)}|{int(r.j)}", {}).get("same_person") for r in c.itertuples(index=False)]
-c["model_conf"] = [results.get(f"{int(r.i)}|{int(r.j)}", {}).get("confidence") for r in c.itertuples(index=False)]
-c["model_reason"] = [results.get(f"{int(r.i)}|{int(r.j)}", {}).get("reason") or results.get(f"{int(r.i)}|{int(r.j)}", {}).get("error") for r in c.itertuples(index=False)]
+c["model_same"] = [results.get(f"{int(r.i)}__{int(r.j)}", {}).get("same_person") for r in c.itertuples(index=False)]
+c["model_conf"] = [results.get(f"{int(r.i)}__{int(r.j)}", {}).get("confidence") for r in c.itertuples(index=False)]
+c["model_reason"] = [results.get(f"{int(r.i)}__{int(r.j)}", {}).get("reason") or results.get(f"{int(r.i)}__{int(r.j)}", {}).get("error") for r in c.itertuples(index=False)]
 c["em_same"] = c.posterior >= 0.95; c["batch_id"] = batch_id
 con.execute("CREATE OR REPLACE TABLE d1_er_adjudications AS SELECT * FROM c")
 valid = c[c.model_same.notna()]

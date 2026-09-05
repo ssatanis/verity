@@ -21,6 +21,7 @@ from evidence import cluster_evidence, provider_evidence, evidence_lines
 from packet import build_packet
 import verify as vf
 import ask as askmod
+import lookup
 import bluebutton as bb
 
 app = FastAPI(title="Verity API", version="0.2")
@@ -162,3 +163,18 @@ def ask_case(body: AskIn):
     if body.subject_type not in ("cluster", "provider"): raise HTTPException(400, "subject_type must be cluster or provider")
     try: return askmod.ask(body.subject_type, body.subject_id, body.question, body.history)
     except RuntimeError as e: raise HTTPException(503, str(e))
+
+
+@app.get("/search")
+def search_any(q: str = Query(..., min_length=2), limit: int = 10):
+    """Search every NPI in NPPES by number prefix or name (organisation, or last and first name)."""
+    try: return {"hits": lookup.search(q, limit)}
+    except Exception as e: raise HTTPException(503, f"warehouse busy: {str(e)[:80]}")
+
+@app.get("/provider/{npi}")
+def provider_any(npi: str):
+    """NPPES record, Medicaid states, yearly Medicaid dollars and list counts for any NPI, whether or not a detector reached it."""
+    try: r = lookup.provider(npi)
+    except Exception as e: raise HTTPException(503, f"warehouse busy: {str(e)[:80]}")
+    if not r: raise HTTPException(404, "NPI not in NPPES")
+    return r

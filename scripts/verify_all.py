@@ -76,10 +76,20 @@ except Exception as e: rec("PENDING", "FastAPI not running", f"start with: uvico
 
 print("== 6. Web app")
 try:
-    for p in ["/", "/app", "/app/clusters", "/app/flags", "/app/flags?detector=D2", "/app/states/MN", "/app/methods", "/app/providers/1811937436"]:
-        r = httpx.get(f"{a.web}{p}", timeout=60); bad = any(x in r.text for x in ["Application error", "Unhandled Runtime Error", "Internal Server Error"])
+    # the console sits behind the reviewer gate: sign in with VERITY_CONSOLE_PASSWORD from web/.env.local and reuse the cookie
+    pw = ""
+    try: pw = next((l.split("=", 1)[1].strip() for l in open("web/.env.local") if l.startswith("VERITY_CONSOLE_PASSWORD=")), "")
+    except Exception: pass
+    web = httpx.Client(base_url=a.web, timeout=60, follow_redirects=False)
+    g = web.get("/app"); ok(g.status_code in (307, 302) if pw else g.status_code == 200, "console gate redirects anonymous visitors to /login", str(g.status_code))
+    if pw:
+        l = web.post("/api/login", json={"password": pw, "next": "/app"}); ok(l.status_code == 200 and "verity_session" in l.headers.get("set-cookie", ""), "reviewer sign in sets the session cookie", str(l.status_code))
+    for p in ["/", "/legal", "/app", "/app/candidates", "/app/candidates?tier=1", "/app/clusters", "/app/flags", "/app/flags?detector=D2", "/app/plazas", "/app/search?q=1811937436", "/app/states/MN", "/app/methods", "/app/providers/1811937436"]:
+        r = web.get(p); bad = any(x in r.text for x in ["Application error", "Unhandled Runtime Error", "Internal Server Error"])
         ok(r.status_code == 200 and not bad, f"GET {p}", f"{r.status_code} {len(r.text)//1000}KB")
-    t = httpx.get(f"{a.web}/app", timeout=60).text
+    for p in ["/", "/legal", "/app/methods"]:
+        r = web.get(p); ok("\u2014" not in r.text and "\u2013" not in r.text, f"no em or en dashes on {p}")
+    t = web.get("/app").text
     ok("$0</div>" not in t and ">0</div>" not in t, "console shows non-zero KPIs (needs sync_outputs)", pending=True)
 except Exception as e: rec("PENDING", "web app not running", f"start with: cd web && npm run dev  ({str(e)[:60]})")
 

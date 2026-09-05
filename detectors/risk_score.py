@@ -16,6 +16,17 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROO
 from _methods import write_section, md_table
 con = duckdb.connect(os.environ.get("VERITY_DUCKDB", "data/verity.duckdb")); con.execute("SET threads=8")
 def q(s): return con.execute(s).fetchall()
+
+con.execute("""CREATE OR REPLACE MACRO pretty_source(s) AS
+  list_aggregate(list_transform(string_split(s, ','), x ->
+    CASE WHEN x = 'MEDICARE_REVOKED' THEN 'the Medicare revocation list'
+         WHEN x = 'OIG_LEIE' THEN 'the OIG exclusion list'
+         WHEN x = 'NPPES_DEACTIVATED' THEN 'the deactivated NPI list'
+         WHEN x = 'TMSIS_DECEASED' THEN 'a state file marking the provider deceased'
+         WHEN x LIKE 'STATE_EXCL_%' THEN 'the ' || substr(x, 12) || ' Medicaid exclusion list'
+         WHEN x LIKE 'SAM_%' THEN 'the SAM.gov exclusion list (' || replace(substr(x, 5), '_', ' ') || ')'
+         WHEN x LIKE 'TMSIS_TERM_%' THEN 'a state Medicaid termination'
+         ELSE lower(replace(x, '_', ' ')) END), 'string_agg', ' and ')""")
 con.execute("""
 CREATE OR REPLACE TABLE provider_risk AS
 WITH d3 AS (
@@ -60,12 +71,12 @@ SELECT *, LEAST(100.0, (CASE tier WHEN 1 THEN 90 WHEN 2 THEN 75 WHEN 3 THEN 60 W
        CASE tier WHEN 1 THEN 'documented action, then payment' WHEN 2 THEN 'impossible volume with concurrency' WHEN 3 THEN 'network structure with a list link'
                  WHEN 4 THEN 'structure or single-organisation volume' ELSE 'informational' END AS tier_label,
        concat_ws('; ',
-         CASE WHEN d3_a = 1 THEN 'on ' || d3_sources || ' from ' || CAST(d3_first_event AS VARCHAR) || ', Medicaid paid in ' || d3_months || ' later months ($' || CAST(ROUND(d3_paid_after) AS BIGINT) || ')' END,
-         CASE WHEN d2_tier = 'A' THEN 'impossible personal-service hours in ' || months_impossible || ' month(s), peak ' || ROUND(peak_hours_per_day, 1) || ' h/day, ' || max_billing_orgs || ' billing organisations' END,
-         CASE WHEN d2_tier = 'B' THEN 'single-organisation impossible hours in ' || months_impossible || ' month(s) (verify supervisory billing)' END,
-         CASE WHEN months_over_mn_cap > 0 THEN 'over Minnesota daily cap in ' || months_over_mn_cap || ' month(s)' END,
-         CASE WHEN d1_eligible THEN 'member of community ' || d1_cluster_id || ' (rank ' || d1_rank || ')' END,
-         CASE WHEN n_strong >= 2 THEN 'corroborated by ' || n_strong || ' detectors' WHEN n_detectors >= 2 THEN 'also reached by a weaker indicator from another detector' END) AS reasons
+         CASE WHEN d3_a = 1 THEN 'Listed on ' || pretty_source(d3_sources) || ' since ' || strftime(d3_first_event, '%B %-d, %Y') || '; Medicaid still paid claims in ' || d3_months || ' later months, $' || format('{:,}', CAST(ROUND(d3_paid_after) AS BIGINT)) || ' in total' END,
+         CASE WHEN d2_tier = 'A' THEN 'Billed more hands-on hours than a day holds in ' || months_impossible || ' month(s), peaking at ' || ROUND(peak_hours_per_day, 1) || ' hours per day across ' || max_billing_orgs || ' billing organisations' END,
+         CASE WHEN d2_tier = 'B' THEN 'Hours beyond a day in ' || months_impossible || ' month(s) under one organisation, which can be supervisory billing; records needed' END,
+         CASE WHEN months_over_mn_cap > 0 THEN 'Over the state daily cap in ' || months_over_mn_cap || ' month(s)' END,
+         CASE WHEN d1_eligible THEN 'Part of provider network ' || d1_cluster_id || ', ranked ' || d1_rank || ' nationally' END,
+         CASE WHEN n_strong >= 2 THEN 'Confirmed independently by ' || n_strong || ' detectors' WHEN n_detectors >= 2 THEN 'A second detector adds a weaker signal' END) AS reasons
 FROM provider_risk""")
 con.execute("CREATE OR REPLACE TABLE provider_risk AS SELECT *, ROW_NUMBER() OVER (ORDER BY score DESC, dollars_at_risk DESC) AS rank FROM provider_risk")
 S = {}

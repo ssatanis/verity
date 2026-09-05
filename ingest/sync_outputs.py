@@ -23,7 +23,10 @@ have = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tab
 counts = {}
 if "clusters" in have:
     counts["clusters"] = copy("clusters", "id, detector, state, county, county_fips, score, dollars_at_risk, n_providers, summary, features, rank, eligible, chain_or_pe, n_hospice, n_hha, n_snf, city, structure_score, label_score, context_score, dollars_medicare, graph, lat, lon",
-        """SELECT c.cluster_id, 'D1', c.state, cc.county_name, c.county_fips, c.risk_score, c.dollars_medicaid_2024, c.n_prov, c.summary, c.features_json, c.rank, c.eligible, c.chain_or_pe = 1,
+        """SELECT c.cluster_id, 'D1', c.state, cc.county_name, c.county_fips,
+                  -- published score on a 0 to 100 scale: the top ranked community is 100, the weakest ranked community is 0; unranked communities are scaled with the same bounds
+                  ROUND(LEAST(100, GREATEST(0, 100 * (c.risk_score - (SELECT MIN(risk_score) FROM clusters WHERE eligible)) / NULLIF((SELECT MAX(risk_score) FROM clusters WHERE eligible) - (SELECT MIN(risk_score) FROM clusters WHERE eligible), 0))), 1),
+                  c.dollars_medicaid_2024, c.n_prov, c.summary, c.features_json, c.rank, c.eligible, c.chain_or_pe = 1,
                   c.n_hospice, c.n_hha, c.n_snf, c.city, c.structure_score, c.label_score, c.context_score, c.dollars_medicare_2023, c.graph_json, cc.lat, cc.lon
            FROM clusters c LEFT JOIN county_centroid cc ON cc.county_fips = c.county_fips""")
     counts["cluster_members"] = copy("cluster_members", "cluster_id, npi, enrollment_id, role, org_name, evidence, ptype, ccn, city, state, zip5, inc_date, labels, medicaid_2024, medicare_2023",

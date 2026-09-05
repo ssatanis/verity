@@ -37,11 +37,11 @@ items = []
 for r in cands.itertuples(index=False):
     ex = dict(name=r.busname or f"{r.firstname} {r.lastname}", address=r.address, city=r.city, state=r.state, zip=r.zip, exclusion_type=r.reason, exclusion_date=str(r.event_dt))
     np_ = dict(npi=r.npi, name=r.nppes_name, practice_address=r.nppes_addr, city=r.nppes_city, state=r.nppes_state, zip=r.nppes_zip, taxonomy=r.taxonomy)
-    items.append((f"{r.source_id}|{r.npi}", json.dumps({"exclusion_entry": ex, "nppes_record": np_}, default=str)))
+    items.append((f"{r.source_id}__{r.npi}", json.dumps({"exclusion_entry": ex, "nppes_record": np_}, default=str)))
 results, batch_id = llm.batch_run(llm.batch_requests(items, Judgement, SYS, effort="low", max_tokens=600), poll_seconds=30)
 rows = []
 for cid, v in results.items():
-    sid, npi = cid.split("|"); rows.append(dict(source_id=sid, npi=npi, same_entity=v.get("same_entity"), confidence=v.get("confidence"), reason=v.get("reason") or v.get("error"), batch_id=batch_id))
+    sid, npi = cid.rsplit("__", 1); rows.append(dict(source_id=sid, npi=npi, same_entity=v.get("same_entity"), confidence=v.get("confidence"), reason=v.get("reason") or v.get("error"), batch_id=batch_id))
 import pandas as pd
 df = pd.DataFrame(rows).merge(cands[["source_id", "npi", "source", "lastname", "firstname", "busname", "state", "reason", "event_dt"]].rename(columns={"reason": "exclusion_type"}), on=["source_id", "npi"], how="left")
 con.execute("CREATE OR REPLACE TABLE sam_npi_matches AS SELECT * FROM df")

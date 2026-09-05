@@ -565,28 +565,37 @@ def binom_tail(n, k, p):  # P(X >= k) for X ~ Binomial(n, p)
 pvals = {k: binom_tail(min(k, len(ev)), int(round(prec[k] * min(k, len(ev)))), base) for k in prec}
 log(f"evaluation: base rate {base:.3f}; precision@K (structure-only score, chains excluded): {prec}")
 # explanations
+def _src_name(x):
+    return {"OIG_LEIE": "the OIG exclusion list", "MEDICARE_REVOKED": "the Medicare revocation list", "SAM": "the SAM.gov exclusion list", "MEDICAID_TERM": "a state Medicaid termination list"}.get(x, str(x).replace("_", " ").lower())
+def _plural(n, one, many=None):
+    n = int(n); return f"{n} {one if n == 1 else (many or one + 's')}"
 def explain(r):
-    parts = [f"{int(r.n_prov)} {'providers' if r.n_prov != 1 else 'provider'} ({', '.join(f'{v} {k}' for k, v in {'hospices': r.n_hospice, 'home health agencies': r.n_hha, 'SNFs': r.n_snf}.items() if v)}) around {r.city}"]
-    if r.owner_multi: parts.append(f"{int(r.owner_multi)} owner{'s' if r.owner_multi > 1 else ''} tied to 3 or more of them (max {int(r.max_owner_degree)})")
-    if max(r.addr_share, r.unit_share) >= 2: parts.append(f"up to {int(max(r.addr_share, r.unit_share))} providers at one address{' (same suite)' if r.unit_share >= 2 else ''}")
-    if r.phone_share >= 2: parts.append(f"{int(r.phone_share)} share a phone number")
-    if r.burst_90 >= 3 and r.burst_90_span: parts.append(f"{int(r.burst_90)} distinct organisations incorporated within 90 days ({r.burst_90_span[0]} to {r.burst_90_span[1]})")
+    """Plain-language facts for reviewers: a one-line headline and a list of short sentences (no identifiers, no underscores)."""
+    kinds = [_plural(v, k[0], k[1]) for k, v in (( ("hospice", "hospices"), r.n_hospice), (("home health agency", "home health agencies"), r.n_hha), (("nursing facility", "nursing facilities"), r.n_snf)) if v]
+    headline = f"{_plural(r.n_prov, 'provider')} around {r.city}: {', '.join(kinds)}."
+    facts = []
+    if r.burst_90 >= 3 and r.burst_90_span: facts.append(f"{int(r.burst_90)} separate companies were incorporated within one 90-day window, between {r.burst_90_span[0]} and {r.burst_90_span[1]}.")
+    if r.owner_multi: facts.append(f"{_plural(r.owner_multi, 'owner')} appear{'s' if r.owner_multi == 1 else ''} on three or more of these providers; the most connected owner sits on {int(r.max_owner_degree)} of them.")
+    if max(r.addr_share, r.unit_share) >= 2: facts.append(f"Up to {int(max(r.addr_share, r.unit_share))} providers share one address{', down to the same suite' if r.unit_share >= 2 else ''}.")
+    if r.phone_share >= 2: facts.append(f"{int(r.phone_share)} providers list the same phone number.")
     if r.excl_addr_hits:
-        h = sorted(r.excl_addr_hits, key=lambda x: x[4] != "same suite")[0]; parts.append(f"{h[0]} is in the {h[4]} as {h[1]} entity {h[2]} ({h[3]}); {len(r.excl_addr_hits)} member(s) share an address with an excluded or revoked entity")
-    if r.n_new: parts.append(f"{int(r.n_new)} formed since 2021")
-    labs = []
-    if r.prov_labels.get("OIG_LEIE"): labs.append(f"{len(r.prov_labels['OIG_LEIE'])} member NPI(s) on the OIG exclusion list")
-    if r.prov_labels.get("MEDICARE_REVOKED"): labs.append(f"{len(r.prov_labels['MEDICARE_REVOKED'])} revoked by Medicare")
-    if r.prov_labels.get("MEDICAID_TERM"): labs.append(f"{len(r.prov_labels['MEDICAID_TERM'])} terminated for cause by a state Medicaid program")
-    if r.state_excl: labs.append(f"{int(r.state_excl)} on a state exclusion list")
+        h = sorted(r.excl_addr_hits, key=lambda x: x[4] != "same suite")[0]
+        facts.append(f"{h[0]} is in the {h[4]} as {str(h[2]).title()}, which appears on {_src_name(h[1])} (action dated {h[3]}). In all, {len(r.excl_addr_hits)} providers here share an address with a revoked or excluded entity.")
+    if r.n_new: facts.append(f"{int(r.n_new)} of the providers were formed in 2021 or later.")
+    if r.prov_labels.get("OIG_LEIE"): facts.append(f"{_plural(len(r.prov_labels['OIG_LEIE']), 'provider')} in the group appear{'s' if len(r.prov_labels['OIG_LEIE']) == 1 else ''} on the OIG exclusion list.")
+    if r.prov_labels.get("MEDICARE_REVOKED"): facts.append(f"{_plural(len(r.prov_labels['MEDICARE_REVOKED']), 'provider')} in the group {'has' if len(r.prov_labels['MEDICARE_REVOKED']) == 1 else 'have'} had Medicare billing privileges revoked.")
+    if r.prov_labels.get("MEDICAID_TERM"): facts.append(f"{_plural(len(r.prov_labels['MEDICAID_TERM']), 'provider')} in the group {'was' if len(r.prov_labels['MEDICAID_TERM']) == 1 else 'were'} terminated for cause by a state Medicaid program.")
+    if r.state_excl: facts.append(f"{_plural(r.state_excl, 'provider')} in the group appear{'s' if int(r.state_excl) == 1 else ''} on a state exclusion list.")
     oh = [h for h in r.owner_hits if h[1] in ("OIG_LEIE", "SAM")]
-    if oh: labs.append(f"owner name match to {oh[0][1]} ({oh[0][2]} confidence): {oh[0][0]}")
-    if labs: parts.append("; ".join(labs))
-    if r.sat_per_10k is not None and not (isinstance(r.sat_per_10k, float) and np.isnan(r.sat_per_10k)) and r.sat_z is not None and not (isinstance(r.sat_z, float) and np.isnan(r.sat_z)): parts.append(f"county has {r.sat_per_10k:.1f} providers per 10k FFS beneficiaries (robust z {r.sat_z:+.1f})")
-    if r.chain_or_pe: parts.append(f"{int(r.chain_members)} of {int(r.n_prov)} members are chain or private-equity owned (excluded from ranking)")
-    elif r.chain_members: parts.append(f"{int(r.chain_members)} member(s) have a chain-affiliated owner")
-    return ". ".join(parts) + "."
-F["summary"] = [explain(r) for r in F.itertuples(index=False)]
+    if oh: facts.append(f"An owner's name, {str(oh[0][0]).title()}, matches {_src_name(oh[0][1])} at {oh[0][2]} confidence.")
+    if r.sat_per_10k is not None and not (isinstance(r.sat_per_10k, float) and np.isnan(r.sat_per_10k)) and r.sat_z is not None and not (isinstance(r.sat_z, float) and np.isnan(r.sat_z)):
+        facts.append(f"The county has {r.sat_per_10k:.1f} providers of this kind per 10,000 Medicare fee-for-service beneficiaries, {'well above' if r.sat_z >= 2 else 'above' if r.sat_z > 0 else 'below'} the national norm.")
+    if r.chain_or_pe: facts.append(f"{int(r.chain_members)} of the {int(r.n_prov)} providers belong to a known chain or private-equity platform, so the group is not ranked.")
+    elif r.chain_members: facts.append(f"{_plural(r.chain_members, 'provider')} {'has' if int(r.chain_members) == 1 else 'have'} a chain-affiliated owner.")
+    return headline, facts
+_ex = [explain(r) for r in F.itertuples(index=False)]
+F["summary"] = [h for h, _ in _ex]; F["facts"] = [f for _, f in _ex]
+
 
 # ------------------------------------------------------------------ H. write out
 F["cluster_id"] = ["D1-" + f"{i:05d}" for i in F["rank"]]
@@ -606,7 +615,7 @@ def _py(v):
     if isinstance(v, float) and np.isnan(v): return None
     if isinstance(v, tuple): return [str(x) for x in v]
     return v
-F["features_json"] = [json.dumps({k: _py(v) for k, v in r.items() if k not in ("graph_json", "owner_hits", "prov_labels", "burst_90_span", "summary", "excl_addr_hits")} | {"owner_hits": r["owner_hits"], "prov_labels": r["prov_labels"], "burst_90_span": [str(x) for x in r["burst_90_span"]] if r["burst_90_span"] else None, "excl_addr_hits": r["excl_addr_hits"]}, default=str) for r in F.to_dict("records")]
+F["features_json"] = [json.dumps({k: _py(v) for k, v in r.items() if k not in ("graph_json", "owner_hits", "prov_labels", "burst_90_span", "summary", "excl_addr_hits", "facts")} | {"facts": list(r["facts"])} | {"owner_hits": r["owner_hits"], "prov_labels": r["prov_labels"], "burst_90_span": [str(x) for x in r["burst_90_span"]] if r["burst_90_span"] else None, "excl_addr_hits": r["excl_addr_hits"]}, default=str) for r in F.to_dict("records")]
 out = F.drop(columns=["owner_hits", "prov_labels", "burst_90_span", "excl_addr_hits"]).copy()
 out["sat_per_10k"] = pd.to_numeric(out.sat_per_10k, errors="coerce"); out["sat_z"] = pd.to_numeric(out.sat_z, errors="coerce")
 con.execute("CREATE OR REPLACE TABLE clusters AS SELECT * FROM out")

@@ -5,6 +5,7 @@ import { serviceClient } from "@/lib/supabase";
 import { claude, claudeReady, cleanText, MODEL } from "@/lib/claude";
 
 // "Ask this case": a reviewer chat that can only call evidence tools over the serving tables. Every answer must cite tool rows.
+export const maxDuration = 120;
 export async function POST(req: Request) {
   const { subject_type, subject_id, question, history = [] } = await req.json();
   if (!claudeReady()) return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured on the server" }, { status: 503 });
@@ -33,8 +34,8 @@ export async function POST(req: Request) {
   const system = `You are the case assistant inside Verity, a provider-integrity console for health plan investigators. You may only answer from the tool results in this conversation. Every factual sentence must end with a bracketed citation naming the tool and the row, for example [get_payment_timeline: NPI 1234567893, 2022-11]. If the tools do not contain the answer, say so. Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Short paragraphs, plain English, no em dashes. Subject: ${subject_type} ${subject_id}.`;
   const messages: any[] = [...history.slice(-8), { role: "user", content: question }];
   try {
-    const runner = claude().beta.messages.toolRunner({ model: MODEL, max_tokens: 4000, system, tools, messages, max_iterations: 8 });
-    const final = await runner.done();
+    const runner = claude().beta.messages.toolRunner({ model: process.env.VERITY_CHAT_MODEL ?? "claude-sonnet-5", max_tokens: 3000, system, tools, messages, max_iterations: 6 });
+    const final = await runner.runUntilDone();
     const text = cleanText(final.content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n"));
     return NextResponse.json({ answer: text, stop_reason: final.stop_reason });
   } catch (e: any) { return NextResponse.json({ error: e?.message ?? "model error" }, { status: 500 }); }

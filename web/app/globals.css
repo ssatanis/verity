@@ -77,3 +77,4 @@ input:focus, textarea:focus { border-color: var(--blue); }
 .hero-band { background: rgba(0, 40, 86, 0.82); }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 ::selection { background: var(--blue); color: #fff; }
+html { scroll-behavior: smooth; }
