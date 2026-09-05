@@ -78,6 +78,10 @@ def _src(x):
 _LAB = {"IMPOSSIBLE_BY_LINE_COUNT": "more hours than a day holds, even counting one unit per claim line", "IMPOSSIBLE_CONSERVATIVE_RATE": "more hours than a day holds at a conservative unit price",
         "IMPOSSIBLE_PER_PATIENT": "more than 24 hours per patient per day", "EXCEEDS_MN_DAILY_CAP": "over the state's daily cap for every patient every day", "IMPLAUSIBLE_OVER_16H": "over 16 hours per day",
         "ELEVATED_OVER_12H": "over 12 hours per day", "UMBRELLA_VOLUME": "agency volume billed under one clinician's NPI", "GROWTH_ANOMALY": "new biller with rapid growth concentrated on one code"}
+def _ord(n):
+    v = int(round(n)); k = v % 100
+    return f"{v}{'th' if 11 <= k <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(v % 10, 'th')}"
+
 def _lab(x): return _LAB.get(str(x or ""), str(x or "").replace("_", " ").lower())
 
 def evidence_lines(ev):
@@ -109,7 +113,7 @@ def evidence_lines(ev):
         L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organization' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
         r = ev.get("risk")
         for c in ev.get("codes") or []:
-            L.append(("procedures billed, Medicaid", f"Code {c['hcpcs']}" + (f" ({c['description']})" if c.get("description") else "") + f": ${float(c['paid'] or 0):,.0f} paid over {c['months']} months, {round(float(c['share'] or 0)*100)}% of this provider's Medicaid dollars" + (f", ${float(c['dpm']):,.0f} per patient-month" if c.get("dpm") is not None else "") + (f", which ranks at the {round(float(c['dpm_pct'])*100)}th percentile of all providers billing this code (typical ${float(c['dpm_median'] or 0):,.0f})" if c.get("dpm_pct") is not None else "") + ("; this code family has a history of abuse" if c.get("high_vector") else "") + "."))
+            L.append(("procedures billed, Medicaid", f"Code {c['hcpcs']}" + (f" ({c['description']})" if c.get("description") else "") + f": ${float(c['paid'] or 0):,.0f} paid over {c['months']} months, {round(float(c['share'] or 0)*100)}% of this provider's Medicaid dollars" + (f", ${float(c['dpm']):,.0f} per patient-month" if c.get("dpm") is not None else "") + (f", which ranks at the {_ord(float(c['dpm_pct'])*100)} percentile of all providers billing this code (typical ${float(c['dpm_median'] or 0):,.2f})" if c.get("dpm_pct") is not None else "") + ("; this code family has a history of abuse" if c.get("high_vector") else "") + "."))
         for c in ev.get("mcodes") or []:
             L.append(("procedures billed, Medicare 2024", f"Code {c['hcpcs']} ({c['description']}): {int(c['services'] or 0):,} services for {int(c['beneficiaries'] or 0):,} beneficiaries, ${float(c['paid'] or 0):,.0f} paid; submitted ${float(c['avg_submitted'] or 0):,.0f} per service against ${float(c['avg_allowed'] or 0):,.0f} allowed, a ratio of {float(c['charge_ratio'] or 0):.1f}x" + (f" where the usual ratio for this code is {float(c['peer_ratio_median']):.1f}x" if c.get("peer_ratio_median") is not None else "") + "."))
         if r: L.append(("provider_risk", f"Evidence tier {r['tier']} ({r['tier_label']}); detectors {', '.join(r['detectors'] or [])}; dollars at risk ${float(r['dollars_at_risk'] or 0):,.0f} (figure of the detector that set the tier, not a sum); reasons: {r['reasons']}."))

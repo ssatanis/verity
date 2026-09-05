@@ -24,3 +24,6 @@ export const labelName = (l?: string | null) => (l ? LABEL[l] ?? l.replace(/_/g,
 export const idMatchName = (l?: string | null) => (l ? IDMATCH[l] ?? l.replace(/_/g, " ") : "");
 export const TIER_LABEL: Record<number, string> = { 1: "Documented action, then payment", 2: "Impossible volume with concurrency", 3: "Network structure with a list link", 4: "Structure, or single-organization volume", 5: "Informational" };
 export const money = (v: number | null | undefined, digits = 1) => { const n = Number(v ?? 0); if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(digits)}B`; if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(digits)}M`; if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(0)}K`; return `$${n.toFixed(0)}`; };
+
+export const ordinal = (n: number) => { const v = Math.round(n); const s = ["th", "st", "nd", "rd"], k = v % 100; return `${v}${s[(k - 20) % 10] ?? s[k] ?? s[0]}`; };
+export const moneyExact = (v: number | null | undefined) => { const n = Number(v ?? 0); if (Math.abs(n) >= 1e3) return money(n); return n < 10 ? `$${n.toFixed(2)}` : `$${Math.round(n)}`; };

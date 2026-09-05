@@ -117,19 +117,26 @@ class Claim(BaseModel):
     id: str | None = None; type: str | None = None; start: dt.date | None = None; end: dt.date | None = None; npis: list[str] = []; paid: float | None = None; codes: list[str] = []
 class VerifyReq(BaseModel):
     claims: list[Claim]
+def _warehouse(fn):
+    """DuckDB is single-writer: while a detector or an ingest step holds the file, read-only connections fail. Answer 503, never 500."""
+    try: return fn()
+    except HTTPException: raise
+    except Exception as e: raise HTTPException(503, f"warehouse busy: {str(e)[:80]}")
+
 @app.post("/verify")
 def verify_claims(req: VerifyReq):
-    return vf.verify_claims([c.model_dump() for c in req.claims])
+    if len(req.claims) > 5000: raise HTTPException(400, "at most 5000 claims per request")
+    return _warehouse(lambda: vf.verify_claims([c.model_dump() for c in req.claims]))
 
 @app.get("/verify/npi/{npi}")
 def verify_npi(npi: str):
     if not vf.NPI_RE.match(npi): raise HTTPException(400, "not an NPI")
-    return dict(npi=npi, provider=vf.provider_names([npi]).get(npi), events=vf.events_for([npi]))
+    return _warehouse(lambda: dict(npi=npi, provider=vf.provider_names([npi]).get(npi), events=vf.events_for([npi])))
 
 @app.get("/verify")
 def verify_many(npis: str = Query(..., description="comma-separated NPIs")):
-    ids = [n.strip() for n in npis.split(",") if n.strip()]
-    return dict(providers=vf.provider_names(ids), events=vf.events_for(ids))
+    ids = [n.strip() for n in npis.split(",") if n.strip()][:500]
+    return _warehouse(lambda: dict(providers=vf.provider_names(ids), events=vf.events_for(ids)))
 
 @app.get("/sam/lookup")
 def sam_lookup(name: str | None = None, uei: str | None = None): return vf.sam_live_lookup(name=name, uei=uei)
@@ -168,7 +175,7 @@ def bb_verify_bundle(req: BundleReq):
     """Run the tripwire over an EOB bundle a beneficiary exported from Medicare.gov (no OAuth needed)."""
     try: claims = bb.normalize_eobs(req.bundle)
     except (AttributeError, TypeError, ValueError, KeyError) as e: raise HTTPException(400, f"not a FHIR ExplanationOfBenefit bundle ({type(e).__name__})")
-    return dict(claims=len(claims), tripwire=vf.verify_claims(claims))
+    return _warehouse(lambda: dict(claims=len(claims), tripwire=vf.verify_claims(claims)))
 
 
 class AskIn(BaseModel):

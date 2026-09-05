@@ -32,7 +32,8 @@ const S = StyleSheet.create({
   fact: { flex: 1, paddingRight: 10 }, factLabel: { fontSize: 7.5, color: "#666666" }, factValue: { fontFamily: "Garamond", fontSize: 14, color: BLUE },
   footer: { position: "absolute", bottom: 26, left: 54, right: 54, flexDirection: "row", justifyContent: "space-between", fontSize: 7.5, color: "#666666", borderTop: "1 solid #d9dde3", paddingTop: 6 },
 });
-const fmtMoney = (v: any) => { const n = Number(v ?? 0); return n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`; };
+const fmtMoney = (v: any) => { const n = Number(v ?? 0); return n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : n < 10 ? `$${n.toFixed(2)}` : `$${Math.round(n)}`; };
+const ordinal = (n: number) => { const v = Math.round(n); const s = ["th", "st", "nd", "rd"], k = v % 100; return `${v}${s[(k - 20) % 10] ?? s[k] ?? s[0]}`; };
 const clean = (s: any) => String(s ?? "").replace(/—/g, ", ").replace(/–/g, " to ").replace(/_/g, " ");
 const h = React.createElement;
 function Doc({ p, status }: { p: any; status: string }) {
@@ -62,7 +63,7 @@ function Doc({ p, status }: { p: any; status: string }) {
       ...(p.procedures ?? []).map((c: any, i: number) => h(View, { style: { flexDirection: "row", marginBottom: 5, alignItems: "flex-start" }, key: "p" + i },
         h(Text, { style: { width: 52, fontWeight: 600 } }, String(c.code)),
         h(View, { style: { flex: 1, paddingRight: 8 } }, h(Text, { style: { fontSize: 8.5 } }, `${c.program}: ${clean(c.description || "Medicaid service code")}`),
-          h(Text, { style: S.cite }, c.percentile != null ? `${Math.round(Number(c.percentile) * 100)}th percentile of providers on this code, ${fmtMoney(c.per_patient_month)} per patient-month against a typical ${fmtMoney(c.typical)}${c.high_vector ? "; code family with a history of abuse" : ""}` : c.charge_ratio != null ? `Submitted charge ${Number(c.charge_ratio).toFixed(1)} times the allowed amount${c.peer_ratio != null ? `, usual ${Number(c.peer_ratio).toFixed(1)} times` : ""}` : "")),
+          h(Text, { style: S.cite }, c.percentile != null ? `${ordinal(Number(c.percentile) * 100)} percentile of providers on this code, ${fmtMoney(c.per_patient_month)} per patient-month against a typical ${fmtMoney(c.typical)}${c.high_vector ? "; code family with a history of abuse" : ""}` : c.charge_ratio != null ? `Submitted charge ${Number(c.charge_ratio).toFixed(1)} times the allowed amount${c.peer_ratio != null ? `, usual ${Number(c.peer_ratio).toFixed(1)} times` : ""}` : "")),
         h(View, { style: { width: 120 } }, h(Text, { style: { fontSize: 8.5, textAlign: "right" } }, `${fmtMoney(c.paid)}  ${Math.round(Number(c.share) * 100)}%`),
           h(View, { style: { height: 4, backgroundColor: "#e8edf4", marginTop: 2 } }, h(View, { style: { height: 4, width: `${Math.max(2, Math.min(100, Number(c.share) * 100))}%`, backgroundColor: BLUE } }))))),
       (p.caveats ?? []).length ? h(Text, { style: S.h2 }, "Rule out first") : null,
