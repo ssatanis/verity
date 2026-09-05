@@ -1,32 +1,20 @@
 import Link from "next/link";
 import { Reveal, Rise } from "./Reveal";
+import { HeroNetwork } from "./HeroNetwork";
 const money = (v: number) => v >= 1e9 ? `$${(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v).toLocaleString()}`;
 const num = (v: number) => Number(v ?? 0).toLocaleString();
 const W = "max-w-[1860px] mx-auto px-8 md:px-[72px]";
 
-function Network() {
-  // abstract provider network drawn in flag blue tints: nodes, suites, owners
-  const pts = [[8, 22], [18, 12], [26, 30], [36, 18], [44, 40], [52, 14], [60, 32], [70, 22], [78, 44], [86, 16], [92, 34], [14, 48], [30, 56], [48, 62], [64, 54], [82, 62], [24, 76], [40, 84], [58, 78], [74, 86], [90, 74], [10, 68], [96, 90], [4, 90]];
-  const edges = [[0, 1], [1, 3], [2, 3], [3, 5], [4, 6], [5, 7], [6, 7], [7, 9], [8, 10], [9, 10], [11, 12], [12, 13], [13, 14], [14, 15], [16, 17], [17, 18], [18, 19], [19, 20], [2, 12], [4, 13], [6, 14], [8, 15], [11, 21], [16, 21], [20, 22], [21, 23], [1, 11], [10, 15], [13, 18], [15, 20], [0, 11], [3, 13]];
-  return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" aria-hidden="true">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#0b3a78" /><stop offset="1" stopColor="#002856" /></linearGradient></defs>
-      <rect width="100" height="100" fill="url(#g)" />
-      {edges.map(([a, b], i) => <line key={i} x1={pts[a][0]} y1={pts[a][1]} x2={pts[b][0]} y2={pts[b][1]} stroke="#ffffff" strokeOpacity="0.22" strokeWidth="0.18" />)}
-      {pts.map(([x, y], i) => <rect key={i} x={x - 0.7} y={y - 0.7} width="1.4" height="1.4" fill="#ffffff" fillOpacity={i % 5 === 0 ? 0.95 : 0.55} />)}
-    </svg>
-  );
-}
 export function Hero() {
   return (
     <section className={W}>
       <div className="relative overflow-hidden" style={{ minHeight: 720 }}>
-        <Network />
-        <div className="relative px-8 md:px-[74px] pt-[88px] pb-[300px]">
-          <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(52px, 7.6vw, 112px)" }}>Integrity Before<br />the Payment<br />Goes Out</h1></Rise>
+        <HeroNetwork />
+        <div className="relative px-8 md:px-[74px] pt-[88px] pb-[300px]" style={{ pointerEvents: "none" }}>
+          <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Every Medicaid Dollar,<br />Verified Before<br />It Is Paid</h1></Rise>
         </div>
-        <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16">
-          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-3xl">Verity checks every enrolled provider against fourteen public federal and state datasets, ranks the ones worth a closer look by how strong the public record is, and gives investigators a packet in which every sentence points to the record behind it.</p></Rise>
+        <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16" style={{ pointerEvents: "none" }}>
+          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-3xl">Verity checks every Medicare and Medicaid provider against fourteen public federal and state datasets, ranks the ones worth a closer look by how strong the public record is, and hands investigators a packet in which every sentence points to the record behind it.</p></Rise>
         </div>
       </div>
     </section>
