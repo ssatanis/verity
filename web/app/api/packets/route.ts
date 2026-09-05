@@ -23,9 +23,9 @@ export async function POST(req: Request) {
   let packet = deterministicPacket(subject_type, subject_id, lines, types, name);
   if (claudeReady()) {
     try {
-      const r = await claude().messages.parse({ model: MODEL, max_tokens: 8000, system: SYSTEM, output_config: { effort: "high" },
-        messages: [{ role: "user", content: JSON.stringify({ subject: packet.title, evidence: packet.evidence, regulatory_grounds: packet.grounds, evidence_types: types }) }],
-        output_format: zodOutputFormat(Draft) });
+      // structured output goes through output_config.format (the top-level output_format field is deprecated by the API)
+      const r = await claude().messages.parse({ model: MODEL, max_tokens: 8000, system: SYSTEM, output_config: { effort: "high", format: zodOutputFormat(Draft) } as any,
+        messages: [{ role: "user", content: JSON.stringify({ subject: packet.title, evidence: packet.evidence, regulatory_grounds: packet.grounds, evidence_types: types }) }] });
       const d = r.parsed_output as z.infer<typeof Draft> | null; const n = lines.length;
       if (d) {
         const ok = d.findings.filter(f => f.evidence_ids.length && f.evidence_ids.every(i => i >= 0 && i < n));

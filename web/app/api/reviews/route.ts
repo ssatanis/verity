@@ -15,7 +15,7 @@ async function classify(detector: string, notes: string) {
     D3: "identity = wrong person or entity (name or NPI mismatch); timing = payment months fall before the action or after a reinstatement or appeal; list = the list action was administrative or not a screening trigger",
   };
   try {
-    const r = await claude().messages.parse({ model: "claude-haiku-4-5", max_tokens: 400, output_format: zodOutputFormat(Cls),
+    const r = await claude().messages.parse({ model: "claude-haiku-4-5", max_tokens: 400, output_config: { format: zodOutputFormat(Cls) } as any,
       system: `Classify a reviewer's rejection note for detector ${detector} into exactly one evidence family from ${JSON.stringify(fams)} or "none" when the note gives no reason. Guide: ${guide[detector]}. Return the family, a one-sentence reason without em dashes, and a confidence from 0 to 1.`,
       messages: [{ role: "user", content: notes.slice(0, 2000) }] });
     const p = r.parsed_output as z.infer<typeof Cls> | null; if (!p || !fams.includes(p.family)) return null; return cleanText(p);
