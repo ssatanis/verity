@@ -10,7 +10,7 @@ Deep dives: [`docs/methods.md`](docs/methods.md) has every number behind the dem
 
 ## Pitch deck
 
-[![Verity pitch deck](docs/deck/1-title.jpg)](docs/Verity_Pitch_Deck.pdf)
+[![Verity pitch deck](docs/deck/1-title.jpg)](Verity_Pitch_Deck.pdf)
 
 Click the cover to page through the full deck as a PDF, or expand below.
 
