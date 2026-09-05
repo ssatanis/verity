@@ -18,7 +18,7 @@ Deep dives: [`docs/methods.md`](docs/methods.md) has every number behind the dem
 | **2,763** | revoked or excluded providers still holding an active Medicaid enrollment | 90+ days after the action |
 | **$1.48B** | paid after a for-cause termination in another state | offered as a screening queue, not a finding |
 
-The $50.36M figure independently matches the order of magnitude of HHS-OIG's audited finding of $50.3M (OEI-03-19-00070). A from-scratch rebuild of this pipeline on refreshed exclusion lists reproduces it within 5%.
+The \$50.36M figure independently matches the order of magnitude of HHS-OIG's audited finding of \$50.3M (OEI-03-19-00070). A from-scratch rebuild of this pipeline on refreshed exclusion lists reproduces it within 5%.
 
 ## Architecture
 
