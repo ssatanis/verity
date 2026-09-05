@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 export function Footer() {
-  const cols = [["Main", [["Home", "/"], ["What We Do", "/#what"], ["Console", "/app"], ["Methods", "/app/methods"]]], ["Company", [["Contact", "mailto:ss4497@cornell.edu"], ["Terms Conditions", "/#terms"], ["Privacy Policy", "/#privacy"], ["Security", "/#security"]]]] as const;
+  const cols = [["Main", [["Home", "/"], ["What We Do", "/#what"], ["Console", "/app"], ["Methods", "/app/methods"]]], ["Company", [["Contact", "mailto:ss4497@cornell.edu"], ["Terms Conditions", "/legal#terms"], ["Privacy Policy", "/legal#privacy"], ["Security", "/legal#security"]]]] as const;
   return (
     <footer className="footer">
       <div className="max-w-[1860px] mx-auto px-8 md:px-[72px] py-16">

@@ -11,5 +11,9 @@ print("duckdb timecodes:", con.execute("SELECT count(*), count(*) FILTER (WHERE 
 rows = con.execute("SELECT hcpcs, personal_service FROM timecodes").fetchall(); con.close()
 with psycopg.connect(os.environ["DATABASE_URL"]) as pg:
     with pg.cursor() as c:
-        for h, p in rows: c.execute("UPDATE public.timecodes SET personal_service = %s WHERE hcpcs = %s", (p, h))
+        # one statement over the pooler instead of one round trip per code
+        c.execute("CREATE TEMP TABLE tc_upd (hcpcs text, personal_service boolean)")
+        with c.copy("COPY tc_upd (hcpcs, personal_service) FROM STDIN") as cp:
+            for h, p in rows: cp.write_row((h, bool(p)))
+        c.execute("UPDATE public.timecodes t SET personal_service = u.personal_service FROM tc_upd u WHERE u.hcpcs = t.hcpcs")
     pg.commit(); print("postgres timecodes updated", len(rows))
