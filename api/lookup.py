@@ -41,11 +41,11 @@ def provider(npi: str) -> dict | None:
                 "SELECT program, year, services, beneficiaries, paid FROM medicare_billing WHERE npi = ? ORDER BY program, year", (npi,)).fetchall()]
         except Exception: out["medicare_by_year"] = []
         try:
-            out["medicaid_top_codes"] = [dict(code=r[0], paid=float(r[1] or 0), months=int(r[2] or 0)) for r in con.execute(
-                "SELECT hcpcs, SUM(paid), COUNT(DISTINCT month) FROM spend WHERE servicing_npi = ? OR billing_npi = ? GROUP BY 1 ORDER BY 2 DESC LIMIT 12", (npi, npi)).fetchall()]
+            out["medicaid_top_codes"] = [dict(code=r[0], paid=float(r[1] or 0), months=int(r[2] or 0), role=r[3]) for r in con.execute(
+                "SELECT hcpcs, SUM(paid), MAX(months), string_agg(DISTINCT role, ' and ') FROM spend_npi_code WHERE npi = ? GROUP BY 1 ORDER BY 2 DESC LIMIT 12", (npi,)).fetchall()]
         except Exception: out["medicaid_top_codes"] = []
         try:
-            out["medicaid_roles"] = dict(con.execute("SELECT role, SUM(paid) FROM (SELECT 'billing' AS role, paid FROM spend_bill_month WHERE npi = ? UNION ALL SELECT 'servicing', paid FROM spend_srv_month WHERE npi = ?) GROUP BY 1", (npi, npi)).fetchall())
+            out["medicaid_roles"] = {r[0]: float(r[1] or 0) for r in con.execute("SELECT 'billing', SUM(paid) FROM spend_bill_month WHERE npi = ? UNION ALL SELECT 'servicing', SUM(paid) FROM spend_srv_month WHERE npi = ?", (npi, npi)).fetchall()}
         except Exception: out["medicaid_roles"] = {}
         try:
             out["lists"] = {"revoked": con.execute("SELECT COUNT(*) FROM revoked WHERE npi = ?", (npi,)).fetchone()[0], "leie": con.execute("SELECT COUNT(*) FROM leie WHERE npi = ?", (npi,)).fetchone()[0],

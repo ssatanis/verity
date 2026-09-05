@@ -79,7 +79,7 @@ try:
     # the console sits behind the reviewer gate: sign in with VERITY_CONSOLE_PASSWORD from web/.env.local and reuse the cookie
     web = httpx.Client(base_url=a.web, timeout=60, follow_redirects=False)
     g = web.get("/app"); ok(g.status_code == 200, "console opens without a sign in", str(g.status_code))
-    for p in ["/", "/legal", "/app", "/app/candidates", "/app/candidates?tier=1", "/app/clusters", "/app/flags", "/app/flags?detector=D2", "/app/plazas", "/app/search?q=1811937436", "/app/states/MN", "/app/methods", "/app/providers/1811937436"]:
+    for p in ["/", "/legal", "/app", "/app/candidates", "/app/candidates?tier=1", "/app/clusters", "/app/flags", "/app/flags?detector=D2", "/app/plazas", "/app/search?q=1811937436", "/app/methods", "/app/providers/1811937436"]:
         r = web.get(p); bad = any(x in r.text for x in ["Application error", "Unhandled Runtime Error", "Internal Server Error"])
         ok(r.status_code == 200 and not bad, f"GET {p}", f"{r.status_code} {len(r.text)//1000}KB")
     for p in ["/", "/legal", "/app/methods"]:

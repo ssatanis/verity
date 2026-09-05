@@ -5,7 +5,7 @@ Design (see docs/RISK_SCORE_V2.md):
   1. Cohort and label.  Every NPI with >= $1,000 of Medicaid payments in 2018-2022. Label y = 1 if the NPI received a fraud-authority
      OIG exclusion (1128(a)(1),(a)(2),(a)(3),(b)(7)) or an integrity-ground Medicare revocation (42 CFR 424.535(a)(2),(3),(4),(5),(7),(8),
      (10),(12),(13),(14),(18),(19),(20),(22),(23)) dated 2023-01-01 or later. Features use only 2018-2022 data, so the test is out of time.
-  2. Features.  Volume, growth, ramp (max month over trailing 6-month median), concentration, concurrency (billing organizations),
+  2. Features.  Volume, growth, ramp (max month over trailing 6-month median), concentration, concurrency (billing organisations),
      patients, impossible-hour months and peak implied hours (Detector 2 restricted to <= 2022), prior administrative history, entity type.
   3. Model.  Weight-of-evidence binning per feature (reported with information value), logistic regression on the WOE features
      (additive log-odds, the same structure as Fellegi-Sunter and credit scorecards), isotonic calibration on a held-out 30 percent.
@@ -23,13 +23,13 @@ import duckdb, numpy as np, pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROOT)
 SRC = os.environ.get("VERITY_DUCKDB", "data/verity.duckdb"); OUT = os.environ.get("RISK_V2_DB", "data/risk_v2.duckdb")
 con = duckdb.connect(SRC, read_only=True); os.makedirs("data/tmp_risk_v2", exist_ok=True); os.makedirs("data/cache_risk_v2", exist_ok=True)
-con.execute("SET memory_limit='2GB'"); con.execute("SET threads=3"); con.execute(f"SET temp_directory='{os.path.expanduser('~/ddbtmp')}'"); con.execute("SET preserve_insertion_order=false"); con.execute("PRAGMA max_temp_directory_size='8GiB'")
+con.execute("SET memory_limit='9GB'"); con.execute("SET threads=8"); con.execute("SET temp_directory='data/tmp_duckdb'"); con.execute("SET preserve_insertion_order=false"); con.execute("PRAGMA max_temp_directory_size='60GiB'")
 T0 = time.time(); log = lambda *a: print(f"[{time.time()-T0:6.0f}s]", *a, flush=True)
 FRAUD_LEIE = "('1128a1','1128a2','1128a3','1128b7')"
 INTEGRITY = r"'\(A\)\((2|3|4|5|7|8|10|12|13|14|18|19|20|22|23)\)'"
 
 def features(end_month):
-    """Per-NPI behavioral features from spend_any_month up to end_month (inclusive), plus D2 and history features. Cached to parquet."""
+    """Per-NPI behavioural features from spend_any_month up to end_month (inclusive), plus D2 and history features. Cached to parquet."""
     cache = f"data/cache_risk_v2/features_{end_month}.parquet"
     if os.path.exists(cache): return pd.read_parquet(cache)
     df = con.execute(f"""
@@ -100,7 +100,7 @@ FEATS = [c for c in Xtr.columns if c != "d1_eligible"]   # D1 membership is a 20
 def woe_table(x, y, bins=10, name=""):
     x = pd.Series(x); q = np.unique(np.quantile(x, np.linspace(0, 1, bins + 1)))
     if len(q) < 3: q = np.unique(np.concatenate([[x.min() - 1e-9], np.unique(x)[:-1] + 1e-9, [x.max() + 1e-9]]))
-    b = pd.cut(x, q, include_lowest=True, duplicates="drop")
+    b = pd.cut(x, q, include_lowest=True, duplicates="drop").cat.codes
     g = pd.DataFrame({"b": b, "y": y}).groupby("b", observed=True)["y"].agg(["sum", "count"])
     g["non"] = g["count"] - g["sum"]; e = (g["sum"] + 0.5) / (y.sum() + 0.5 * len(g)); ne = (g["non"] + 0.5) / ((1 - y).sum() + 0.5 * len(g))
     g["woe"] = np.log(e / ne); g["iv"] = (e - ne) * g["woe"]; g["feature"] = name; g["rate"] = g["sum"] / g["count"]
@@ -108,14 +108,14 @@ def woe_table(x, y, bins=10, name=""):
 woe_rows, IV, edges = [], {}, {}
 for f in FEATS:
     t, iv, q = woe_table(Xtr[f].values, y, name=f); woe_rows.append(t); IV[f] = iv; edges[f] = q
-woe_df = pd.concat(woe_rows); woe_df["bin"] = woe_df["bin"].astype(str)
+woe_df = pd.concat(woe_rows); woe_df["bin"] = woe_df["bin"].astype(int)
 log("information value:", {k: round(v, 3) for k, v in sorted(IV.items(), key=lambda kv: -kv[1])})
 def apply_woe(X):
     Z = pd.DataFrame(index=X.index)
     for f in FEATS:
         t = woe_df[woe_df.feature == f]; q = edges[f]
-        b = pd.cut(X[f].clip(q[0], q[-1]), q, include_lowest=True, duplicates="drop").astype(str)
-        m = dict(zip(t["bin"], t["woe"])); Z[f] = b.map(m).fillna(0.0).values
+        b = pd.cut(X[f].clip(q[0], q[-1]), q, include_lowest=True, duplicates="drop").cat.codes
+        m = dict(zip(t["bin"], t["woe"])); Z[f] = pd.Series(b).map(m).fillna(0.0).values
     return Z
 
 # ---------- model, held-out evaluation, calibration ----------
@@ -130,13 +130,19 @@ raw_te = lr.predict_proba(Z.iloc[ite])[:, 1]
 iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0); iso.fit(raw_te, y[ite])   # calibrate on held-out (reported as in-sample for the calibration step)
 p_te = iso.predict(raw_te); yte = y[ite]
 def prec_at_k(p, yv, k): idx = np.argsort(-p)[:k]; return yv[idx].mean()
-rng = np.random.default_rng(11); B = 2000; ks = [50, 100, 250, 500, 1000, 2500]
+rng = np.random.default_rng(11); B = 1000; ks = [50, 100, 250, 500, 1000, 2500]
+from scipy.stats import rankdata
+def auc_fast(p, yv):
+    r = rankdata(p); n1 = yv.sum(); n0 = len(yv) - n1
+    return (r[yv == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
 boots = {k: [] for k in ks}; aucs, aps = [], []
 for _ in range(B):
     s = rng.integers(0, len(p_te), len(p_te)); ps, ys = p_te[s], yte[s]
     if ys.sum() == 0: continue
-    aucs.append(roc_auc_score(ys, ps)); aps.append(average_precision_score(ys, ps))
-    for k in ks: boots[k].append(prec_at_k(ps, ys, k))
+    o = np.argsort(-ps, kind="mergesort"); yo = ys[o]
+    for k in ks: boots[k].append(yo[:k].mean())
+    aucs.append(auc_fast(ps, ys))
+    cum = np.cumsum(yo); prec = cum / np.arange(1, len(yo) + 1); aps.append(float((prec * yo).sum() / max(ys.sum(), 1)))
 base = yte.mean()
 ev = dict(n_test=int(len(yte)), positives_test=int(yte.sum()), base_rate=float(base),
           auc=float(roc_auc_score(yte, p_te)), auc_ci=[float(np.percentile(aucs, 2.5)), float(np.percentile(aucs, 97.5))],
@@ -150,6 +156,8 @@ cal = pd.DataFrame({"p": p_te, "y": yte}); cal["decile"] = pd.qcut(cal.p.rank(me
 cal_t = cal.groupby("decile").agg(n=("y", "size"), predicted=("p", "mean"), observed=("y", "mean")).reset_index()
 
 # ---------- apply to the full window (2018-2024) ----------
+COHORT = dict(n=int(len(tr)), positives=int(y.sum()), base_rate=float(y.mean()), d1_pos=float(Xtr.loc[y == 1, "d1_eligible"].mean()), d1_all=float(Xtr["d1_eligible"].mean()))
+import gc; del Z, Xtr, tr; gc.collect()
 log("building scoring features (2018-2024)")
 fu = features("2024-12"); Xfu = engineer(fu); Zfu = apply_woe(Xfu)
 fu["p_action"] = iso.predict(lr.predict_proba(Zfu)[:, 1]); fu["logit_raw"] = lr.decision_function(Zfu)
@@ -168,6 +176,7 @@ if len(fu) >= 200000:   # chunk to bound memory
         ii = idx[s:s + 20000]; out[ii] = (np.outer(peak[ii], U) > 24).mean(axis=1)
     fu["p_impossible"] = out
 fu.loc[fu["peak_lb_personal_hpd"] > 24, "p_impossible"] = 1.0   # the rate-free lower bound needs no assumption
+fu.loc[fu["entity_type"] != "1", "p_impossible"] = 0.0             # personal-service hours are only a physical constraint for an individual NPI
 log(f"u ~ LogNormal(mu={mu:.3f}, sd={sd:.3f}); median u = {math.exp(mu):.2f}")
 
 # ---------- documented actions (Detector 3 tier A) and expected loss ----------
@@ -177,13 +186,12 @@ LGD = 0.9
 fu["exposure_12m"] = fu.paid_12m.fillna(0)
 fu["expected_loss"] = fu.p_action * fu.exposure_12m * LGD
 fu.loc[fu.documented == 1, "expected_loss"] = fu.loc[fu.documented == 1, "d3_paid_after"].fillna(0) * LGD + fu.loc[fu.documented == 1, "exposure_12m"] * LGD
-def tier(r):
-    if r.documented == 1: return 1
-    if r.p_impossible >= 0.95 and r.m_over24_concurrent > 0: return 2
-    if r.p_action >= 0.05: return 3
-    if r.p_action >= 0.01 or r.p_impossible >= 0.5: return 4
-    return 5
-fu["tier"] = fu.apply(tier, axis=1)
+BASE = COHORT["base_rate"]
+fu["lift"] = fu.p_action / BASE
+fu["tier"] = np.select([fu.documented == 1,
+                        (fu.p_impossible >= 0.95) & (fu.m_over24_concurrent > 0),
+                        fu.lift >= 10,
+                        (fu.lift >= 3) | (fu.p_impossible >= 0.5)], [1, 2, 3, 4], default=5)
 fu["score"] = (100 * (1 - (1 - fu.p_action) * (1 - 0.5 * fu.p_impossible))).round(2)   # combined probability, capped by construction
 fu.loc[fu.documented == 1, "score"] = 100.0
 fu = fu.sort_values(["tier", "expected_loss"], ascending=[True, False]).reset_index(drop=True); fu["rank"] = np.arange(1, len(fu) + 1)
@@ -193,11 +201,14 @@ out = duckdb.connect(OUT)
 out.execute("CREATE OR REPLACE TABLE risk_v2 AS SELECT * FROM fu"); out.execute("CREATE OR REPLACE TABLE risk_v2_woe AS SELECT * FROM woe_df")
 out.execute("CREATE OR REPLACE TABLE risk_v2_calibration AS SELECT * FROM cal_t")
 out.execute("CREATE OR REPLACE TABLE risk_v2_eval AS SELECT ? AS eval_json", [json.dumps(ev)])
-summ = dict(cohort=int(len(tr)), positives=int(y.sum()), base_rate=float(y.mean()), eval=ev,
+summ = dict(cohort=COHORT["n"], positives=COHORT["positives"], base_rate=COHORT["base_rate"], eval=ev,
             calibration=cal_t.to_dict(orient="records"), u_lognormal=dict(mu=mu, sd=sd, median=math.exp(mu)),
             tiers=fu.groupby("tier").agg(n=("npi", "size"), expected_loss=("expected_loss", "sum"), exposure=("exposure_12m", "sum")).reset_index().to_dict(orient="records"),
             top25=fu.head(25)[["rank", "npi", "name", "entity_type", "nppes_state", "tier", "score", "p_action", "p_impossible", "expected_loss", "exposure_12m", "d3_sources", "top_drivers"]].to_dict(orient="records"),
+            top25_probability=fu[fu.documented == 0].sort_values("p_action", ascending=False).head(25)[["rank", "npi", "name", "entity_type", "nppes_state", "tier", "score", "p_action", "lift", "p_impossible", "expected_loss", "exposure_12m", "top_drivers"]].to_dict(orient="records"),
+            top25_queue=fu[(fu.documented == 0) & (fu.lift >= 10)].sort_values("expected_loss", ascending=False).head(25)[["rank", "npi", "name", "entity_type", "nppes_state", "tier", "score", "p_action", "lift", "p_impossible", "expected_loss", "exposure_12m", "top_drivers"]].to_dict(orient="records"),
+            by_state=fu[fu.tier <= 4].groupby("nppes_state").agg(n=("npi", "size"), expected_loss=("expected_loss", "sum")).sort_values("expected_loss", ascending=False).head(15).reset_index().to_dict(orient="records"),
             top25_predicted=fu[fu.documented == 0].sort_values("expected_loss", ascending=False).head(25)[["rank", "npi", "name", "entity_type", "nppes_state", "tier", "score", "p_action", "p_impossible", "expected_loss", "exposure_12m", "top_drivers"]].to_dict(orient="records"),
-            scored=int(len(fu)), sum_expected_loss=float(fu.expected_loss.sum()), d1_eligible_rate_in_positives=float(Xtr.loc[y == 1, "d1_eligible"].mean()), d1_eligible_rate_overall=float(Xtr["d1_eligible"].mean()))
+            scored=int(len(fu)), sum_expected_loss=float(fu.expected_loss.sum()), d1_eligible_rate_in_positives=COHORT["d1_pos"], d1_eligible_rate_overall=COHORT["d1_all"])
 os.makedirs("demo/cache", exist_ok=True); json.dump(summ, open("demo/cache/risk_v2_summary.json", "w"), indent=1, default=str)
 out.close(); log("done:", OUT)
