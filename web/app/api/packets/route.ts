@@ -11,7 +11,7 @@ const Draft = z.object({
   recommendation: z.string(), caveats: z.array(z.string()),
 });
 const SYSTEM = `You draft referral candidate packets for health plan special investigations units and state Medicaid program integrity units.
-Rules: every finding must be supported verbatim by the evidence lines and cite their ids; never add a fact that is not in the evidence; describe records, dates and amounts and never assert fraud, intent or guilt; use only the regulatory grounds provided, by citation; plain English, short sentences; no em dashes or en dashes; include caveats naming the legitimate explanations a reviewer must rule out.`;
+Rules: every finding must be supported verbatim by the evidence lines and cite their ids; never add a fact that is not in the evidence; describe records, dates and amounts and never assert fraud, intent or guilt; use only the regulatory grounds provided, by citation; plain English, short sentences; no em dashes, no en dashes, no underscores and no code-like identifiers (write list names and labels in words); the plain_english field is a specific three-to-five sentence description of this subject drawn from the evidence, never a generic paragraph; include caveats naming the legitimate explanations a reviewer must rule out.`;
 
 export async function POST(req: Request) {
   const { subject_type, subject_id, created_by = "console" } = await req.json();

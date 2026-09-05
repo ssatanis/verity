@@ -28,11 +28,11 @@ Rules:
 2. Describe records, dates and amounts. Never assert fraud, intent or guilt. The subject is a referral candidate, not a finding.
 3. Use the regulatory grounds provided by their citation; do not invent citations.
 4. Plain English, short sentences, no jargon a payer executive would not know. Do not use em dashes or en dashes anywhere.
-5. Include caveats: legitimate explanations the reviewer must rule out (supervisory billing conventions, appeals and reinstatements, shared landlords, data lag)."""
+5. Include caveats: legitimate explanations the reviewer must rule out (supervisory billing conventions, appeals and reinstatements, shared landlords, data lag). The plain_english field is a specific description of this subject drawn from the evidence, three to five sentences, never a generic paragraph. Never use underscores or code-like identifiers; write list names and labels in words."""
 
 def _title(ev):
-    if ev["kind"] == "cluster": return f"Referral candidate packet: provider community {ev['cluster']['id']}"
-    p = ev["provider"] or {}; return f"Referral candidate packet: NPI {ev.get('provider', {}).get('npi') or ''} {p.get('name') or ''}".strip()
+    if ev["kind"] == "cluster": return f"Referral packet: provider network {ev['cluster']['id']}"
+    p = ev.get("provider") or {}; return f"Referral packet: {p.get('name') or ('NPI ' + str(p.get('npi') or ''))}".strip()
 
 # caveats keyed by evidence type (mirrors web/lib/packet.ts): the ordinary explanations a reviewer must rule out first
 CAVEATS = {

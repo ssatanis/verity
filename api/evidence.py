@@ -34,7 +34,19 @@ def cluster_evidence(cluster_id):
         owners = pg.execute("SELECT * FROM public.owners WHERE enrollment_id = ANY(%s) ORDER BY enrollment_id", ([m["enrollment_id"] for m in members],)).fetchall()
         sat = pg.execute("SELECT * FROM public.saturation_county WHERE county_fips = %s AND aggregation_level = 'COUNTY' ORDER BY reference_period DESC", (c["county_fips"],)).fetchall() if c["county_fips"] else []
     feats = c["features"] if isinstance(c["features"], dict) else json.loads(c["features"] or "{}")
-    return dict(kind="cluster", cluster=dict(c, features=feats, graph=None), members=members, owners=owners, flags=flags, revoked=rev, leie=leie, saturation=sat[:6])
+    factors = []
+    try:
+        with _pg() as pg2:
+            fx = pg2.execute("SELECT label, unit, value, percentile, factor, outlook FROM public.network_factors WHERE cluster_id = %s AND ((percentile >= 90 AND factor <> 'momentum') OR factor = 'momentum') ORDER BY percentile DESC NULLS LAST LIMIT 7", (cluster_id,)).fetchall()
+        for r in fx:
+            if r["factor"] == "momentum":
+                if r.get("outlook"): factors.append(f"Momentum across the rate-of-change factors is {r['outlook']} (robust z {float(r['value'] or 0):.2f}); this is an indicative reading, not a validated forecast.")
+            elif r["value"] is not None and r["percentile"] is not None:
+                v = float(r["value"]); u = r["unit"]; vv = f"${v:,.0f}" if u == "$" else (f"{round(v*100)}%" if u == "share" else (f"{v:.1f} years" if u == "years" else (str(int(v)) if v.is_integer() else f"{v:.1f}")))
+                factors.append(f"{r['label']}: {vv}, in the top {max(1, round(100 - float(r['percentile'])))}% of networks in the risky direction.")
+    except Exception:
+        factors = []
+    return dict(kind="cluster", factors=factors, cluster=dict(c, features=feats, graph=None), members=members, owners=owners, flags=flags, revoked=rev, leie=leie, saturation=sat[:6])
 
 def provider_evidence(npi):
     with _pg() as pg:
@@ -48,26 +60,44 @@ def provider_evidence(npi):
     if not p and not flags and not risk: return None
     return dict(kind="provider", provider=p or dict(npi=npi, name=(risk or {}).get("name")), flags=flags, revoked=rev, leie=leie, enrollments=enr, clusters=clusters, risk=risk)
 
+def _src(x):
+    x = str(x or "")
+    if x == "MEDICARE_REVOKED": return "the Medicare revocation list"
+    if x == "OIG_LEIE": return "the OIG exclusion list"
+    if x == "NPPES_DEACTIVATED": return "the deactivated NPI list"
+    if x == "MEDICAID_TERM": return "a state Medicaid termination list"
+    if x.startswith("STATE_EXCL_"): return f"the {x[11:]} Medicaid exclusion list"
+    if x.startswith("SAM"): return "the SAM.gov exclusion list"
+    return x.replace("_", " ").lower()
+_LAB = {"IMPOSSIBLE_BY_LINE_COUNT": "more hours than a day holds, even counting one unit per claim line", "IMPOSSIBLE_CONSERVATIVE_RATE": "more hours than a day holds at a conservative unit price",
+        "IMPOSSIBLE_PER_PATIENT": "more than 24 hours per patient per day", "EXCEEDS_MN_DAILY_CAP": "over the state's daily cap for every patient every day", "IMPLAUSIBLE_OVER_16H": "over 16 hours per day",
+        "ELEVATED_OVER_12H": "over 12 hours per day", "UMBRELLA_VOLUME": "agency volume billed under one clinician's NPI", "GROWTH_ANOMALY": "new biller with rapid growth concentrated on one code"}
+def _lab(x): return _LAB.get(str(x or ""), str(x or "").replace("_", " ").lower())
+
 def evidence_lines(ev):
     """Flat list of (source, statement) pairs, the citation trail every packet sentence must map to."""
     L = []
     if ev["kind"] == "cluster":
         c = ev["cluster"]; f = c["features"]
-        L.append(("clusters", f"Community {c['id']} ({c['n_providers']} providers: {c['n_hospice']} hospice, {c['n_hha']} home health, {c['n_snf']} SNF) centered on {c['city']}; risk score {float(c['score']):.2f}, rank {c['rank']}."))
-        if f.get("burst_90", 0) >= 2: L.append(("hospice/hha/snf enrollment files, INCORPORATION DATE", f"{f['burst_90']} members were incorporated within a 90-day window {f.get('burst_90_span')}."))
-        if max(f.get("addr_share", 0), f.get("unit_share", 0)) >= 2: L.append(("enrollment ADDRESS LINE 1 / NPPES practice location", f"Up to {max(f['addr_share'], f['unit_share'])} members share one practice address{' (same suite)' if f.get('unit_share',0) >= 2 else ''}."))
-        if f.get("owner_multi", 0): L.append(("All-Owners files, resolved persons and organizations", f"{f['owner_multi']} owner(s) are tied to three or more members (largest: {f['max_owner_degree']})."))
-        if f.get("phone_share", 0) >= 2: L.append(("NPPES practice telephone", f"{f['phone_share']} members list the same telephone number."))
-        for src, npis in (f.get("prov_labels") or {}).items(): L.append((src, f"Member NPI(s) {', '.join(npis)} appear on {src}."))
-        for h in f.get("owner_hits") or []: L.append((h[1], f"Owner '{h[0]}' matches {h[1]} at {h[2]} confidence (effective {h[3]})."))
-        if f.get("sat_per_10k") is not None: L.append(("CMS Market Saturation and Utilization", f"The county has {float(f['sat_per_10k']):.1f} providers per 10,000 FFS beneficiaries (robust z {float(f.get('sat_z') or 0):+.1f})."))
-        L.append(("T-MSIS provider spending 2024", f"Members billed Medicaid ${float(c['dollars_at_risk'] or 0):,.0f} in 2024" + (f"; Medicare 2023 hospice/HHA payments ${float(c['dollars_medicare'] or 0):,.0f}." if c.get("dollars_medicare") else ".")))
-        for m in ev["members"][:40]: L.append(("cluster_members", f"{m['ptype']} {m['org_name']} (NPI {m['npi']}, {m['city']}, {m['state']}; incorporated {m['inc_date']}; Medicaid 2024 ${float(m['medicaid_2024'] or 0):,.0f}; labels {m['labels']})."))
-        for r in ev["revoked"]: L.append(("Revocation_Extract", f"NPI {r['npi']} revoked {r['revoked_dt']} under {r['revocation_rsn']} (bar to {r['reenroll_bar_dt']})."))
-        for r in ev["leie"]: L.append(("OIG LEIE", f"NPI {r['npi']} excluded {r['excl_dt']} under section 1128 {r['excltype']}."))
+        kinds = ", ".join(f"{n} {one if n == 1 else many}" for n, one, many in ((c["n_hospice"], "hospice", "hospices"), (c["n_hha"], "home health agency", "home health agencies"), (c["n_snf"], "nursing facility", "nursing facilities")) if n)
+        L.append(("clusters", f"Provider network {c['id']}: {c['n_providers']} providers around {c['city']}, {c.get('state') or ''} ({kinds}); network score {float(c['score']):.0f} of 100, ranked {c['rank']} nationally."))
+        for x in (f.get("facts") or []): L.append(("network facts", x))
+        for src, npis in (f.get("prov_labels") or {}).items(): L.append((_src(src), f"Providers with NPI {', '.join(npis)} appear on {_src(src)}."))
+        for h in f.get("owner_hits") or []: L.append((_src(h[1]), f"An owner named {str(h[0]).title()} matches {_src(h[1])} at {h[2]} confidence (action dated {h[3]})."))
+        if f.get("sat_per_10k") is not None: L.append(("CMS market saturation", f"The county has {float(f['sat_per_10k']):.1f} providers of this kind per 10,000 Medicare fee-for-service beneficiaries, {'above' if float(f.get('sat_z') or 0) > 0 else 'below'} the national norm."))
+        dm, dc = float(c.get("dollars_at_risk") or 0), float(c.get("dollars_medicare") or 0)
+        L.append(("T-MSIS provider spending 2024", (f"The providers billed Medicaid ${dm:,.0f} in 2024" + (f" and received ${dc:,.0f} in Medicare hospice and home health payments in 2023." if dc else ".")) if dm > 0 else (f"The providers received ${dc:,.0f} in Medicare hospice and home health payments in 2023 and billed no Medicaid in 2024." if dc else "The providers billed no Medicaid in 2024 and no Medicare hospice or home health payments are recorded for 2023.")))
+        for fx in (ev.get("factors") or [])[:6]: L.append(("factor desk", fx))
+        for m in ev["members"][:40]:
+            labs = m.get("labels") or []; labs = json.loads(labs) if isinstance(labs, str) else labs
+            kind = {"HHA": "Home health agency", "SNF": "Nursing facility"}.get(m["ptype"], "Hospice")
+            L.append(("network members", f"{kind} {m['org_name']} (NPI {m['npi']}, {m['city']}, {m['state']})" + (f", incorporated {m['inc_date']}" if m.get("inc_date") else "") + (f", billed Medicaid ${float(m['medicaid_2024']):,.0f} in 2024" if float(m.get("medicaid_2024") or 0) > 0 else ", no Medicaid billing in 2024") + (f", on {' and '.join(_src(l) for l in labs)}" if labs else "") + "."))
+        for r in ev["revoked"]: L.append(("Medicare revocation list", f"NPI {r['npi']} was revoked on {r['revoked_dt']} under {str(r['revocation_rsn'] or '').replace('_', ' ')}, barred from re-enrolling until {r['reenroll_bar_dt']}."))
+        for r in ev["leie"]: L.append(("OIG exclusion list", f"NPI {r['npi']} was excluded on {r['excl_dt']} under section 1128 {r['excltype']}."))
         for fl in ev["flags"][:20]:
             e = fl["evidence"] if isinstance(fl["evidence"], dict) else json.loads(fl["evidence"] or "{}")
-            L.append((f"flags/{fl['detector']}", f"NPI {fl['npi']} {fl['metric']} = {float(fl['value'] or 0):,.2f} (threshold {fl['threshold']}) in {fl['month']}; ${float(fl['dollars'] or 0):,.0f}; {e.get('label') or e.get('source') or ''}."))
+            if fl["detector"] == "D3": L.append(("paid after a list action", f"NPI {fl['npi']}: after the {_src(e.get('source'))} action of {e.get('event_dt')}, Medicaid paid ${float(e.get('paid_after') or 0):,.0f} across {e.get('months_paid_after')} later months."))
+            else: L.append(("hours per day", f"NPI {fl['npi']}: {_lab(e.get('label'))} in {str(fl['month'])[:7]}, {float(fl['value'] or 0):,.1f} hours per day, ${float(fl['dollars'] or 0):,.0f} paid."))
     else:
         p = ev["provider"] or {}
         L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organization' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
