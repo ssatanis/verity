@@ -11,7 +11,7 @@ export function Hero() {
       <div className="relative overflow-hidden" style={{ minHeight: 720 }}>
         <HeroNetwork />
         <div className="relative px-8 md:px-[74px] pt-[88px] pb-[300px]" style={{ pointerEvents: "none" }}>
-          <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Every Medicaid Dollar,<br />Verified Before<br />It Is Paid</h1></Rise>
+          <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Integrity Before<br />the Payment<br />Goes Out</h1></Rise>
         </div>
         <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16" style={{ pointerEvents: "none" }}>
           <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">Fourteen public datasets. Every Medicare and Medicaid provider. One ranked queue, and a packet in which every sentence cites the record behind it.</p></Rise>

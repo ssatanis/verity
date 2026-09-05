@@ -126,7 +126,7 @@ def parse_ap_date(s):
 CARD = re.compile(r'<li class="usa-card[^"]*">(.*?)</li>\s*(?=<li class="usa-card|</ul>)', re.S)
 CARD_LINK = re.compile(r'<h2 class="usa-card__heading">\s*<a href="([^"]+)">(.*?)</a>', re.S)
 CARD_DATE = re.compile(r'<span class="text-base-dark[^"]*">([^<]+)</span>')
-CARD_TAG = re.compile(r'<li class="[^"]*usa-tag[^"]*">([^<]+)</li>')
+CARD_TAG = re.compile(r'<li class="[^"]*usa-tag[^"]*">([^<]+)')   # the card capture ends at the tag's own </li>, so do not require it
 ARTICLE = re.compile(r"<article[^>]*>(.*?)</article>", re.S)
 MAIN = re.compile(r"<main[^>]*>(.*?)</main>", re.S)
 READ_MORE = re.compile(r'<a[^>]+href="([^"]+)"[^>]*>\s*Read more on', re.I)
