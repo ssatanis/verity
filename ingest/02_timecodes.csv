@@ -1,0 +1,321 @@
+hcpcs,description,minutes_per_unit,unit_basis,group_divisor,family,fraud_vector,mn_rate_per_unit,mn_daily_cap_hours,source,notes,personal_service
+97151,Behavior identification assessment by physician/QHP,15,per_15min,1,aba,MED,,8,CPT; MN cap 8h/day,,Y
+97152,Behavior identification supporting assessment by technician,15,per_15min,1,aba,LOW,,,CPT,,N
+97153,Adaptive behavior treatment by protocol by technician,15,per_15min,1,aba,HIGH,,8,CPT; MN cap 8h/day,MN EIDBI core code,N
+97154,Group adaptive behavior treatment by protocol,15,per_15min,4,aba,HIGH,,4.5,CPT; MN cap 4.5h/day,group; assume 4 patients,N
+97155,Adaptive behavior treatment with protocol modification by QHP,15,per_15min,1,aba,HIGH,,6,CPT; MN cap 6h/day,MN EIDBI core code,Y
+97156,Family adaptive behavior treatment guidance,15,per_15min,1,aba,MED,,4,CPT; MN cap 4h/day,,Y
+97157,Multiple-family group adaptive behavior treatment guidance,15,per_15min,4,aba,MED,,,CPT,group; assume 4 families,Y
+97158,Group adaptive behavior treatment with protocol modification,15,per_15min,4,aba,MED,,,CPT,group; assume 4 patients,N
+0362T,Behavior identification supporting assessment (2 or more technicians),15,per_15min,1,aba,MED,,,CPT,MN EIDBI,N
+0373T,Adaptive behavior treatment with protocol modification (2 or more technicians),15,per_15min,1,aba,HIGH,,8,CPT; MN cap 8h/day,MN EIDBI,N
+0364T,Adaptive behavior treatment by protocol first 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
+0365T,Adaptive behavior treatment by protocol each addl 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
+0366T,Group adaptive behavior treatment by protocol first 30 min (pre-2019),30,per_30min,4,aba,MED,,,CPT,retired 2019; group,N
+0367T,Group adaptive behavior treatment by protocol each addl 30 min (pre-2019),30,per_30min,4,aba,MED,,,CPT,retired 2019; group,N
+0368T,Adaptive behavior treatment with protocol modification first 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
+0369T,Adaptive behavior treatment with protocol modification each addl 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
+90832,Psychotherapy 30 min,30,per_session,1,psychotherapy,MED,,,CPT,,Y
+90833,Psychotherapy 30 min add-on to E/M,30,per_session,1,psychotherapy,MED,,,CPT,,Y
+90834,Psychotherapy 45 min,45,per_session,1,psychotherapy,MED,,,CPT,,Y
+90836,Psychotherapy 45 min add-on to E/M,45,per_session,1,psychotherapy,MED,,,CPT,,Y
+90837,Psychotherapy 60 min,60,per_session,1,psychotherapy,HIGH,,,CPT; OIG A-09-21-03021,,Y
+90838,Psychotherapy 60 min add-on to E/M,60,per_session,1,psychotherapy,MED,,,CPT,,Y
+90839,Psychotherapy for crisis first 60 min,60,per_session,1,psychotherapy,MED,,,CPT,,Y
+90840,Psychotherapy for crisis each addl 30 min,30,per_30min,1,psychotherapy,MED,,,CPT,,Y
+90845,Psychoanalysis,45,per_session,1,psychotherapy,MED,,,CPT,untimed; conservative 45,Y
+90846,Family psychotherapy without patient 50 min,50,per_session,1,psychotherapy,MED,,,CPT,,Y
+90847,Family psychotherapy with patient 50 min,50,per_session,1,psychotherapy,MED,,,CPT,,Y
+90849,Multiple-family group psychotherapy,90,per_session,6,psychotherapy,MED,,,CPT,group; assume 90 min and 6 families,Y
+90853,Group psychotherapy,90,per_session,6,psychotherapy,HIGH,,,CPT (assumed 60),group; assume 90 min and 6 patients,Y
+90791,Psychiatric diagnostic evaluation,60,per_session,1,psychotherapy,MED,,,CPT,untimed; conservative 60,Y
+90792,Psychiatric diagnostic evaluation with medical services,60,per_session,1,psychotherapy,MED,,,CPT,untimed; conservative 60,Y
+90875,Psychophysiological therapy with biofeedback 30 min,30,per_session,1,psychotherapy,MED,,,CPT,,Y
+90876,Psychophysiological therapy with biofeedback 45 min,45,per_session,1,psychotherapy,MED,,,CPT,,Y
+96116,Neurobehavioral status exam first hour,60,per_hour,1,psych_testing,LOW,,,CPT,,Y
+96121,Neurobehavioral status exam each addl hour,60,per_hour,1,psych_testing,LOW,,,CPT,,Y
+96130,Psychological testing evaluation first hour,60,per_hour,1,psych_testing,MED,124.36,,CPT; MN grid,,Y
+96131,Psychological testing evaluation each addl hour,60,per_hour,1,psych_testing,MED,85.05,,CPT; MN grid,,Y
+96132,Neuropsychological testing evaluation first hour,60,per_hour,1,psych_testing,LOW,,,CPT,,Y
+96133,Neuropsychological testing evaluation each addl hour,60,per_hour,1,psych_testing,LOW,,,CPT,,Y
+96136,Psych/neuropsych test administration by professional first 30 min,30,per_30min,1,psych_testing,MED,,,CPT,,Y
+96137,Psych/neuropsych test administration by professional each addl 30 min,30,per_30min,1,psych_testing,MED,,,CPT,,Y
+96138,Psych/neuropsych test administration by technician first 30 min,30,per_30min,1,psych_testing,MED,,,CPT,,N
+96139,Psych/neuropsych test administration by technician each addl 30 min,30,per_30min,1,psych_testing,MED,,,CPT,,N
+96112,Developmental test administration first hour,60,per_hour,1,psych_testing,LOW,,,CPT,,Y
+96113,Developmental test administration each addl 30 min,30,per_30min,1,psych_testing,LOW,,,CPT,,Y
+96150,Health and behavior assessment each 15 min (pre-2020),15,per_15min,1,health_behavior,LOW,,,CPT,retired 2020,Y
+96151,Health and behavior reassessment each 15 min (pre-2020),15,per_15min,1,health_behavior,LOW,,,CPT,retired 2020,Y
+96152,Health and behavior intervention individual each 15 min (pre-2020),15,per_15min,1,health_behavior,LOW,,,CPT,retired 2020,Y
+96153,Health and behavior intervention group each 15 min (pre-2020),15,per_15min,4,health_behavior,LOW,,,CPT,retired 2020; group,Y
+96154,Health and behavior intervention family with patient each 15 min (pre-2020),15,per_15min,1,health_behavior,LOW,,,CPT,retired 2020,Y
+96155,Health and behavior intervention family without patient each 15 min (pre-2020),15,per_15min,1,health_behavior,LOW,,,CPT,retired 2020,Y
+96158,Health behavior intervention individual first 30 min,30,per_30min,1,health_behavior,LOW,,,CPT,,Y
+96159,Health behavior intervention individual each addl 15 min,15,per_15min,1,health_behavior,LOW,,,CPT,,Y
+96164,Health behavior intervention group first 30 min,30,per_30min,4,health_behavior,LOW,,,CPT,group,Y
+96165,Health behavior intervention group each addl 15 min,15,per_15min,4,health_behavior,LOW,,,CPT,group,Y
+96167,Health behavior intervention family with patient first 30 min,30,per_30min,1,health_behavior,LOW,,,CPT,,Y
+96168,Health behavior intervention family with patient each addl 15 min,15,per_15min,1,health_behavior,LOW,,,CPT,,Y
+96170,Health behavior intervention family without patient first 30 min,30,per_30min,1,health_behavior,LOW,,,CPT,,Y
+96171,Health behavior intervention family without patient each addl 15 min,15,per_15min,1,health_behavior,LOW,,,CPT,,Y
+H0004,Behavioral health counseling and therapy per 15 min,15,per_15min,1,behavioral_health,HIGH,,,HCPCS,,N
+H0034,Medication training and support per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H0036,Community psychiatric supportive treatment face-to-face per 15 min,15,per_15min,1,behavioral_health,HIGH,,,HCPCS,,N
+H0037,Community psychiatric supportive treatment program per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H0038,Self-help/peer services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H0039,Assertive community treatment face-to-face per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H0040,Assertive community treatment program per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H0043,Supported housing per diem,,per_diem,1,housing,MED,,,HCPCS,,N
+H0045,Respite care not in the home per diem,,per_diem,1,respite,LOW,,,HCPCS,,N
+H0050,Alcohol/drug brief intervention per 15 min,15,per_15min,1,substance_use,LOW,,,HCPCS,,N
+H0010,Alcohol/drug sub-acute detox residential per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0011,Alcohol/drug acute detox residential per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0012,Alcohol/drug sub-acute detox residential per diem (no room and board),,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0013,Alcohol/drug acute detox residential per diem (no room and board),,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0015,Alcohol/drug intensive outpatient per diem,,per_diem,1,substance_use,HIGH,,,HCPCS,,N
+H0017,Behavioral health residential (hospital residential) per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0018,Behavioral health short-term residential per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0019,Behavioral health long-term residential per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H0035,Mental health partial hospitalization less than 24 hours,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2010,Comprehensive medication services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2011,Crisis intervention service per 15 min,15,per_15min,1,behavioral_health,MED,40.58,,HCPCS; MN grid,,N
+H2012,Behavioral health day treatment per hour,60,per_hour,1,behavioral_health,MED,,,HCPCS,,N
+H2013,Psychiatric health facility service per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2014,Skills training and development per 15 min,15,per_15min,1,behavioral_health,HIGH,14.25,,HCPCS; MN grid,MN EIDBI/CTSS,N
+H2015,Comprehensive community support services per 15 min,15,per_15min,1,housing,HIGH,17.17,,HCPCS; MN HSS manual,MN Housing Stabilization Services,N
+H2016,Comprehensive community support services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2017,Psychosocial rehabilitation services per 15 min,15,per_15min,1,behavioral_health,HIGH,19.12,,HCPCS; MN grid,,N
+H2018,Psychosocial rehabilitation services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2019,Therapeutic behavioral services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2020,Therapeutic behavioral services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2021,Community-based wrap-around services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2022,Community-based wrap-around services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2023,Supported employment per 15 min,15,per_15min,1,employment,LOW,,,HCPCS,,N
+H2024,Supported employment per diem,,per_diem,1,employment,LOW,,,HCPCS,,N
+H2025,Ongoing support to maintain employment per 15 min,15,per_15min,1,employment,LOW,,,HCPCS,,N
+H2026,Ongoing support to maintain employment per diem,,per_diem,1,employment,LOW,,,HCPCS,,N
+H2027,Psychoeducational service per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2030,Mental health clubhouse services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2031,Mental health clubhouse services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+H2032,Activity therapy per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2033,Multisystemic therapy for juveniles per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+H2034,Alcohol/drug halfway house services per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+H2035,Alcohol/drug treatment program per hour,60,per_hour,1,substance_use,LOW,,,HCPCS,,N
+H2036,Alcohol/drug treatment program per diem,,per_diem,1,substance_use,LOW,,,HCPCS,,N
+T1000,Private duty/independent nursing licensed up to 15 min,15,per_15min,1,nursing,MED,,,HCPCS,,N
+T1002,RN services up to 15 min,15,per_15min,1,nursing,MED,,,HCPCS,,N
+T1003,LPN/LVN services up to 15 min,15,per_15min,1,nursing,MED,,,HCPCS,,N
+T1004,Qualified nursing aide services up to 15 min,15,per_15min,1,nursing,MED,,,HCPCS,,N
+T1005,Respite care services up to 15 min,15,per_15min,1,respite,MED,,,HCPCS,,N
+T1013,Sign language or oral interpretive services per 15 min,15,per_15min,1,interpreter,LOW,,,HCPCS,,N
+T1016,Case management each 15 min,15,per_15min,1,case_management,MED,,,HCPCS,,N
+T1017,Targeted case management each 15 min,15,per_15min,1,case_management,MED,,,HCPCS,,N
+T1019,Personal care services per 15 min,15,per_15min,1,personal_care,HIGH,,,HCPCS,largest Medicaid HCBS code,N
+T1020,Personal care services per diem,,per_diem,1,personal_care,HIGH,,,HCPCS,,N
+T1022,Contracted home health agency services per day,,per_diem,1,home_health,MED,,,HCPCS,,N
+T1026,Intensive extended multidisciplinary services for children per hour,60,per_hour,1,pediatric,LOW,,,HCPCS,,N
+T1027,Family training and counseling for child development per 15 min,15,per_15min,1,pediatric,LOW,,,HCPCS,,N
+T1030,Nursing care in the home by RN per diem,,per_diem,1,nursing,MED,,,HCPCS,,N
+T1031,Nursing care in the home by LPN per diem,,per_diem,1,nursing,MED,,,HCPCS,,N
+T2012,Habilitation educational waiver per diem,,per_diem,1,habilitation,LOW,,,HCPCS,,N
+T2013,Habilitation educational waiver per hour,60,per_hour,1,habilitation,LOW,,,HCPCS,,N
+T2014,Habilitation prevocational waiver per diem,,per_diem,1,habilitation,LOW,,,HCPCS,,N
+T2015,Habilitation prevocational waiver per hour,60,per_hour,1,habilitation,LOW,,,HCPCS,,N
+T2016,Habilitation residential waiver per diem,,per_diem,1,habilitation,LOW,,,HCPCS,,N
+T2017,Habilitation residential waiver per 15 min,15,per_15min,1,habilitation,LOW,,,HCPCS,,N
+T2018,Habilitation supported employment waiver per diem,,per_diem,1,employment,LOW,,,HCPCS,,N
+T2019,Habilitation supported employment waiver per 15 min,15,per_15min,1,employment,LOW,,,HCPCS,,N
+T2020,Day habilitation waiver per diem,,per_diem,1,habilitation,LOW,,,HCPCS,,N
+T2021,Day habilitation waiver per 15 min,15,per_15min,1,habilitation,LOW,,,HCPCS,,N
+T2027,Specialized childcare waiver per 15 min,15,per_15min,1,pediatric,LOW,,,HCPCS,,N
+T2031,Assisted living waiver per diem,,per_diem,1,residential,LOW,,,HCPCS,,N
+T2033,Residential care NOS waiver per diem,,per_diem,1,residential,LOW,,,HCPCS,,N
+T2034,Crisis intervention waiver per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+T2040,Financial management self-directed waiver per 15 min,15,per_15min,1,case_management,LOW,,,HCPCS,,N
+T2041,Supports brokerage self-directed waiver per 15 min,15,per_15min,1,case_management,LOW,,,HCPCS,,N
+S5100,Adult day care per 15 min,15,per_15min,1,adult_day,LOW,,,HCPCS,,N
+S5101,Adult day care per half day,240,per_half_day,1,adult_day,LOW,,,HCPCS,,N
+S5102,Adult day care per diem,,per_diem,1,adult_day,LOW,,,HCPCS,,N
+S5105,Center-based day care services not in program fee per diem,,per_diem,1,adult_day,LOW,,,HCPCS,,N
+S5108,Home care training to client per 15 min,15,per_15min,1,personal_care,MED,,,HCPCS,,N
+S5110,Home care training family per 15 min,15,per_15min,1,personal_care,MED,,,HCPCS,,N
+S5115,Home care training non-family per 15 min,15,per_15min,1,personal_care,MED,,,HCPCS,,N
+S5120,Chore services per 15 min,15,per_15min,1,personal_care,MED,,,HCPCS,,N
+S5121,Chore services per diem,,per_diem,1,personal_care,MED,,,HCPCS,,N
+S5125,Attendant care services per 15 min,15,per_15min,1,personal_care,HIGH,,,HCPCS,,N
+S5126,Attendant care services per diem,,per_diem,1,personal_care,MED,,,HCPCS,,N
+S5130,Homemaker service per 15 min,15,per_15min,1,personal_care,MED,,,HCPCS,,N
+S5131,Homemaker service per diem,,per_diem,1,personal_care,MED,,,HCPCS,,N
+S5135,Companion care adult per 15 min,15,per_15min,1,personal_care,HIGH,,,HCPCS; MN Adult Companion,,N
+S5136,Companion care adult per diem,,per_diem,1,personal_care,MED,,,HCPCS,,N
+S5140,Foster care adult per diem,,per_diem,1,residential,LOW,,,HCPCS,,N
+S5145,Foster care therapeutic child per diem,,per_diem,1,residential,LOW,,,HCPCS,,N
+S5150,Unskilled respite care per 15 min,15,per_15min,1,respite,MED,,,HCPCS,,N
+S5151,Unskilled respite care per diem,,per_diem,1,respite,LOW,,,HCPCS,,N
+S5181,Home health respiratory therapy per diem,,per_diem,1,home_health,MED,,,HCPCS,,N
+S9122,Home health aide or CNA in the home per hour,60,per_hour,1,home_health,MED,,,HCPCS,,N
+S9123,Nursing care in the home by RN per hour,60,per_hour,1,nursing,MED,,,HCPCS,,N
+S9124,Nursing care in the home by LPN per hour,60,per_hour,1,nursing,MED,,,HCPCS,,N
+S9125,Respite care in the home per diem,,per_diem,1,respite,LOW,,,HCPCS,,N
+S9126,Hospice care in the home per diem,,per_diem,1,hospice,LOW,,,HCPCS,,N
+S9127,Social work visit in the home per diem,,per_diem,1,home_health,MED,,,HCPCS,,N
+S9128,Speech therapy in the home per diem,,per_diem,1,home_health,MED,,,HCPCS,,N
+S9129,Occupational therapy in the home per diem,,per_diem,1,home_health,MED,,,HCPCS,,N
+S9131,Physical therapy in the home per diem,,per_diem,1,home_health,MED,,,HCPCS,,N
+S9480,Intensive outpatient psychiatric services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+S9482,Family stabilization services per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
+S9484,Crisis intervention mental health services per hour,60,per_hour,1,behavioral_health,MED,,,HCPCS,,N
+S9485,Crisis intervention mental health services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
+G0151,PT in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0152,OT in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0153,SLP in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0155,Clinical social worker in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0156,Home health or hospice aide each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0157,PT assistant in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0158,OT assistant in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0159,PT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0160,OT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0161,SLP maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0162,RN management and evaluation of plan of care each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0299,Direct skilled nursing by RN in home health or hospice each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0300,Direct skilled nursing by LPN in home health or hospice each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0493,RN observation and assessment in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0494,LPN observation and assessment in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0495,RN training/education of patient or caregiver each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0496,LPN training/education of patient or caregiver each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+97110,Therapeutic exercises each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97112,Neuromuscular reeducation each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97113,Aquatic therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97116,Gait training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97124,Massage therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97140,Manual therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97530,Therapeutic activities each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97533,Sensory integrative techniques each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97535,Self-care/home management training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97537,Community/work reintegration training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97542,Wheelchair management each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97545,Work hardening initial 2 hours,120,per_session,1,pt_ot,LOW,,,CPT,,N
+97546,Work hardening each addl hour,60,per_hour,1,pt_ot,LOW,,,CPT,,N
+97032,Electrical stimulation manual each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97033,Iontophoresis each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97034,Contrast baths each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97035,Ultrasound each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97036,Hubbard tank each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97129,Therapeutic interventions for cognitive function initial 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97130,Therapeutic interventions for cognitive function each addl 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97161,PT evaluation low complexity,20,per_session,1,pt_ot,LOW,,,CPT,typical 20 min,Y
+97162,PT evaluation moderate complexity,30,per_session,1,pt_ot,LOW,,,CPT,typical 30 min,Y
+97163,PT evaluation high complexity,45,per_session,1,pt_ot,LOW,,,CPT,typical 45 min,Y
+97164,PT re-evaluation,20,per_session,1,pt_ot,LOW,,,CPT,typical 20 min,Y
+97165,OT evaluation low complexity,30,per_session,1,pt_ot,LOW,,,CPT,typical 30 min,Y
+97166,OT evaluation moderate complexity,45,per_session,1,pt_ot,LOW,,,CPT,typical 45 min,Y
+97167,OT evaluation high complexity,60,per_session,1,pt_ot,LOW,,,CPT,typical 60 min,Y
+97168,OT re-evaluation,30,per_session,1,pt_ot,LOW,,,CPT,typical 30 min,Y
+97750,Physical performance test each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97755,Assistive technology assessment each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97760,Orthotic management and training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97761,Prosthetic training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97763,Orthotic/prosthetic management subsequent each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97802,Medical nutrition therapy initial each 15 min,15,per_15min,1,nutrition,LOW,,,CPT,,Y
+97803,Medical nutrition therapy reassessment each 15 min,15,per_15min,1,nutrition,LOW,,,CPT,,Y
+97804,Medical nutrition therapy group each 30 min,30,per_30min,4,nutrition,LOW,,,CPT,group,Y
+97810,Acupuncture without electrical stimulation initial 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
+97811,Acupuncture without electrical stimulation each addl 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
+97813,Acupuncture with electrical stimulation initial 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
+97814,Acupuncture with electrical stimulation each addl 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
+92507,Speech/language treatment individual,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
+92508,Speech/language treatment group,60,per_session,4,speech,LOW,,,CPT,untimed group; assume 60 min and 4 patients,N
+92521,Evaluation of speech fluency,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
+92522,Evaluation of speech sound production,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
+92523,Evaluation of speech sound production with language comprehension,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
+92524,Behavioral and qualitative analysis of voice and resonance,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
+92526,Treatment of swallowing dysfunction,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
+92609,Therapeutic services for speech-generating device,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
+99201,Office visit new patient level 1 (retired 2021),10,per_session,1,em_office,LOW,,,CPT,,Y
+99202,Office visit new patient level 2,15,per_session,1,em_office,LOW,,,CPT,2021 time range 15-29; lower bound,Y
+99203,Office visit new patient level 3,30,per_session,1,em_office,LOW,,,CPT,2021 time range 30-44; lower bound,Y
+99204,Office visit new patient level 4,45,per_session,1,em_office,LOW,,,CPT,2021 time range 45-59; lower bound,Y
+99205,Office visit new patient level 5,60,per_session,1,em_office,LOW,,,CPT,2021 time range 60-74; lower bound,Y
+99211,Office visit established patient level 1,5,per_session,1,em_office,LOW,,,CPT,,Y
+99212,Office visit established patient level 2,10,per_session,1,em_office,LOW,,,CPT,2021 time range 10-19; lower bound,Y
+99213,Office visit established patient level 3,20,per_session,1,em_office,MED,,,CPT,2021 time range 20-29; lower bound,Y
+99214,Office visit established patient level 4,30,per_session,1,em_office,MED,,,CPT,2021 time range 30-39; lower bound,Y
+99215,Office visit established patient level 5,40,per_session,1,em_office,HIGH,,,CPT,2021 time range 40-54; lower bound,Y
+99221,Initial hospital care level 1,40,per_session,1,em_hospital,LOW,,,CPT,,Y
+99222,Initial hospital care level 2,55,per_session,1,em_hospital,LOW,,,CPT,,Y
+99223,Initial hospital care level 3,75,per_session,1,em_hospital,LOW,,,CPT,,Y
+99231,Subsequent hospital care level 1,25,per_session,1,em_hospital,LOW,,,CPT,,Y
+99232,Subsequent hospital care level 2,35,per_session,1,em_hospital,LOW,,,CPT,,Y
+99233,Subsequent hospital care level 3,50,per_session,1,em_hospital,LOW,,,CPT,,Y
+99238,Hospital discharge 30 min or less,30,per_session,1,em_hospital,LOW,,,CPT,,Y
+99239,Hospital discharge more than 30 min,45,per_session,1,em_hospital,LOW,,,CPT,,Y
+99291,Critical care first 30-74 min,30,per_session,1,em_hospital,LOW,,,CPT,lower bound,Y
+99292,Critical care each addl 30 min,30,per_30min,1,em_hospital,LOW,,,CPT,,Y
+99304,Initial nursing facility care level 1,25,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99305,Initial nursing facility care level 2,35,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99306,Initial nursing facility care level 3,50,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99307,Subsequent nursing facility care level 1,10,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99308,Subsequent nursing facility care level 2,15,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99309,Subsequent nursing facility care level 3,30,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99310,Subsequent nursing facility care level 4,45,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99315,Nursing facility discharge 30 min or less,30,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99316,Nursing facility discharge more than 30 min,45,per_session,1,em_nursing_facility,LOW,,,CPT,,Y
+99324,Domiciliary/rest home visit new patient level 1 (retired 2023),20,per_session,1,em_home,LOW,,,CPT,,Y
+99325,Domiciliary/rest home visit new patient level 2 (retired 2023),30,per_session,1,em_home,LOW,,,CPT,,Y
+99326,Domiciliary/rest home visit new patient level 3 (retired 2023),45,per_session,1,em_home,LOW,,,CPT,,Y
+99327,Domiciliary/rest home visit new patient level 4 (retired 2023),60,per_session,1,em_home,LOW,,,CPT,,Y
+99328,Domiciliary/rest home visit new patient level 5 (retired 2023),75,per_session,1,em_home,LOW,,,CPT,,Y
+99334,Domiciliary/rest home visit established level 1 (retired 2023),15,per_session,1,em_home,LOW,,,CPT,,Y
+99335,Domiciliary/rest home visit established level 2 (retired 2023),25,per_session,1,em_home,LOW,,,CPT,,Y
+99336,Domiciliary/rest home visit established level 3 (retired 2023),40,per_session,1,em_home,LOW,,,CPT,,Y
+99337,Domiciliary/rest home visit established level 4 (retired 2023),60,per_session,1,em_home,LOW,,,CPT,,Y
+99341,Home visit new patient level 1,15,per_session,1,em_home,LOW,,,CPT,,Y
+99342,Home visit new patient level 2,30,per_session,1,em_home,LOW,,,CPT,,Y
+99343,Home visit new patient level 3 (retired 2023),45,per_session,1,em_home,LOW,,,CPT,,Y
+99344,Home visit new patient level 4,60,per_session,1,em_home,LOW,,,CPT,,Y
+99345,Home visit new patient level 5,75,per_session,1,em_home,LOW,,,CPT,,Y
+99347,Home visit established patient level 1,20,per_session,1,em_home,LOW,,,CPT,,Y
+99348,Home visit established patient level 2,30,per_session,1,em_home,LOW,,,CPT,,Y
+99349,Home visit established patient level 3,40,per_session,1,em_home,LOW,,,CPT,,Y
+99350,Home visit established patient level 4,60,per_session,1,em_home,LOW,,,CPT,,Y
+99354,Prolonged service outpatient first hour (retired 2023),60,per_hour,1,prolonged,LOW,,,CPT,,Y
+99355,Prolonged service outpatient each addl 30 min (retired 2023),30,per_30min,1,prolonged,LOW,,,CPT,,Y
+99356,Prolonged service inpatient first hour (retired 2023),60,per_hour,1,prolonged,LOW,,,CPT,,Y
+99357,Prolonged service inpatient each addl 30 min (retired 2023),30,per_30min,1,prolonged,LOW,,,CPT,,Y
+99417,Prolonged outpatient E/M each 15 min,15,per_15min,1,prolonged,LOW,,,CPT,,Y
+99418,Prolonged inpatient E/M each 15 min,15,per_15min,1,prolonged,LOW,,,CPT,,Y
+G2212,Prolonged office visit each 15 min (Medicare),15,per_15min,1,prolonged,LOW,,,HCPCS,,Y
+G0316,Prolonged hospital inpatient each 15 min,15,per_15min,1,prolonged,LOW,,,HCPCS,,Y
+G0317,Prolonged nursing facility each 15 min,15,per_15min,1,prolonged,LOW,,,HCPCS,,Y
+G0318,Prolonged home visit each 15 min,15,per_15min,1,prolonged,LOW,,,HCPCS,,Y
+99401,Preventive counseling individual 15 min,15,per_session,1,counseling,LOW,,,CPT,,Y
+99402,Preventive counseling individual 30 min,30,per_session,1,counseling,LOW,,,CPT,,Y
+99403,Preventive counseling individual 45 min,45,per_session,1,counseling,LOW,,,CPT,,Y
+99404,Preventive counseling individual 60 min,60,per_session,1,counseling,LOW,,,CPT,,Y
+99411,Preventive counseling group 30 min,30,per_session,6,counseling,LOW,,,CPT,group,Y
+99412,Preventive counseling group 60 min,60,per_session,6,counseling,LOW,,,CPT,group,Y
+99406,Smoking cessation counseling 3-10 min,3,per_session,1,counseling,LOW,,,CPT,lower bound,Y
+99407,Smoking cessation counseling more than 10 min,10,per_session,1,counseling,LOW,,,CPT,lower bound,Y
+99408,Alcohol/substance screening and brief intervention 15-30 min,15,per_session,1,counseling,LOW,,,CPT,lower bound,Y
+99409,Alcohol/substance screening and brief intervention more than 30 min,30,per_session,1,counseling,LOW,,,CPT,lower bound,Y
+G0396,Alcohol/substance assessment and intervention 15-30 min,15,per_session,1,counseling,LOW,,,HCPCS,lower bound,Y
+G0397,Alcohol/substance assessment and intervention more than 30 min,30,per_session,1,counseling,LOW,,,HCPCS,lower bound,Y
+G0442,Annual alcohol misuse screening 15 min,15,per_session,1,counseling,LOW,,,HCPCS,,Y
+G0443,Brief alcohol misuse counseling 15 min,15,per_session,1,counseling,LOW,,,HCPCS,,Y
+G0444,Annual depression screening 15 min,15,per_session,1,counseling,LOW,,,HCPCS,,Y
+G0446,Intensive behavioral therapy for cardiovascular disease 15 min,15,per_session,1,counseling,LOW,,,HCPCS,,Y
+G0447,Face-to-face behavioral counseling for obesity 15 min,15,per_session,1,counseling,LOW,,,HCPCS,,Y
+99441,Telephone E/M 5-10 min (retired 2025),5,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+99442,Telephone E/M 11-20 min (retired 2025),11,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+99443,Telephone E/M 21-30 min (retired 2025),21,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98966,Telephone assessment by nonphysician 5-10 min,5,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98967,Telephone assessment by nonphysician 11-20 min,11,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98968,Telephone assessment by nonphysician 21-30 min,21,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+99421,Online digital E/M 5-10 min,5,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+99422,Online digital E/M 11-20 min,11,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+99423,Online digital E/M 21 or more min,21,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98970,Online digital assessment by nonphysician 5-10 min,5,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98971,Online digital assessment by nonphysician 11-20 min,11,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+98972,Online digital assessment by nonphysician 21 or more min,21,per_session,1,telehealth,LOW,,,CPT,lower bound,Y
+T2024,Waiver service assessment/plan of care development (MN Housing Consultation T2024 U8),,per_encounter,1,housing,MED,174.22,,HCPCS; MN HSS,untimed; MN HSS,N
+T2022,Case management per month,,per_month,1,case_management,LOW,,,HCPCS,monthly,N

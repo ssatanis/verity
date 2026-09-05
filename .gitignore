@@ -1,0 +1,27 @@
+# data and build artifacts (never commit raw downloads or the warehouse)
+data/
+_to_delete/
+logs/
+demo/cache/
+*.duckdb
+*.duckdb.wal
+
+# secrets
+.env
+.env.*
+!.env.example
+web/.env.local
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# node
+web/node_modules/
+web/.next/
+web/out/
+
+# os
+.DS_Store

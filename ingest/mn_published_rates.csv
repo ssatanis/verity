@@ -1,0 +1,299 @@
+hcpcs,modifiers,program,unit,unit_minutes,rate,version,source
+S5135,,Adult Companion Services,15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p2
+S5135,U5,"Adult Companion Services, Remote",15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p2
+S5100,,Adult Day Services,15 Minutes,15,4.53,2026-04,DHS-3945_PCA_rates.pdf p2
+S5100,TF,"Adult Day Services, Bath",15 Minutes,15,11.58,2026-04,DHS-3945_PCA_rates.pdf p2
+S5100,U7,"Adult Day Services, FADS",15 Minutes,15,4.53,2026-04,DHS-3945_PCA_rates.pdf p2
+S5100,U4,"Adult Day Services, Remote",15 Minutes,15,4.53,2026-04,DHS-3945_PCA_rates.pdf p2
+S5115,TF,Caregiver Counseling,15 Minutes,15,20.82,2026-04,DHS-3945_PCA_rates.pdf p2
+S5115,TF U4,"Caregiver Counseling, Remote",15 Minutes,15,20.82,2026-04,DHS-3945_PCA_rates.pdf p2
+S5115,,Caregiver Training,15 Minutes,15,20.82,2026-04,DHS-3945_PCA_rates.pdf p2
+S5115,U4,"Caregiver Training, Remote",15 Minutes,15,20.82,2026-04,DHS-3945_PCA_rates.pdf p2
+T1016,UC,Case Management,15 Minutes,15,25.46,2026-04,DHS-3945_PCA_rates.pdf p2
+T1016,TF UC,"Case Management Aide, Paraprofessional",15 Minutes,15,9.39,2026-04,DHS-3945_PCA_rates.pdf p2
+T1016,,"Case Management, Conversion",15 Minutes,15,25.46,2026-04,DHS-3945_PCA_rates.pdf p2
+T2040,,CDCS Background Check,Per Print,,44.0,2026-04,DHS-3945_PCA_rates.pdf p2
+S5120,,Chore Services,15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p3
+T1003,,"Home Care Nursing, LPN",15 Minutes,15,10.18,2026-04,DHS-3945_PCA_rates.pdf p3
+T1003,TG,"Home Care Nursing, LPN Complex",15 Minutes,15,11.93,2026-04,DHS-3945_PCA_rates.pdf p3
+T1003,TT,"Home Care Nursing, LPN Shared, 1:2",15 Minutes,15,7.65,2026-04,DHS-3945_PCA_rates.pdf p3
+T1002,,"Home Care Nursing, RN",15 Minutes,15,13.26,2026-04,DHS-3945_PCA_rates.pdf p3
+T1002,TG,"Home Care Nursing, RN Complex",15 Minutes,15,15.89,2026-04,DHS-3945_PCA_rates.pdf p3
+T1002,TT,"Home Care Nursing, RN Shared, 1:2",15 Minutes,15,9.94,2026-04,DHS-3945_PCA_rates.pdf p3
+S5170,,Home Delivered Meals,One Meal Per,,9.9,2026-04,DHS-3945_PCA_rates.pdf p4
+T1004,,Home Health Aide,15 Minutes,15,11.22,2026-04,DHS-3945_PCA_rates.pdf p4
+T1021,,Home Health Aide,Visit,,80.62,2026-04,DHS-3945_PCA_rates.pdf p4
+G0300,,"Home Health Service, Skilled Nursing, LPN",15 Minutes,15,12.81,2026-04,DHS-3945_PCA_rates.pdf p4
+G0299,,"Home Health Service, Skilled Nursing, RN",15 Minutes,15,12.81,2026-04,DHS-3945_PCA_rates.pdf p4
+S5130,TG,"Homemaker, Assistance with Personal Cares",15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p4
+S5130,,"Homemaker, Cleaning",15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p4
+S5130,TF,"Homemaker, Home Management",15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p4
+S5130,TF U4,"Homemaker, Home Management, Remote",15 Minutes,15,7.9,2026-04,DHS-3945_PCA_rates.pdf p4
+H2015,U3 U4,"Individual Community Living Support (ICLS), Remote",15 Minutes,15,9.16,2026-04,DHS-3945_PCA_rates.pdf p4
+S9470,,Nutrition Services,Visit,,80.63,2026-04,DHS-3945_PCA_rates.pdf p4
+S5160,,PERS Installation and Testing,Each Time,,500.0,2026-04,DHS-3945_PCA_rates.pdf p4
+S5161,,PERS Monthly Service Fee,Per Month,,110.0,2026-04,DHS-3945_PCA_rates.pdf p4
+S5162,,PERS Purchase,Each Time,,1500.0,2026-04,DHS-3945_PCA_rates.pdf p4
+S5150,,"Respite Care Services, In Home",15 Minutes,15,9.64,2026-04,DHS-3945_PCA_rates.pdf p5
+S5151,,"Respite Care Services, In Home",Daily,,173.52,2026-04,DHS-3945_PCA_rates.pdf p5
+S5150,U4,"Respite Care Services, In Home, Remote",15 Minutes,15,9.64,2026-04,DHS-3945_PCA_rates.pdf p5
+S5150,UB,"Respite Care Services, Out of Home",15 Minutes,15,9.64,2026-04,DHS-3945_PCA_rates.pdf p5
+H0045,,"Respite Care Services, Out of Home",Daily,,173.52,2026-04,DHS-3945_PCA_rates.pdf p5
+H0045,,"Respite Hospital, 24 hours",Daily,,147.85,2026-04,DHS-3945_PCA_rates.pdf p5
+T1031,,"Skilled Nurse Visit, LPN",Visit,,105.07,2026-04,DHS-3945_PCA_rates.pdf p5
+T1031,GT,"Skilled Nurse Visit, LPN, Telehomecare",Visit,,105.07,2026-04,DHS-3945_PCA_rates.pdf p5
+T1030,,"Skilled Nurse Visit, RN",Visit,,105.07,2026-04,DHS-3945_PCA_rates.pdf p5
+T1030,GT,"Skilled Nurse Visit, RN, Telehomecare",Visit,,105.07,2026-04,DHS-3945_PCA_rates.pdf p5
+E1399,,Specialized Supplies and Equipment,Per Item,,0.0,2026-04,DHS-3945_PCA_rates.pdf p5
+T2003,,Transportation,One Way Trip,,20.21,2026-04,DHS-3945_PCA_rates.pdf p5
+S0215,UC,"Transportation, Mileage, Commercial Vehicle",Per Mile,,1.54,2026-04,DHS-3945_PCA_rates.pdf p6
+S0215,UC,"Transportation, Mileage, Non-commercial Vehicle",Per Mile,,0.7,2026-04,DHS-3945_PCA_rates.pdf p6
+T1016,UC,Case Management,15 Minutes,15,24.47,2026-04,DHS-3945_PCA_rates.pdf p7
+S5120,,Chore Services,15 Minutes,15,4.32,2026-04,DHS-3945_PCA_rates.pdf p7
+H2015,U6,"Comprehensive Community Support Services, MHM Only",15 Minutes,15,17.17,2026-04,DHS-3945_PCA_rates.pdf p8
+T1003,TG UC,"Home Care Nursing, LPN Complex, Extended",15 Minutes,15,11.93,2026-04,DHS-3945_PCA_rates.pdf p10
+T1003,UC,"Home Care Nursing, LPN Regular, Extended",15 Minutes,15,10.18,2026-04,DHS-3945_PCA_rates.pdf p10
+T1003,TT UC,"Home Care Nursing, LPN Shared, 1:2, Extended",15 Minutes,15,7.65,2026-04,DHS-3945_PCA_rates.pdf p10
+T1002,TG UC,"Home Care Nursing, RN Complex, Extended",15 Minutes,15,15.89,2026-04,DHS-3945_PCA_rates.pdf p10
+T1002,UC,"Home Care Nursing, RN Regular, Extended",15 Minutes,15,13.26,2026-04,DHS-3945_PCA_rates.pdf p10
+T1002,TT UC,"Home Care Nursing, RN Shared, 1:2, Extended",15 Minutes,15,9.94,2026-04,DHS-3945_PCA_rates.pdf p10
+S5170,,Home Delivered Meals,One Meal Per,,7.51,2026-04,DHS-3945_PCA_rates.pdf p11
+T1004,,"Home Health Aide, Extended",15 Minutes,15,7.7,2026-04,DHS-3945_PCA_rates.pdf p11
+S9970,U6 U5,"Membership Fees (Exercise Classes, Health Club/Fitness",Per Month,,66.66,2026-04,DHS-3945_PCA_rates.pdf p12
+S9129,TF UC,"Occupational Therapy Assistant, Extended",Visit,,71.91,2026-04,DHS-3945_PCA_rates.pdf p12
+S9129,UC,"Occupational Therapy, Extended",Visit,,110.62,2026-04,DHS-3945_PCA_rates.pdf p12
+S5135,U6 UA,"Overnight Assistance, MHM Only",15 Minutes,15,2.17,2026-04,DHS-3945_PCA_rates.pdf p12
+T1019,UC,"Personal Care Assistance (PCA), 1:1, Extended",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,TT UC,"Personal Care Assistance (PCA), 1:2, Extended",15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,HQ UC,"Personal Care Assistance (PCA), 1:3, Extended",15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,TG UC,"Personal Care Assistance (PCA), Complex, 1:1, Extended",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,TG TT UC,"Personal Care Assistance (PCA), Complex, 1:2, Extended",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,HQ TG UC,"Personal Care Assistance (PCA), Complex, 1:3, Extended",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p13
+T1019,UA,"Personal Care Assistance (PCA), Supervision",15 Minutes,15,13.86,2026-04,DHS-3945_PCA_rates.pdf p13
+S9131,TF UC,"Physical Therapy Assistant, Extended",Visit,,70.49,2026-04,DHS-3945_PCA_rates.pdf p13
+S9131,UC,"Physical Therapy, Extended",Visit,,108.42,2026-04,DHS-3945_PCA_rates.pdf p13
+S5181,UC,"Respiratory Therapy, Extended",Visit,,69.66,2026-04,DHS-3945_PCA_rates.pdf p14
+S9128,UC,"Speech Therapy, Extended",Visit,,110.07,2026-04,DHS-3945_PCA_rates.pdf p15
+T1016,UC,Case Management,15 Minutes,15,23.19,2026-04,DHS-3945_PCA_rates.pdf p37
+T1004,,"Home Health Aide, Extended",15 Minutes,15,11.22,2026-04,DHS-3945_PCA_rates.pdf p48
+T2029,,Specialized Supplies and Equipment,Per Item,,0.0,2026-04,DHS-3945_PCA_rates.pdf p50
+T2003,UC,Transportation,One Way Trip,,20.21,2026-04,DHS-3945_PCA_rates.pdf p50
+H2015,,"Community Living Assistance, In Person/Remote",15 Minutes,15,4.55,2026-04,DHS-3945_PCA_rates.pdf p52
+H2016,,"Community Living Assistance, Remote",Daily,,6.06,2026-04,DHS-3945_PCA_rates.pdf p52
+S9129,,Occupational Therapy,Visit,,110.62,2026-04,DHS-3945_PCA_rates.pdf p54
+S9129,TF,Occupational Therapy Assistant,Visit,,71.91,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,,"Personal Care Assistance (PCA), 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,U5,"Personal Care Assistance (PCA), 1:1, Notice of Reduction",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,U6,"Personal Care Assistance (PCA), 1:1, Temporary 45 Day",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,TT,"Personal Care Assistance (PCA), 1:2",15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,TT U5,"Personal Care Assistance (PCA), 1:2, Notice of Reduction",15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,TT U6,"Personal Care Assistance (PCA), 1:2, Temporary 45 Day",15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p54
+T1019,HQ,"Personal Care Assistance (PCA), 1:3",15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,HQ U5,"Personal Care Assistance (PCA), 1:3, Notice of Reduction",15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,HQ U6,"Personal Care Assistance (PCA), 1:3, Temporary 45 Day",15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG,"Personal Care Assistance (PCA), Complex, 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG U5,"Personal Care Assistance (PCA), Complex, 1:1, Notice of",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG U6,"Personal Care Assistance (PCA), Complex, 1:1, Temporary",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG TT,"Personal Care Assistance (PCA), Complex, 1:2",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG TT U5,"Personal Care Assistance (PCA), Complex, 1:2, Notice of",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,TG TT U6,"Personal Care Assistance (PCA), Complex, 1:2, Temporary",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,HQ TG,"Personal Care Assistance (PCA), Complex, 1:3",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,HQ TG U5,"Personal Care Assistance (PCA), Complex, 1:3, Notice of",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p55
+T1019,HQ TG U6,"Personal Care Assistance (PCA), Complex, 1:3, Temporary",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p55
+T1001,,PHN Face to Face Assessment for PCA,Visit,,276.65,2026-04,DHS-3945_PCA_rates.pdf p55
+T1001,TS,PHN Service Update for PCA,Visit,,138.32,2026-04,DHS-3945_PCA_rates.pdf p55
+T1001,U6,PHN Temporary Service Increase for PCA,Visit,,138.32,2026-04,DHS-3945_PCA_rates.pdf p56
+S9131,,Physical Therapy,Visit,,108.42,2026-04,DHS-3945_PCA_rates.pdf p56
+S9131,TF,Physical Therapy Assistant,Visit,,70.49,2026-04,DHS-3945_PCA_rates.pdf p56
+S5181,,Respiratory Therapy,Visit,,69.66,2026-04,DHS-3945_PCA_rates.pdf p56
+S9128,,Speech Therapy,Visit,,110.07,2026-04,DHS-3945_PCA_rates.pdf p56
+T1016,U6,"Case Management, Demonstration",15 Minutes,15,24.47,2026-04,DHS-3945_PCA_rates.pdf p57
+A0180,U6,"Cost for Finding Housing/Employment, Ancillary Recipient Actual Cost-",Daily,,200.0,2026-04,DHS-3945_PCA_rates.pdf p57
+A0160,U6,"Cost for Finding Housing/Employment, Case Worker",Per Mile,,0.7,2026-04,DHS-3945_PCA_rates.pdf p57
+A0200,U6,"Cost for Finding Housing/Employment, Escort Lodging Actual Cost-",Daily,,200.0,2026-04,DHS-3945_PCA_rates.pdf p57
+A0210,U6,"Cost for Finding Housing/Employment, Escort Meals Actual Cost-",Daily,,37.0,2026-04,DHS-3945_PCA_rates.pdf p57
+A0170,U6,"Cost for Finding Housing/Employment, Parking Fees and Tolls Actual Cost-",Daily,,20.0,2026-04,DHS-3945_PCA_rates.pdf p57
+A0190,U6,"Cost for Finding Housing/Employment, Recipient Meals Actual Cost-",Daily,,37.0,2026-04,DHS-3945_PCA_rates.pdf p57
+S5160,U6,PERS Installation and Testing,Each Time,,500.0,2026-04,DHS-3945_PCA_rates.pdf p58
+S5161,U6,PERS Monthly Service Fee,Per Month,,110.0,2026-04,DHS-3945_PCA_rates.pdf p58
+S5162,U6,PERS Purchase,Each Time,,1500.0,2026-04,DHS-3945_PCA_rates.pdf p58
+S5120,U6,Pre-Transition Clean-up Services ¹,15 Minutes,15,4.32,2026-04,DHS-3945_PCA_rates.pdf p58
+S5150,U6,"Respite Care Services, In Home",15 Minutes,15,5.47,2026-04,DHS-3945_PCA_rates.pdf p58
+S5150,U6 UB,"Respite Care Services, Out of Home",15 Minutes,15,5.47,2026-04,DHS-3945_PCA_rates.pdf p58
+T1017,U6,Transition Coordination,15 Minutes,15,16.63,2026-04,DHS-3945_PCA_rates.pdf p59
+T1019,U9,"CFSS, Agency, 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U8,"CFSS, Agency, 45 day temp start",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 TG,"CFSS, Agency, Complex, 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U8 TG,"CFSS, Agency, Complex, 45 day temp start",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 U4 TG,"CFSS, Agency, Complex, Continuation of",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 UC TG,"CFSS, Agency, Complex, Extended, 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 U5 TG,"CFSS, Agency, Complex, Reduction, 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 U6 TG,"CFSS, Agency, Complex, Temporary Increase,",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p70
+T1019,U9 U4,"CFSS, Agency, Continuation of Benefits, 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p71
+T1019,U9 UC,"CFSS, Agency, Extended, 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p71
+S5160,U9,"CFSS, Agency, PERS Installation and Testing",Each Time,,500.0,2026-04,DHS-3945_PCA_rates.pdf p71
+S5162,U9,"CFSS, Agency, PERS Purchase",Each Time,,1501.95,2026-04,DHS-3945_PCA_rates.pdf p71
+T1019,U9 U5,"CFSS, Agency, Reduction, 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p71
+T1019,U9 U6,"CFSS, Agency, Temporary Increase, 1:1",15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p71
+T2040,UB UA U6,"CFSS, Budget, Failed background study fee",Per Print,,44.0,2026-04,DHS-3945_PCA_rates.pdf p73
+S5160,UB,"CFSS, Budget, PERS Installation and Testing",Each Time,,500.0,2026-04,DHS-3945_PCA_rates.pdf p73
+S5162,UB,"CFSS, Budget, PERS Purchase",Each Time,,1500.0,2026-04,DHS-3945_PCA_rates.pdf p73
+T1019,,CFSS 1:1,15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,CFSS 1:2,15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,CFSS 1:3,15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"CFSS, Complex 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"CFSS, Complex 1:2",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"CFSS, Complex 1:3",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,PCA 1:1,15 Minutes,15,6.22,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,PCA 1:2,15 Minutes,15,4.68,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,PCA 1:3,15 Minutes,15,4.1,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"PCA, Complex 1:1",15 Minutes,15,6.99,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"PCA, Complex 1:2",15 Minutes,15,5.25,2026-04,DHS-3945_PCA_rates.pdf p77
+T1019,,"PCA, Complex 1:3",15 Minutes,15,4.6,2026-04,DHS-3945_PCA_rates.pdf p77
+S5135,,Adult Companion Services,15 Minutes,15,2.57,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5135,U5,"Adult Companion Services, Remote",15 Minutes,15,2.57,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5100,,Adult Day Services,15 Minutes,15,3.45,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5100,TF,"Adult Day Services, Bath",15 Minutes,15,7.65,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5100,U7,"Adult Day Services, FADS",15 Minutes,15,3.45,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+T1016,UC,Case Management,15 Minutes,15,25.46,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+T1016,TF UC,"Case Management Aide, Paraprofessional",15 Minutes,15,9.39,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+T1016,,"Case Management, Conversion",15 Minutes,15,25.46,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+T2040,,CDCS Background Check,Per Print,,42.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5120,,Chore Services,15 Minutes,15,4.15,2022-01,DHS-3945_PCA_rates_2022-01.pdf p2
+S5115,TF,"Family Caregiver, Coaching and Counseling (including",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5115,TF U4,"Family Caregiver, Coaching and Counseling, Remote",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5115,TG,"Family Caregiver, Family Memory Care",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5115,TG U4,"Family Caregiver, Family Memory Care, Remote",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5115,,"Family Caregiver, Training and Education",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5115,U4,"Family Caregiver, Training and Education, Remote",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1003,,"Home Care Nursing, LPN",15 Minutes,15,6.69,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1003,TG,"Home Care Nursing, LPN Complex",15 Minutes,15,7.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1003,TT,"Home Care Nursing, LPN Shared, 1:2",15 Minutes,15,5.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1002,,"Home Care Nursing, RN",15 Minutes,15,8.71,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1002,TG,"Home Care Nursing, RN Complex",15 Minutes,15,10.44,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1002,TT,"Home Care Nursing, RN Shared, 1:2",15 Minutes,15,6.53,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+S5170,,Home Delivered Meals,One Meal Per,,7.6,2022-01,DHS-3945_PCA_rates_2022-01.pdf p3
+T1004,,Home Health Aide,15 Minutes,15,8.01,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+T1021,,Home Health Aide,Visit,,57.57,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+G0300,,"Home Health Service, Skilled Nursing, LPN",15 Minutes,15,9.14,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+G0299,,"Home Health Service, Skilled Nursing, RN",15 Minutes,15,9.14,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5130,TG,"Homemaker, Assistance with Personal Cares",15 Minutes,15,4.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5130,,"Homemaker, Cleaning",15 Minutes,15,4.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5130,TF,"Homemaker, Home Management",15 Minutes,15,4.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5130,TF U4,"Homemaker, Home Management, Remote",15 Minutes,15,4.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+H2015,U3,"Individual Community Living Support (ICLS), In",15 Minutes,15,6.1,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+H2015,U3 U4,"Individual Community Living Support (ICLS), Remote",15 Minutes,15,6.1,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S9470,,Nutrition Services,Visit,,80.63,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5160,,PERS Installation and Testing,Each Time,,500.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5161,,PERS Monthly Service Fee,Per Month,,110.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+S5162,,PERS Purchase,Each Time,,1500.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+T1019,,"Personal Care Assistance (PCA), 1:1",15 Minutes,15,4.9,2022-01,DHS-3945_PCA_rates_2022-01.pdf p4
+T1019,TT,"Personal Care Assistance (PCA), 1:2",15 Minutes,15,3.68,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1019,HQ,"Personal Care Assistance (PCA), 1:3",15 Minutes,15,3.23,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1019,TG,"Personal Care Assistance (PCA), Complex, 1:1",15 Minutes,15,5.27,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1019,TG TT,"Personal Care Assistance (PCA), Complex, 1:2",15 Minutes,15,3.96,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1019,HQ TG,"Personal Care Assistance (PCA), Complex, 1:3",15 Minutes,15,3.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1019,UA,"Personal Care Assistance (PCA), RN Supervision",15 Minutes,15,11.71,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+S5150,,"Respite Care Services, In Home",15 Minutes,15,5.77,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+S5151,,"Respite Care Services, In Home",Daily,,103.85,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+S5150,U4,"Respite Care Services, In Home, Remote",15 Minutes,15,5.77,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+S5150,UB,"Respite Care Services, Out of Home",15 Minutes,15,5.77,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+H0045,,"Respite Care Services, Out of Home",Daily,,103.85,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+H0045,,"Respite Hospital, 24 hours",Daily,,147.85,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1031,,"Skilled Nurse Visit, LPN",Visit,,75.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1031,GT,"Skilled Nurse Visit, LPN, Telehomecare",Visit,,75.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p5
+T1030,,"Skilled Nurse Visit, RN",Visit,,75.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+T1030,GT,"Skilled Nurse Visit, RN, Telehomecare",Visit,,75.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+E1399,,Specialized Supplies and Equipment,Per Item,,0.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+T2003,,Transportation,One Way Trip,,20.21,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+S0215,UC,"Transportation, Mileage, Commercial Vehicle",Per Mile,,1.54,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+S0215,UC,"Transportation, Mileage, Non-commercial Vehicle",Per Mile,,0.56,2022-01,DHS-3945_PCA_rates_2022-01.pdf p6
+T1016,UC,Case Management,15 Minutes,15,24.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p7
+S5120,,Chore Services,15 Minutes,15,3.76,2022-01,DHS-3945_PCA_rates_2022-01.pdf p7
+H2015,U6,"Comprehensive Community Support Services, MHM Only",15 Minutes,15,17.17,2022-01,DHS-3945_PCA_rates_2022-01.pdf p8
+S5115,U6,"Family Memory Care Intervention, MHM Only",15 Minutes,15,18.11,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1003,TG UC,"Home Care Nursing, LPN Complex, Extended",15 Minutes,15,7.84,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1003,UC,"Home Care Nursing, LPN Regular, Extended",15 Minutes,15,6.69,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1003,TT UC,"Home Care Nursing, LPN Shared, 1:2, Extended",15 Minutes,15,5.02,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1002,TG UC,"Home Care Nursing, RN Complex, Extended",15 Minutes,15,10.44,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1002,UC,"Home Care Nursing, RN Regular, Extended",15 Minutes,15,8.71,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1002,TT UC,"Home Care Nursing, RN Shared, 1:2, Extended",15 Minutes,15,6.53,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+S5170,,Home Delivered Meals,One Meal Per,,6.53,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+T1004,,"Home Health Aide, Extended",15 Minutes,15,5.49,2022-01,DHS-3945_PCA_rates_2022-01.pdf p10
+S5130,TG,"Homemaker, Assistance with Personal Cares",15 Minutes,15,4.61,2022-01,DHS-3945_PCA_rates_2022-01.pdf p11
+S5130,,"Homemaker, Cleaning",15 Minutes,15,4.61,2022-01,DHS-3945_PCA_rates_2022-01.pdf p11
+S5130,TF,"Homemaker, Home Management",15 Minutes,15,4.61,2022-01,DHS-3945_PCA_rates_2022-01.pdf p11
+S5130,TF U4,"Homemaker, Home Management, Remote",15 Minutes,15,4.61,2022-01,DHS-3945_PCA_rates_2022-01.pdf p11
+S9970,U6 U5,"Membership Fees (Exercise Classes, Health",Per Month,,66.66,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+S9129,TF UC,"Occupational Therapy Assistant, Extended",Visit,,51.35,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+S9129,UC,"Occupational Therapy, Extended",Visit,,79.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+S5135,U6 UA,"Overnight Assistance, MHM Only",15 Minutes,15,2.17,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+T1019,UC,"Personal Care Assistance (PCA), 1:1, Extended",15 Minutes,15,4.9,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+T1019,TT UC,"Personal Care Assistance (PCA), 1:2, Extended",15 Minutes,15,3.68,2022-01,DHS-3945_PCA_rates_2022-01.pdf p12
+T1019,HQ UC,"Personal Care Assistance (PCA), 1:3, Extended",15 Minutes,15,3.23,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+T1019,TG UC,"Personal Care Assistance (PCA), Complex, 1:1,",15 Minutes,15,5.27,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+T1019,TG TT UC,"Personal Care Assistance (PCA), Complex, 1:2,",15 Minutes,15,3.96,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+T1019,HQ TG UC,"Personal Care Assistance (PCA), Complex, 1:3,",15 Minutes,15,3.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+S9131,TF UC,"Physical Therapy Assistant, Extended",Visit,,50.33,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+S9131,UC,"Physical Therapy, Extended",Visit,,77.43,2022-01,DHS-3945_PCA_rates_2022-01.pdf p13
+S5181,UC,"Respiratory Therapy, Extended",Visit,,49.74,2022-01,DHS-3945_PCA_rates_2022-01.pdf p14
+S9128,UC,"Speech Therapy, Extended",Visit,,78.6,2022-01,DHS-3945_PCA_rates_2022-01.pdf p14
+T2018,U6,"Supported Employment Benchmark Incentive Payment,",Daily,,760.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p15
+T1016,UC,Case Management,15 Minutes,15,23.19,2022-01,DHS-3945_PCA_rates_2022-01.pdf p34
+T1004,,"Home Health Aide, Extended",15 Minutes,15,8.01,2022-01,DHS-3945_PCA_rates_2022-01.pdf p44
+T2029,,Specialized Supplies and Equipment,Per Item,,0.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p46
+T2003,UC,Transportation,One Way Trip,,20.21,2022-01,DHS-3945_PCA_rates_2022-01.pdf p46
+H2015,,"Community Living Assistance, In Person/Remote",15 Minutes,15,4.55,2022-01,DHS-3945_PCA_rates_2022-01.pdf p47
+H2016,,"Community Living Assistance, Remote",Daily,,6.06,2022-01,DHS-3945_PCA_rates_2022-01.pdf p47
+S9129,,Occupational Therapy,Visit,,79.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+S9129,TF,Occupational Therapy Assistant,Visit,,51.35,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+T1019,U5,"Personal Care Assistance (PCA), 1:1, Notice of",15 Minutes,15,4.9,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+T1019,U6,"Personal Care Assistance (PCA), 1:1, Temporary 45 Day",15 Minutes,15,4.9,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+T1019,TT U5,"Personal Care Assistance (PCA), 1:2, Notice of",15 Minutes,15,3.68,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+T1019,TT U6,"Personal Care Assistance (PCA), 1:2, Temporary 45 Day",15 Minutes,15,3.68,2022-01,DHS-3945_PCA_rates_2022-01.pdf p49
+T1019,HQ U5,"Personal Care Assistance (PCA), 1:3, Notice of",15 Minutes,15,3.23,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,HQ U6,"Personal Care Assistance (PCA), 1:3, Temporary 45 Day",15 Minutes,15,3.23,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,TG U5,"Personal Care Assistance (PCA), Complex, 1:1, Notice of",15 Minutes,15,5.27,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,TG U6,"Personal Care Assistance (PCA), Complex, 1:1,",15 Minutes,15,5.27,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,TG TT U5,"Personal Care Assistance (PCA), Complex, 1:2, Notice of",15 Minutes,15,3.96,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,TG TT U6,"Personal Care Assistance (PCA), Complex, 1:2,",15 Minutes,15,3.96,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,HQ TG U5,"Personal Care Assistance (PCA), Complex, 1:3, Notice of",15 Minutes,15,3.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1019,HQ TG U6,"Personal Care Assistance (PCA), Complex, 1:3,",15 Minutes,15,3.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1001,,PHN Face to Face Assessment for PCA,Visit,,276.65,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1001,TS,PHN Service Update for PCA,Visit,,138.32,2022-01,DHS-3945_PCA_rates_2022-01.pdf p50
+T1001,U6,PHN Temporary Service Increase for PCA,Visit,,138.32,2022-01,DHS-3945_PCA_rates_2022-01.pdf p51
+S9131,,Physical Therapy,Visit,,77.43,2022-01,DHS-3945_PCA_rates_2022-01.pdf p51
+S9131,TF,Physical Therapy Assistant,Visit,,50.33,2022-01,DHS-3945_PCA_rates_2022-01.pdf p51
+S5181,,Respiratory Therapy,Visit,,49.74,2022-01,DHS-3945_PCA_rates_2022-01.pdf p51
+S9128,,Speech Therapy,Visit,,78.6,2022-01,DHS-3945_PCA_rates_2022-01.pdf p51
+H2015,U8 TS,Housing Sustaining,15 Minutes,15,17.17,2022-01,DHS-3945_PCA_rates_2022-01.pdf p52
+H2015,U8,Housing Transition,15 Minutes,15,17.17,2022-01,DHS-3945_PCA_rates_2022-01.pdf p52
+T1016,U6,"Case Management, Demonstration",15 Minutes,15,24.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0180,U6,"Cost for Finding Housing/Employment, Ancillary Actual Cost-",Daily,,125.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0160,U6,"Cost for Finding Housing/Employment, Case Worker",Per Mile,,0.56,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0200,U6,"Cost for Finding Housing/Employment, Escort Lodging Actual Cost-",Daily,,125.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0210,U6,"Cost for Finding Housing/Employment, Escort Meals Actual Cost-",Daily,,37.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0170,U6,"Cost for Finding Housing/Employment, Parking Fees and Actual Cost-",Daily,,20.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+A0190,U6,"Cost for Finding Housing/Employment, Recipient Meals Actual Cost-",Daily,,37.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+S5160,U6,PERS Installation and Testing,Each Time,,500.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p53
+S5161,U6,PERS Monthly Service Fee,Per Month,,110.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p54
+S5162,U6,PERS Purchase,Each Time,,1500.0,2022-01,DHS-3945_PCA_rates_2022-01.pdf p54
+S5150,U6,"Respite Care Services, In Home",15 Minutes,15,5.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p54
+S5150,U6 UB,"Respite Care Services, Out of Home",15 Minutes,15,5.47,2022-01,DHS-3945_PCA_rates_2022-01.pdf p54
+T1017,U6,Transition Coordination,15 Minutes,15,16.63,2022-01,DHS-3945_PCA_rates_2022-01.pdf p54
+97151,UB,EIDBI Comprehensive Multi-Disciplinary Evaluation (QSP),15 Minutes,15,94.8,2026-01,MN_EIDBI_billing_grid_2026-01.pdf p2
+97151,,EIDBI CMDE by CMDE provider (SPA MN-24-0010),15 Minutes,15,50.112,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+97153,,EIDBI intervention (SPA MN-24-0010),15 Minutes,15,20.178,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+0373T,,EIDBI intervention with two providers (SPA MN-24-0010),15 Minutes,15,24.192,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+97154,,EIDBI group intervention (SPA MN-24-0010),15 Minutes,15,6.72,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+97155,,EIDBI observation and direction (SPA MN-24-0010),15 Minutes,15,20.178,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+97156,,EIDBI family/caregiver training (SPA MN-24-0010),15 Minutes,15,20.178,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+97157,,EIDBI group family/caregiver training (SPA MN-24-0010),15 Minutes,15,6.72,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+T1024,,EIDBI coordinated care conference per provider per session (SPA MN-24-0010),Session,,112.678,2024-01,MN-24-0010_EIDBI_SPA.pdf p4
+H2011,,Crisis intervention (MH procedure grid),15 Minutes,15,40.58,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+H2014,,Skills training and development / CTSS (MH procedure grid),15 Minutes,15,14.25,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+H2017,,ARMHS psychosocial rehabilitation (MH procedure grid),15 Minutes,15,19.12,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+96130,,Psychological testing evaluation first hour (MH procedure grid),Hour,60,124.36,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+96131,,Psychological testing evaluation additional hour (MH procedure grid),Hour,60,85.05,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+T2024,,Housing Consultation T2024 U8 (HSS manual),Encounter,,174.22,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
+H2015,,Housing Stabilization Services H2015 U8 (HSS manual),15 Minutes,15,17.17,2026-playbook,build playbook (MN DHS MH procedure grid 2026 / HSS manual)
