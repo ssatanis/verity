@@ -626,6 +626,9 @@ out["sat_per_10k"] = pd.to_numeric(out.sat_per_10k, errors="coerce"); out["sat_z
 con.execute("CREATE OR REPLACE TABLE clusters AS SELECT * FROM out")
 Mm["labels"] = [json.dumps(x) for x in Mm.labels]
 con.execute("CREATE OR REPLACE TABLE cluster_members AS SELECT * FROM Mm")
+for _df in (per, org):
+    for _c in _df.columns:
+        if _df[_c].dtype == object and _df[_c].map(lambda v: isinstance(v, (tuple, list))).any(): _df[_c] = _df[_c].astype(str)
 con.execute("CREATE OR REPLACE TABLE d1_persons AS SELECT * FROM per"); con.execute("CREATE OR REPLACE TABLE d1_orgs AS SELECT * FROM org")
 con.execute("CREATE OR REPLACE TABLE d1_providers AS SELECT * FROM prov")
 json.dump(dict(fs=fs_stats, precision=prec, precision_pvalues=pvals, base_rate=base, base_rate_holdout=base_holdout, excluded_addresses=len(excl_addr), n_comms=len(F), hubs=len(hubs), nodes=G.number_of_nodes(), edges=G.number_of_edges()), open("demo/cache/d1_summary.json", "w"), indent=1, default=str)
