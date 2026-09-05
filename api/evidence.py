@@ -57,8 +57,14 @@ def provider_evidence(npi):
         enr = pg.execute("SELECT * FROM public.enrollments WHERE npi = %s", (npi,)).fetchall()
         clusters = pg.execute("SELECT c.id, c.summary, c.score, c.rank FROM public.cluster_members m JOIN public.clusters c ON c.id = m.cluster_id WHERE m.npi = %s", (npi,)).fetchall()
         risk = pg.execute("SELECT npi, name, tier, tier_label, detectors, score, dollars_at_risk, reasons, rank FROM public.provider_risk WHERE npi = %s", (npi,)).fetchone()
+        try: codes = pg.execute("SELECT hcpcs, description, paid, share, months, dpm, dpm_pct, dpm_median, high_vector FROM public.provider_codes WHERE npi = %s ORDER BY rk LIMIT 6", (npi,)).fetchall()
+        except Exception: codes = []
+        try: mcodes = pg.execute("SELECT hcpcs, description, services, beneficiaries, paid, share, avg_submitted, avg_allowed, charge_ratio, peer_ratio_median FROM public.provider_codes_medicare WHERE npi = %s ORDER BY rk LIMIT 4", (npi,)).fetchall()
+        except Exception: mcodes = []
     if not p and not flags and not risk: return None
-    return dict(kind="provider", provider=p or dict(npi=npi, name=(risk or {}).get("name")), flags=flags, revoked=rev, leie=leie, enrollments=enr, clusters=clusters, risk=risk)
+    procedures = [dict(program="Medicaid", code=c["hcpcs"], description=c["description"], paid=float(c["paid"] or 0), share=float(c["share"] or 0), per_patient_month=c["dpm"], percentile=c["dpm_pct"], typical=c["dpm_median"], high_vector=bool(c["high_vector"])) for c in codes] + \
+                 [dict(program="Medicare 2024", code=c["hcpcs"], description=c["description"], paid=float(c["paid"] or 0), share=float(c["share"] or 0), charge_ratio=c["charge_ratio"], peer_ratio=c["peer_ratio_median"]) for c in mcodes]
+    return dict(kind="provider", provider=p or dict(npi=npi, name=(risk or {}).get("name")), flags=flags, revoked=rev, leie=leie, enrollments=enr, clusters=clusters, risk=risk, codes=codes, mcodes=mcodes, procedures=procedures)
 
 def _src(x):
     x = str(x or "")
@@ -102,6 +108,10 @@ def evidence_lines(ev):
         p = ev["provider"] or {}
         L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organization' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
         r = ev.get("risk")
+        for c in ev.get("codes") or []:
+            L.append(("procedures billed, Medicaid", f"Code {c['hcpcs']}" + (f" ({c['description']})" if c.get("description") else "") + f": ${float(c['paid'] or 0):,.0f} paid over {c['months']} months, {round(float(c['share'] or 0)*100)}% of this provider's Medicaid dollars" + (f", ${float(c['dpm']):,.0f} per patient-month" if c.get("dpm") is not None else "") + (f", which ranks at the {round(float(c['dpm_pct'])*100)}th percentile of all providers billing this code (typical ${float(c['dpm_median'] or 0):,.0f})" if c.get("dpm_pct") is not None else "") + ("; this code family has a history of abuse" if c.get("high_vector") else "") + "."))
+        for c in ev.get("mcodes") or []:
+            L.append(("procedures billed, Medicare 2024", f"Code {c['hcpcs']} ({c['description']}): {int(c['services'] or 0):,} services for {int(c['beneficiaries'] or 0):,} beneficiaries, ${float(c['paid'] or 0):,.0f} paid; submitted ${float(c['avg_submitted'] or 0):,.0f} per service against ${float(c['avg_allowed'] or 0):,.0f} allowed, a ratio of {float(c['charge_ratio'] or 0):.1f}x" + (f" where the usual ratio for this code is {float(c['peer_ratio_median']):.1f}x" if c.get("peer_ratio_median") is not None else "") + "."))
         if r: L.append(("provider_risk", f"Evidence tier {r['tier']} ({r['tier_label']}); detectors {', '.join(r['detectors'] or [])}; dollars at risk ${float(r['dollars_at_risk'] or 0):,.0f} (figure of the detector that set the tier, not a sum); reasons: {r['reasons']}."))
         for r in ev["revoked"]: L.append(("Revocation_Extract", f"Revoked {r['revoked_dt']} under {r['revocation_rsn']}; re-enrollment bar to {r['reenroll_bar_dt']}."))
         for r in ev["leie"]: L.append(("OIG LEIE", f"Excluded {r['excl_dt']} under section 1128 {r['excltype']} ({r['general']})."))

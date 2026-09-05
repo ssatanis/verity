@@ -5,11 +5,13 @@ import { AskCase } from "@/components/app/AskCase";
 import { Tier } from "@/components/app/Tier";
 import { sourceName, labelName, idMatchName, money } from "@/lib/labels";
 import { nppesLookup } from "@/lib/nppes";
+import { Procedures } from "@/components/app/Procedures";
 export const revalidate = 60;
 const ev = (x: any) => (typeof x === "string" ? JSON.parse(x) : x) ?? {};
 const API = process.env.VERITY_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
 export default async function Provider({ params }: { params: Promise<{ npi: string }> }) {
   const { npi } = await params; const sb = publicClient();
+  if (!/^\d{10}$/.test(npi)) return <div><Link href="/app/candidates" className="eyebrow">Providers</Link><div className="card-2 p-6 text-[13px] mt-4">That is not an NPI. An NPI is a ten-digit number; use the search box to look up a provider by name.</div></div>;
   const [{ data: p }, { data: risk }, { data: flags }, { data: rev }, { data: leie }, { data: members }, { data: packets }] = await Promise.all([
     sb.from("providers").select("*").eq("npi", npi).maybeSingle(),
     sb.from("provider_risk").select("*").eq("npi", npi).maybeSingle(),
@@ -18,10 +20,11 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
     sb.from("cluster_members").select("cluster_id, clusters(id,rank,score,summary)").eq("npi", npi),
     sb.from("packets").select("id,status,packet,created_at,model").eq("subject_id", npi).order("created_at", { ascending: false }).limit(1),
   ]);
+  const [{ data: codes }, { data: mcodes }] = await Promise.all([sb.from("provider_codes").select("*").eq("npi", npi).order("rk"), sb.from("provider_codes_medicare").select("*").eq("npi", npi).order("rk")]);
   // any NPI in the country: the CMS NPPES Registry API gives the registry record; the local warehouse adds Medicaid figures when it is reachable
   const [nppes, reg] = await Promise.all([
     nppesLookup(npi),
-    (async () => { if (!API) return null; try { const r = await fetch(`${API}/provider/${npi}`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(4000) }); return r.ok ? await r.json() : null; } catch { return null; } })(),
+    (async () => { if (!API) return null; try { const r = await fetch(`${API}/provider/${encodeURIComponent(npi)}`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(4000) }); return r.ok ? await r.json() : null; } catch { return null; } })(),
   ]);
   const d2 = (flags ?? []).filter(f => f.detector === "D2" && f.metric !== "growth_and_concentration"); const d3 = (flags ?? []).filter(f => f.detector === "D3"); const growth = (flags ?? []).filter(f => f.metric === "growth_and_concentration");
   const name = nppes?.name || p?.name || risk?.name || reg?.name || flags?.[0]?.name || npi;
@@ -35,7 +38,7 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
           <h1 className="display serif text-[34px] md:text-[42px]">{name}</h1>
           <p className="text-[13px] text-[var(--ink-3)] mt-3">NPI {npi}, {entity === "2" ? "organization" : "individual"}{city ? `, ${city}, ${state}` : state ? `, ${state}` : ""}{tax ? `, ${tax}` : ""}{nppes?.status === "deactivated" || reg?.deact_date || p?.deact_date ? `, NPI deactivated ${nppes?.deactivation_date ?? reg?.deact_date ?? p?.deact_date ?? ""}` : ""}</p>
         </div>
-        {risk ? <div className="kpi min-w-[260px]"><div className="flex items-center gap-3"><Tier n={risk.tier} /><div><div className="eyebrow">Evidence tier</div><div className="serif text-[20px]">{risk.tier_label}</div></div></div><div className="text-[12.5px] text-[var(--ink-2)] mt-3 leading-5">{risk.reasons}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">score {Number(risk.score).toFixed(0)} of 100, rank {risk.rank}, {money(risk.dollars_at_risk)} at stake</div></div>
+        {risk ? <div className="kpi min-w-[260px]"><div className="flex items-center gap-3"><Tier n={risk.tier} /><div><div className="eyebrow">Evidence tier</div><div className="serif text-[20px]">{risk.tier_label}</div></div></div><div className="text-[12.5px] text-[var(--ink-2)] mt-3 leading-5">{String(risk.reasons ?? "").split("; ").map((x: string, i: number) => <div key={i}>{x}</div>)}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">score {Number(risk.score).toFixed(0)} of 100, rank {risk.rank}, {money(risk.dollars_at_risk)} at stake</div></div>
           : <div className="kpi min-w-[260px]"><div className="eyebrow">Evidence tier</div><div className="serif text-[20px]">No indicators</div><div className="text-[12.5px] text-[var(--ink-2)] mt-2 leading-5">No detector reached this NPI and it appears on none of the loaded lists.</div></div>}
       </div>
       <div className="grid md:grid-cols-[1.4fr_1fr] gap-6 mt-8">
@@ -68,6 +71,7 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
               {reg?.medicaid_states?.length ? <tr><td className="text-[var(--ink-2)]">Medicaid enrollment</td><td>{reg.medicaid_states.join(", ")}</td></tr> : null}
             </tbody></table>
           </div> : null}
+          <Procedures medicaid={(codes as any) ?? []} medicare={(mcodes as any) ?? []} fallback={reg?.medicaid_top_codes} />
           {(reg?.spend_by_year?.length || reg?.medicare_by_year?.length) ? <div className="card p-5"><h2 className="serif text-[24px] mb-1">Billing history</h2><p className="text-[12px] text-[var(--ink-3)] mb-3">Public payment files: Medicaid from T-MSIS (all states, 2018 to 2024), Medicare Part B, Part D, DME referrals and post-acute care from the CMS provider utilization files. Figures are what the programs paid, not what was billed.</p>
             <div className="grid md:grid-cols-2 gap-6">
               {reg?.spend_by_year?.length ? <div><div className="eyebrow mb-1">Medicaid paid by year{reg.medicaid_roles ? ` (billing ${money(reg.medicaid_roles.billing ?? 0)}, rendering ${money(reg.medicaid_roles.servicing ?? 0)} over all years)` : ""}</div><table className="table"><thead><tr><th>year</th><th>paid</th><th>months with claims</th></tr></thead><tbody>{reg.spend_by_year.map((r: any) => <tr key={r.year}><td>{r.year}</td><td>{money(r.paid)}</td><td>{r.months}</td></tr>)}</tbody></table></div> : null}

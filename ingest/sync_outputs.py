@@ -21,6 +21,15 @@ def copy(table, cols, sql, truncate=True):
     pg.commit(); os.remove(tmp); print(f"synced {table:<18} {n:>9,} rows {time.time()-t:5.1f}s", flush=True); return n
 have = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()}
 counts = {}
+if "provider_codes" in have:
+    counts["provider_codes"] = copy("provider_codes", "npi, hcpcs, description, paid, share, lines, months, patient_months, dpm, dpm_pct, dpm_median, dpm_p95, high_vector, code_family, avg_submitted, avg_allowed, charge_ratio, peer_ratio_median, peer_ratio_p90, medicare_services, rk",
+        """SELECT npi, hcpcs, description, paid, share, lines, months, patient_months, dpm, dpm_pct, dpm_median, dpm_p95, high_vector, code_family, avg_submitted, avg_allowed, charge_ratio, peer_ratio_median, peer_ratio_p90, medicare_services, rk
+           FROM provider_codes WHERE npi IN (SELECT npi FROM provider_risk) QUALIFY row_number() OVER (PARTITION BY npi, hcpcs ORDER BY paid DESC) = 1""")
+    counts["provider_codes_medicare"] = copy("provider_codes_medicare", "npi, hcpcs, description, services, beneficiaries, paid, share, avg_submitted, avg_allowed, charge_ratio, peer_ratio_median, peer_ratio_p90, rk",
+        """SELECT npi, hcpcs, description, services, beneficiaries, paid, share, avg_submitted, avg_allowed, charge_ratio, peer_ratio_median, peer_ratio_p90, rk
+           FROM provider_codes_medicare WHERE npi IN (SELECT npi FROM provider_risk) QUALIFY row_number() OVER (PARTITION BY npi, hcpcs ORDER BY paid DESC) = 1""")
+    counts["procedure_trends"] = copy("procedure_trends", "hcpcs, description, n_flagged, n_all, n_tier1, n_tier2, paid_flagged, paid_all, lift, vector, family",
+        """SELECT hcpcs, description, n_flagged, n_all, n_tier1, n_tier2, paid_flagged, paid_all, lift, vector, family FROM procedure_trends WHERE n_all >= 100 ORDER BY lift DESC LIMIT 300""")
 if "d1_factors" in have:
     counts["network_factors"] = copy("network_factors", "cluster_id, factor, family, label, unit, direction, note, value, percentile, z, outlook",
         """SELECT d.cluster_id, d.factor, d.family, d.label, d.unit, d.direction, d.note, d.value, d.percentile, d.z, d.outlook
@@ -51,8 +60,8 @@ counts["providers"] = copy("providers", "npi, entity_type, name, org_name, addre
                zc.lat, zc.lon, pc.county_fips
         FROM ids JOIN nppes n ON n.npi = ids.npi LEFT JOIN provider_state ps ON ps.npi = n.npi LEFT JOIN zcta_centroid zc ON zc.zcta = n.zip5 LEFT JOIN zcta_primary_county pc ON pc.zcta = n.zip5""")
 if "provider_risk" in have:
-    counts["provider_risk"] = copy("provider_risk", "npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, detectors, dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023",
-        """SELECT npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, to_json(detectors), dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023 FROM provider_risk""")
+    counts["provider_risk"] = copy("provider_risk", "npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, detectors, dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023, procedure_points, procedure_reason",
+        """SELECT npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, to_json(detectors), dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023 , procedure_points, procedure_reason FROM provider_risk""")
 if "d1_hub_addresses" in have:
     counts["hub_addresses"] = copy("hub_addresses", "address, level, n_providers, n_hospice, n_hha, n_snf, n_since_2019, n_labelled, revoked_entity_here, city, state, zip5, county_fips, npis, hub",
         "SELECT address, level, n_providers, n_hospice, n_hha, n_snf, n_since_2019, n_labelled, revoked_entity_here, city, state, zip5, county_fips, npis, hub FROM d1_hub_addresses")

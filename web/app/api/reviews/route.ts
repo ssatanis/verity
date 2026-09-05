@@ -3,6 +3,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { serviceClient } from "@/lib/supabase";
 import { claude, claudeReady, cleanText } from "@/lib/claude";
+import { readJson, str, UUID_RE } from "@/lib/validate";
 
 // Families per detector. A rejection note is classified to the family that was wrong, so only that family's weight moves.
 const FAMILIES: Record<string, string[]> = { D1: ["structure", "label", "context"], D2: ["volume", "rate", "convention"], D3: ["identity", "timing", "list"] };
@@ -22,7 +23,9 @@ async function classify(detector: string, notes: string) {
   } catch { return null; }
 }
 export async function POST(req: Request) {
-  const { packet_id, decision, reviewer = "console", notes = "" } = await req.json();
+  const body = await readJson(req); if (!body) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const { packet_id, decision } = body; const reviewer = str(body.reviewer, 80).trim() || "console"; const notes = str(body.notes, 4000);
+  if (typeof packet_id !== "string" || !UUID_RE.test(packet_id)) return NextResponse.json({ error: "bad packet id" }, { status: 400 });
   if (!["accept", "reject", "needs_info"].includes(decision)) return NextResponse.json({ error: "bad decision" }, { status: 400 });
   const sb = serviceClient();
   const { data: p } = await sb.from("packets").select("subject_type,subject_id").eq("id", packet_id).maybeSingle();
@@ -34,15 +37,22 @@ export async function POST(req: Request) {
   await sb.from("reviews").insert({ packet_id, subject_type: p.subject_type, subject_id: p.subject_id, decision, reviewer, notes, detector, score_at_review: score, notes_family: cls?.family ?? null });
   await sb.from("packets").update({ status: decision === "accept" ? "accepted" : decision === "reject" ? "rejected" : "needs_info" }).eq("id", packet_id);
   // Beta-binomial re-weighting per family. Accept credits every family present in the case; a classified rejection debits only its family; an unclassified rejection debits every family present.
-  const { data: rows } = detector === "D1" ? await sb.from("reviews").select("decision, notes_family, clusters!inner(features)").eq("detector", "D1") : await sb.from("reviews").select("decision, notes_family").eq("detector", detector);
+  // reviews has no foreign key to clusters, so the D1 features are fetched by subject id rather than through a PostgREST embed
+  let rows: any[] = [];
+  if (detector === "D1") {
+    const { data: rv } = await sb.from("reviews").select("decision, notes_family, subject_id").eq("detector", "D1").limit(1000);
+    const ids = [...new Set((rv ?? []).map((r: any) => r.subject_id).filter(Boolean))] as string[]; const feats = new Map<string, any>();
+    for (let i = 0; i < ids.length; i += 200) { const { data: cl } = await sb.from("clusters").select("id,features").in("id", ids.slice(i, i + 200)); for (const c of cl ?? []) feats.set(c.id, J(c.features)); }
+    rows = (rv ?? []).map((r: any) => ({ ...r, features: feats.get(r.subject_id) ?? {} }));
+  } else { const { data: rv } = await sb.from("reviews").select("decision, notes_family").eq("detector", detector).limit(1000); rows = rv ?? []; }
   const prior = 4; const fams = FAMILIES[detector] ?? ["evidence"]; const weights: Record<string, number> = {}; const counts: Record<string, [number, number]> = {};
   for (const fam of fams) {
-    const present = (r: any) => detector !== "D1" || !!J(r.clusters?.features)?.[`${fam}_family`];
+    const present = (r: any) => detector !== "D1" || !!r.features?.[`${fam}_family`];
     let a = 0, b = 0;
-    for (const r of rows ?? []) { if (!present(r)) continue; if (r.decision === "accept") a++; else if (r.decision === "reject" && (!r.notes_family || r.notes_family === fam)) b++; }
+    for (const r of rows) { if (!present(r)) continue; if (r.decision === "accept") a++; else if (r.decision === "reject" && (!r.notes_family || r.notes_family === fam)) b++; }
     counts[fam] = [a, b]; weights[fam] = Math.round(1000 * 2 * (a + prior / 2) / (a + b + prior)) / 1000;
   }
-  const n = rows?.length ?? 0;
+  const n = rows.length;
   await sb.from("score_weights").upsert({ detector, weights, n_reviews: n, updated_at: new Date().toISOString() });
   return NextResponse.json({ detector, weights, counts, n_reviews: n, note_family: cls, informational: n < 200, message: n < 200 ? `Weights move with each decision but stay informational until a few hundred reviews per detector; ${n} recorded so far.` : "Weights are applied at the next scoring run." });
 }

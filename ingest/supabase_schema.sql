@@ -218,3 +218,24 @@ language sql stable as $$
   where sim > 0.25 and (st is null or state = upper(st)) and (ct is null or city ilike ct || '%')
   order by sim desc, tier nulls last limit lim
 $$;
+
+-- procedure-level evidence: largest Medicaid codes per provider with national comparison, and codes that recur among flagged providers
+create table if not exists public.provider_codes (
+  npi text not null, hcpcs text not null, description text, paid numeric, share numeric, lines numeric, months int, patient_months numeric,
+  dpm numeric, dpm_pct numeric, dpm_median numeric, dpm_p95 numeric, high_vector boolean, code_family text,
+  avg_submitted numeric, avg_allowed numeric, charge_ratio numeric, peer_ratio_median numeric, peer_ratio_p90 numeric, medicare_services numeric, rk int,
+  primary key (npi, hcpcs)
+);
+create index if not exists provider_codes_npi_idx on public.provider_codes (npi);
+create table if not exists public.provider_codes_medicare (
+  npi text not null, hcpcs text not null, description text, services numeric, beneficiaries numeric, paid numeric, share numeric,
+  avg_submitted numeric, avg_allowed numeric, charge_ratio numeric, peer_ratio_median numeric, peer_ratio_p90 numeric, rk int, primary key (npi, hcpcs)
+);
+create table if not exists public.procedure_trends (
+  hcpcs text primary key, description text, n_flagged int, n_all int, n_tier1 int, n_tier2 int, paid_flagged numeric, paid_all numeric, lift numeric, vector text, family text
+);
+alter table public.provider_codes enable row level security; alter table public.provider_codes_medicare enable row level security; alter table public.procedure_trends enable row level security;
+drop policy if exists "public read provider_codes" on public.provider_codes; create policy "public read provider_codes" on public.provider_codes for select using (true);
+drop policy if exists "public read provider_codes_medicare" on public.provider_codes_medicare; create policy "public read provider_codes_medicare" on public.provider_codes_medicare for select using (true);
+drop policy if exists "public read procedure_trends" on public.procedure_trends; create policy "public read procedure_trends" on public.procedure_trends for select using (true);
+alter table public.provider_risk add column if not exists procedure_points int; alter table public.provider_risk add column if not exists procedure_reason text;

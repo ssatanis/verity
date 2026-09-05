@@ -10,12 +10,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.environ.get("VERITY_DUCKDB", os.path.join(ROOT, "data/verity.duckdb"))
 NPI_RE = re.compile(r"^[12]\d{9}$")
 
-_con = None
 def con():
-    global _con
-    if _con is None:
-        _con = duckdb.connect(DB, read_only=True)
-    return _con
+    # a fresh read-only connection per call: it is released as soon as the statement finishes, so the API never holds the
+    # single-writer lock while a detector or an ingest step needs the warehouse
+    return duckdb.connect(DB, read_only=True)
 
 def _tables():
     return {r[0] for r in con().execute("SELECT table_name FROM information_schema.tables").fetchall()}

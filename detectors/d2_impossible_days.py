@@ -238,6 +238,13 @@ print("growth anomalies:", q("SELECT year, COUNT(*) FROM d2_growth_flags WHERE l
 # ---------------- 5. flags for the app ----------------
 con.execute("""CREATE TABLE IF NOT EXISTS flags (id BIGINT, detector VARCHAR, npi VARCHAR, billing_npi VARCHAR, state VARCHAR, month DATE, hcpcs VARCHAR,
                metric VARCHAR, value DOUBLE, threshold DOUBLE, score DOUBLE, dollars DOUBLE, tier VARCHAR, evidence JSON, created_at TIMESTAMP)""")
+# supervisory umbrella test: a rendering NPI with hundreds of patients a month, or whose billing organizations each carry dozens of rendering clinicians,
+# is a medical director or supervising clinician on the claims, not one person's hours. Such months stay tier B however many organizations bill them.
+run("d2_umbrella", """
+CREATE OR REPLACE TABLE d2_umbrella AS
+WITH sz AS (SELECT billing_npi, COUNT(DISTINCT servicing_npi) AS n_render FROM spend GROUP BY 1),
+     pr AS (SELECT DISTINCT servicing_npi, billing_npi FROM spend)
+SELECT pr.servicing_npi AS npi, AVG(sz.n_render) AS avg_org_render, MAX(sz.n_render) AS max_org_render FROM pr JOIN sz USING (billing_npi) GROUP BY 1""")
 con.execute("DELETE FROM flags WHERE detector = 'D2'")
 con.execute("""INSERT INTO flags
 SELECT CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT), 'D2', servicing_npi, NULL, state, month_start, NULL,
@@ -246,8 +253,9 @@ SELECT CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT), 'D2', servicin
        CASE WHEN label LIKE 'IMPOSSIBLE%' THEN 24 WHEN label = 'EXCEEDS_MN_DAILY_CAP' THEN 1 WHEN label = 'IMPLAUSIBLE_OVER_16H' THEN 16 WHEN label = 'UMBRELLA_VOLUME' THEN 24 ELSE 12 END,
        CASE WHEN label LIKE 'IMPOSSIBLE%' THEN 3 WHEN label = 'EXCEEDS_MN_DAILY_CAP' THEN 2 WHEN label = 'IMPLAUSIBLE_OVER_16H' THEN 1 WHEN label = 'UMBRELLA_VOLUME' THEN 0.7 ELSE 0.5 END + LEAST(GREATEST(COALESCE(robust_z,0),0),20)/20.0,
        paid, CASE WHEN label = 'EXCEEDS_MN_DAILY_CAP' THEN 'A' WHEN label = 'IMPOSSIBLE_PER_PATIENT' THEN 'A'
-                  WHEN label LIKE 'IMPOSSIBLE%' AND n_billing_orgs >= 3 THEN 'A'      -- impossible personal hours rendered for 3+ unrelated billers
-                  WHEN label LIKE 'IMPOSSIBLE%' THEN 'B' ELSE 'C' END,                -- single-organization impossibility can be a supervisory umbrella
+                  WHEN label LIKE 'IMPOSSIBLE%' AND n_billing_orgs >= 3 AND patients_sum_codes <= 500
+                       AND COALESCE((SELECT avg_org_render FROM d2_umbrella u WHERE u.npi = d2_scored.servicing_npi), 0) < 30 THEN 'A'   -- impossible personal hours rendered for 3+ small, unrelated billers
+                  WHEN label LIKE 'IMPOSSIBLE%' THEN 'B' ELSE 'C' END,                -- single-organization or supervisory-umbrella impossibility
        to_json(struct_pack(label := label, test_basis := test_basis, entity_type := entity_type, name := name, city := city, taxonomy := taxonomy, days_in_month := days_in_month,
                            hours_lb := hours_lb, hours_pt := hours_pt, hours_cons := hours_cons, hours_lb_per_day := hours_lb_per_day, hours_pt_per_day := hours_pt_per_day,
                            hours_lb_personal_per_day := hours_lb_personal_per_day, hours_pt_personal_per_day := hours_pt_personal_per_day, hours_cons_personal_per_day := hours_cons_personal_per_day, paid_personal := paid_personal,

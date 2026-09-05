@@ -113,9 +113,11 @@ def eob_codes(eob):
 
 def normalize_eobs(bundle):
     claims = []
-    for e in bundle.get("entry", []) or []:
+    entries = bundle.get("entry") if isinstance(bundle, dict) else None
+    for e in (entries if isinstance(entries, list) else []):
+        if not isinstance(e, dict): continue
         eob = e.get("resource", e)
-        if eob.get("resourceType") != "ExplanationOfBenefit": continue
+        if not isinstance(eob, dict) or eob.get("resourceType") != "ExplanationOfBenefit": continue
         bp = eob.get("billablePeriod") or {}
         npis = eob_npis(eob)
         claims.append(dict(id=eob.get("id"), type=eob_type(eob), start=_date(bp.get("start")), end=_date(bp.get("end")),

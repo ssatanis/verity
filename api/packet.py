@@ -64,7 +64,7 @@ def deterministic_packet(ev):
     return dict(title=_title(ev), subject_type=ev["kind"], subject_id=subject, generated_at=dt.datetime.now(dt.timezone.utc).isoformat(), model="deterministic",
                 summary=lines[0][1] if lines else "", findings=findings, grounds=grounds, evidence_types=types,
                 recommendation="Request the provider's records for the flagged service months, verify the cited public records against the source datasets, run the 42 CFR 455.436 database checks, and, if the records do not resolve the pattern, refer to the state Medicaid program integrity unit and the Medicaid Fraud Control Unit under 42 CFR 455.23(d).",
-                evidence=[dict(id=i, source=l[0], statement=l[1]) for i, l in enumerate(lines)],
+                evidence=[dict(id=i, source=l[0], statement=l[1]) for i, l in enumerate(lines)], procedures=ev.get("procedures") or [],
                 plain_english=("Public records show several related provider entities that were formed close together, share owners, suites or phone numbers, and sit in a market with an unusual number of providers. " if ev["kind"] == "cluster" else "Public records show an action that should have triggered a state screening check, followed by Medicaid claims for later service months, or a billing volume that one clinician could not deliver personally. ") + "Each numbered finding cites the public dataset and row it came from. This is a screening indicator to be checked, not a conclusion.",
                 caveats=caveats)
 

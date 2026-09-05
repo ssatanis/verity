@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { serviceClient } from "@/lib/supabase";
-import { claude, claudeReady, cleanText, MODEL } from "@/lib/claude";
+import { claude, claudeReady, cleanText } from "@/lib/claude";
+import { readJson, subjectOk, str, chatHistory } from "@/lib/validate";
 
 // "Ask this case": a reviewer chat that can only call evidence tools over the serving tables. Every answer must cite tool rows.
 export const maxDuration = 120;
 export async function POST(req: Request) {
-  const { subject_type, subject_id, question, history = [] } = await req.json();
+  const body = await readJson(req); if (!body) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const { subject_type, subject_id } = body; const question = str(body.question, 2000).trim(); const history = chatHistory(body.history);
+  if (!subjectOk(subject_type, subject_id) || !question) return NextResponse.json({ error: "bad request" }, { status: 400 });
   if (!claudeReady()) return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured on the server" }, { status: 503 });
-  if (!["cluster", "provider"].includes(subject_type) || !subject_id || !question) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const sb = serviceClient(); const J = (x: any) => (typeof x === "string" ? JSON.parse(x) : x) ?? {};
   const used: string[] = []; const LIMIT = 14000;
   const safe = async (name: string, fn: () => Promise<string>): Promise<string> => { used.push(name); try { const out = await fn(); return out.length > LIMIT ? out.slice(0, LIMIT) + `\n[truncated: ${out.length - LIMIT} more characters; ask a narrower question for the rest]` : out; } catch (e: any) { return JSON.stringify({ error: `tool ${name} failed: ${String(e?.message ?? e).slice(0, 120)}` }); } };
@@ -36,11 +38,11 @@ export async function POST(req: Request) {
       if (subject_type !== "cluster") return "[]"; const { data } = await sb.from("network_factors").select("factor,family,label,unit,value,percentile,z,outlook").eq("cluster_id", subject_id).order("percentile", { ascending: false }); return JSON.stringify(data ?? []); }) }),
   ];
   const system = `You are the case assistant inside Verity, a provider-integrity console for health plan investigators. You may only answer from the tool results in this conversation. Every factual sentence must end with a bracketed citation naming the tool and the row, for example [get_payment_timeline: NPI 1234567893, 2022-11]. If the tools do not contain the answer, say so. Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Short paragraphs, plain English, no em dashes. Subject: ${subject_type} ${subject_id}.`;
-  const messages: any[] = [...history.slice(-8), { role: "user", content: question }];
+  const messages: any[] = [...history, { role: "user", content: question }];
   try {
     const runner = claude().beta.messages.toolRunner({ model: process.env.VERITY_CHAT_MODEL ?? "claude-sonnet-5", max_tokens: 3000, system, tools, messages, max_iterations: 6 });
     const final: any = await Promise.race([runner.runUntilDone(), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 140000))]);
     const text = cleanText(final.content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n"));
     return NextResponse.json({ answer: text || "The evidence tables hold nothing that answers this question.", stop_reason: final.stop_reason, tools_used: [...new Set(used)] });
-  } catch (e: any) { const msg = String(e?.message ?? "model error"); return NextResponse.json({ error: msg === "timeout" ? "The assistant took too long. Ask a narrower question." : msg, tools_used: [...new Set(used)] }, { status: msg === "timeout" ? 504 : 500 }); }
+  } catch (e: any) { const msg = String(e?.message ?? "model error"); return NextResponse.json({ error: msg === "timeout" ? "The assistant took too long. Ask a narrower question." : msg.slice(0, 200), tools_used: [...new Set(used)] }, { status: msg === "timeout" ? 504 : 500 }); }
 }

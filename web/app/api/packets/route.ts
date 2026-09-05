@@ -4,6 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { serviceClient } from "@/lib/supabase";
 import { evidenceLines, deterministicPacket } from "@/lib/packet";
 import { claude, claudeReady, cleanText, MODEL } from "@/lib/claude";
+import { readJson, subjectOk, str } from "@/lib/validate";
 
 const Draft = z.object({
   summary: z.string(), plain_english: z.string(),
@@ -14,13 +15,14 @@ const SYSTEM = `You draft referral candidate packets for health plan special inv
 Rules: every finding must be supported verbatim by the evidence lines and cite their ids; never add a fact that is not in the evidence; describe records, dates and amounts and never assert fraud, intent or guilt; use only the regulatory grounds provided, by citation; plain English, short sentences; no em dashes, no en dashes, no underscores and no code-like identifiers (write list names and labels in words); the plain_english field is a specific three-to-five sentence description of this subject drawn from the evidence, never a generic paragraph; include caveats naming the legitimate explanations a reviewer must rule out.`;
 
 export async function POST(req: Request) {
-  const { subject_type, subject_id, created_by = "console" } = await req.json();
-  if (!["cluster", "provider"].includes(subject_type) || !subject_id) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const body = await readJson(req); if (!body) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const { subject_type, subject_id } = body; const created_by = str(body.created_by, 80).trim() || "console";
+  if (!subjectOk(subject_type, subject_id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const sb = serviceClient();
-  const { lines, types } = await evidenceLines(sb, subject_type, subject_id);
+  const { lines, types, procedures } = await evidenceLines(sb, subject_type, subject_id);
   if (!lines.length) return NextResponse.json({ error: "not found" }, { status: 404 });
   const name = subject_type === "provider" ? (await sb.from("providers").select("name").eq("npi", subject_id).maybeSingle()).data?.name : undefined;
-  let packet = deterministicPacket(subject_type, subject_id, lines, types, name);
+  let packet = deterministicPacket(subject_type, subject_id, lines, types, name, procedures);
   if (claudeReady()) {
     try {
       // structured output goes through output_config.format (the top-level output_format field is deprecated by the API)
