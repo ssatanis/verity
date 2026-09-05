@@ -67,6 +67,13 @@ export default async function Methods() {
       </section>
 
       <section className="mt-12">
+        <h2 className="serif text-[32px]" style={{ color: "var(--blue)" }}>Factor desk for networks</h2>
+        <p className="text-[14px] leading-7 mt-3">Every network with three or more providers is measured on thirty factors in seven families: formation timing, ownership, addresses and contacts, list exposure, market, money, and identity and enrollment. Each factor carries its value, its percentile among all such networks in the risky direction, and a robust z-score. Six rate-of-change factors (formation velocity, share of new companies, Medicaid growth, owner association bursts, county saturation trend and ownership changes) are averaged as clipped z-scores into a momentum reading:</p>
+        <Eq>{String.raw`m = \frac{1}{k}\sum_{j=1}^{k} \operatorname{clip}(z_j,\,-3,\,3)`}</Eq>
+        <p className="text-[14px] leading-7">with the outlook labelled rising fast at or above 1, rising from 0.3, steady, or cooling below minus 0.3. The desk is indicative: no outcome data exist yet to calibrate it, and it never changes a tier.</p>
+      </section>
+
+      <section className="mt-12">
         <h2 className="serif text-[32px]" style={{ color: "var(--blue)" }}>One score per provider</h2>
         <p className="text-[14px] leading-7 mt-3">Every provider any detector reached gets a tier that says what the public record can prove: 1, on a public list and still paid afterwards; 2, more hours than a day holds across several organizations; 3, part of a ranked network that touches a public list; 4, network structure alone or hours beyond a day under one organization; 5, worth knowing. The score adds a bonus when strong findings from different detectors agree, and a small term for the dollars involved:</p>
         <Eq>{String.raw`\text{score} = \min\Big(100,\; \text{base}_{\text{tier}} + 8\,\max(n_{\text{strong}} - 1, 0) + \min\big(9, \log_{10} \text{dollars}\big)\Big)`}</Eq>
