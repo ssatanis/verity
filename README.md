@@ -8,6 +8,26 @@ Deep dives: [`docs/methods.md`](docs/methods.md) has every number behind the dem
 
 ![Verity console](docs/console.png)
 
+## Pitch deck
+
+[![Verity pitch deck](docs/deck/1-title.jpg)](docs/Verity_Pitch_Deck.pdf)
+
+Click the cover to page through the full deck as a PDF, or expand below.
+
+<details>
+<summary><b>View all eight slides</b></summary>
+<br>
+
+![Slide 2, the problem](docs/deck/2-problem.jpg)
+![Slide 3, what we built](docs/deck/3-product.jpg)
+![Slide 4, one provider](docs/deck/4-case.jpg)
+![Slide 5, the math](docs/deck/5-math.jpg)
+![Slide 6, what the government saves](docs/deck/6-savings.jpg)
+![Slide 7, who buys](docs/deck/7-market.jpg)
+![Slide 8, close](docs/deck/8-close.jpg)
+
+</details>
+
 ## The numbers
 
 | | | |
