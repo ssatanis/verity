@@ -42,7 +42,7 @@ export default async function Overview() {
           <div className="flex justify-between items-center mb-3"><h2 className="serif text-[24px]">Networks to look at first</h2><Link href="/app/clusters" className="link text-[12px]">All networks</Link></div>
           {clusters?.map(c => { const f = (typeof c.features === "string" ? JSON.parse(c.features) : c.features) ?? {}; const facts: string[] = f.facts ?? []; return (
             <Link key={c.id} href={`/app/clusters/${c.id}`} className="block py-3 rule hover:bg-[var(--paper-2)]">
-              <div className="flex justify-between text-[13px]"><span className="serif text-[17px]">{c.summary}</span><span className="serif text-[17px]" style={{ color: "var(--blue)" }}>{Number(c.score).toFixed(0)}</span></div>
+              <div className="flex justify-between text-[13px]"><span className="serif text-[17px]">{c.summary}</span><span style={{ color: "var(--blue)" }}>{Number(c.score).toFixed(0)}</span></div>
               <div className="text-[11.5px] text-[var(--ink-2)] mt-1 line-clamp-2">{facts.slice(0, 2).join(" ")}</div>
               <div className="text-[11px] text-[var(--ink-3)] mt-1">{c.id}, {money(c.dollars_at_risk)} Medicaid 2024</div>
             </Link>); })}
