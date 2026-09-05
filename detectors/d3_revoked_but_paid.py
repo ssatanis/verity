@@ -65,8 +65,8 @@ ACTIVE = "('02','03','04','05','06')"
 NAME_MATCH_UNION = ""
 if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'sam_npi_matches'").fetchone()[0]:
     NAME_MATCH_UNION = """UNION ALL
-  SELECT m.npi, m.source || '_NAME', CAST(m.event_dt AS DATE), NULL::DATE, 'name-matched by model at high confidence: ' || COALESCE(m.exclusion_type, ''), m.state, 'B',
-         COALESCE(NULLIF(m.busname, ''), trim(COALESCE(m.firstname, '') || ' ' || COALESCE(m.lastname, ''))), 'name_match'
+  SELECT CAST(m.npi AS VARCHAR), CAST(m.source AS VARCHAR) || '_NAME', CAST(m.event_dt AS DATE), NULL::DATE, 'name-matched by model at high confidence: ' || COALESCE(CAST(m.exclusion_type AS VARCHAR), ''), CAST(m.state AS VARCHAR), 'B',
+         COALESCE(NULLIF(CAST(m.busname AS VARCHAR), ''), trim(COALESCE(CAST(m.firstname AS VARCHAR), '') || ' ' || COALESCE(CAST(m.lastname AS VARCHAR), ''))), 'name_match'
   FROM sam_npi_matches m WHERE m.same_entity AND m.confidence = 'high' AND m.event_dt IS NOT NULL AND npi_luhn_ok(m.npi)"""
 run("d3_events", f"""
 CREATE OR REPLACE TABLE d3_events AS

@@ -607,18 +607,15 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 
 ## Unified provider risk score
 
-**In plain language.** This section combines the separate detectors into one score per provider identifier, so each NPI appears once with a tier, a numeric score and the reasons behind it. Tiers run from 1 to 5, with tier 1 reserved for a documented federal or state action followed by later paid service months, tier 2 for physically impossible service volume billed across three or more organizations, tiers 3 and 4 for network structure or single-organization volume, and tier 5 for informational cases. The score starts at a tier base of 90, 75, 60, 45 or 25, adds 8 points for each extra strong finding that independently reached the same NPI up to 16 points, and adds up to 9 points based on the log of dollars at risk, with a ceiling of 100. Dollars at risk always come from the single detector that set the tier and are never summed or borrowed from a weaker signal, which keeps a small documented-action case from being outranked by a weaker volume flag. The counts run from 391 NPIs in tier 1 with $56.96M at risk to 2,118 in tier 5 with $2,743.75M, and no NPI in any tier was reached by two or more detectors independently, so the corroboration bonus never applied here. Every listed row is a candidate for records review, not a finding.
-
-
 **Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action. Tier 2: physically impossible personal-service volume billed by three or more organizations in a month, more than 24 hours per patient per day, or over Minnesota's own daily cap. Tier 3: member of an eligible provider community with a label link. Tier 4: structure only, or single-organization impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers), never a sum and never borrowed from a weaker indicator, so a single-organization volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
 
 | tier | meaning | NPIs | $M at risk | reached by 2+ detectors |
 |---|---|---|---|---|
 | 1 | documented action, then payment | 391 | 56.96 | 0 |
-| 2 | impossible volume with concurrency | 605 | 2,717.89 | 0 |
+| 2 | impossible volume with concurrency | 602 | 2,609.91 | 0 |
 | 3 | network structure with a list link | 6,506 | 1,223.30 | 0 |
-| 4 | structure or single-organization volume | 1,991 | 4,846.24 | 0 |
-| 5 | informational | 2,118 | 2,743.75 | 0 |
+| 4 | structure or single-organization volume | 1,992 | 4,781.09 | 0 |
+| 5 | informational | 2,120 | 2,764.25 | 0 |
 
 0 NPIs were reached by two or more detectors independently; corroboration is the strongest signal the pipeline produces and it is weighted accordingly.
 
