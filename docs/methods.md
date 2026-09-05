@@ -4,7 +4,9 @@ How the warehouse is built, what was dropped, and the numbers behind every figur
 
 ## Build
 
-**In plain language.** This section describes how the analysis database is built and what data is allowed in. A SQL script is run into a DuckDB file, and a lookup table lists the time-based billing codes along with the minutes each billed unit implies, a divisor for group codes, and deliberately low durations for untimed session codes so the impossible-days check under-counts rather than over-counts. Per-diem codes are carried with no minutes so day counts can instead be compared against patients times days in the month. Filters require ten-digit identifiers, paid amounts between 0 and 50,000,000 dollars per identifier-code-month, and, for one table only, that the code appear in the time-code list. Enrollment segments with placeholder dates are dropped or treated as open-ended, and a provider's home state is the state with the most enrolled days, though those days are a presence weight for ranking states rather than true calendar days because segments overlap. No SAM.gov extract is available, so exclusions come from LEIE, the CMS revoked list, and Medicaid termination codes.
+**In plain language.** This section describes how the working database is built and what data is allowed into it. A SQL script is run by a Python driver to create a DuckDB file, and a companion CSV lists the time-based procedure codes along with the minutes each billed unit implies, a divisor for group codes, and deliberately low durations for untimed session codes so the impossible-days check understates rather than overstates. Per-diem codes carry no minutes and are kept only so day counts can be compared against patients times days in the month. Spending records are filtered to ten-digit identifiers on both provider fields and paid amounts between 0 and 50,000,000 dollars per provider-code-month, with one table further limited to codes on the time-code list. Enrollment segments with placeholder dates are dropped or treated as open-ended, and home state is assigned by the largest presence weight, which is not calendar days because segments overlap by plan and month. Exclusion screening relies on the LEIE file, the revoked list, and termination codes, since no SAM.gov extract was available.
+
+
 
 
 
@@ -15,7 +17,9 @@ Filters on the T-MSIS Medicaid spending file: both NPIs must be ten digits, paid
 
 ## Warehouse sanity checks (2026-09-05 12:11 ET)
 
-**In plain language.** This section is a data quality check on the analysis warehouse before any findings are drawn from it. It counts the rows loaded into each source table and shows how the main Medicaid spending file was filtered down. Starting from 238,015,729 rows, the analysis keeps only claim lines with time-based procedure codes, valid billing and servicing identifiers, and paid amounts between zero and 50 million dollars. That leaves 56,701,897 rows tied to 1,220,721 servicing identifiers and about 532.82 billion dollars, spread across 2018 through 2024 with yearly totals rising from 51.31 billion to a peak of 96.15 billion in 2023. Personal care services per 15 minutes is the single largest time-based code at 106.49 billion dollars. The checks also flag known gaps: only 8,841 of 83,842 exclusion list rows carry an identifier, incorporation dates parse for roughly 60 to 76 percent of the facility files, and the county saturation table contains no moratorium rows. These counts describe data completeness only and say nothing about the conduct of any provider.
+**In plain language.** This section is a data quality check on the analysis warehouse before any findings are produced. It counts the rows in each source table and shows what was filtered out of the Medicaid spending file. After keeping only time-based procedure codes, valid provider identifiers, and payments between zero and 50 million dollars, the working spend table holds 56.7 million rows, about 1.22 million servicing providers, and 532.82 billion dollars, rising from 51.31 billion in 2018 to 91.68 billion in 2024. Large numbers of rows were removed for unusable billing or servicing identifiers, roughly 7.9 million and 10.4 million, so coverage is incomplete and any provider-level totals should be read with that in mind. Other checks show expected patterns, such as two owner types, all revoked records carrying a date, only 8,841 of 83,842 exclusion records having a provider identifier, and incorporation dates parsing for only part of the hospice, home health, and nursing facility files.
+
+
 
 
 
@@ -119,7 +123,9 @@ Tables in `data/verity.duckdb`: chow, drops, enroll, hha, hospice, hospital, lei
 
 ## Detector 3: dead in Medicare, alive in Medicaid
 
-**In plain language.** This detector compares provider identifiers on federal and state "must not be paid" lists against Medicaid paid claims for service months from January 2018 through December 2024, counting only claims dated strictly after the action month and, where a source supplies one, before the bar or reinstatement date. The strongest evidence group, called tier A, covers specific Medicare revocation grounds, federal exclusions without a state waiver, and three state exclusion lists; weaker administrative revocations and deactivation records are kept as tier B and left out of the headline. Of 15,708 tier-A identifiers with an action date inside the window, 353 had later Medicaid payments totalling $50.36M, and 174 were paid in six or more months after the action, worth $45.38M, an order of magnitude consistent with a prior federal audit. Separately, 2,763 revoked or excluded identifiers still held an active Medicaid enrollment segment more than 90 days after the action, and 6,361 identifiers terminated for cause in one state appeared active in another, with $1,484.95M paid after termination. The section flags its own limits: identifiers must pass a check-digit test, state rows whose names do not match the national registry are set aside, state termination codes are uneven, and the cross-state list is offered as a screening queue rather than a finding.
+**In plain language.** This detector matches provider IDs that appear on federal or state "do not pay" lists against Medicaid payment records for service months from January 2018 through December 2024, and flags payments dated strictly after the listing took effect and, where a reinstatement or bar expiry date exists, before that end date. Only the strongest grounds count toward the headline, meaning for-cause Medicare revocations, federal exclusions without a state waiver, and three state exclusion lists; administrative revocations and weaker signals are kept in the tables but held back as lower tiers. Of 15,708 provider IDs on a top-tier list with an effective date in the window, 353 had Medicaid paid claims after the action for $50.36M, and 174 were paid in six or more later months for $45.38M, which is in line with a prior federal audit that found $50.3M across 584 providers. Separate checks show 2,763 revoked or excluded IDs still holding an active Medicaid enrollment segment more than 90 days later, and 6,361 IDs terminated for cause in one state while active in another. The section states its own limits: every ID must pass the check digit test, rows whose names do not match the national registry are set aside, deceased-status and deactivation results lack corroboration and are reported as lower tier, and the cross-state list is described as a screening queue rather than a finding because state termination codes are uneven.
+
+
 
 
 
@@ -207,7 +213,9 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 
 ## Detector 2: impossible days
 
-**In plain language.** This detector converts Medicaid payment records into implied clinician hours for each rendering provider, billing provider, procedure code and month. Hours are built three ways: a rate-free floor that assumes at least one unit per claim line, a point estimate using an estimated unit price, and a conservative estimate using a price 1.5 times higher. Because the estimated unit price is itself designed to be an upper bound on the true price, the dollar-based hour figures come out too low, so a day flagged as impossible is impossible under every assumption used. The unit price is taken from the 5th percentile of paid dollars per line within a state, code and year, with a median used instead for codes where Medicare crossover payments distort the low end, and published Minnesota rates replace the estimate where available, always using the highest non-supervision variant to keep hours conservative. Validation against published rates shows the chosen approach sits above the published price in the expected direction, with a median signed error of about 108 percent for the plain 5th percentile and much larger gaps for the median estimator, and 117 of 131 code-years land at or above 0.9 times the published rate.
+**In plain language.** This section explains how paid dollars are turned into implied clinician hours for each rendering provider, billing provider, code and month. Hours are computed three ways: a rate-free floor that counts each claim line as at least one unit, a point estimate using an estimated unit price, and a conservative estimate that inflates that price by 50 percent. Because the estimated price is itself an upper bound on what a unit can pay, the dollar-based hour counts are understatements, so a day flagged as impossible is impossible under every assumption made; group codes are divided by an assumed number of participants, and minutes per unit come from a published code time table. The unit price is estimated as the 5th percentile of paid per line by state, code and year after dropping very low cells, with the median used instead for codes where Medicare crossover lines pay only coinsurance, and published state rates replace the estimate where available, taking the highest non-supervision variant to keep hours conservative. Validation against published rates shows the chosen approach errs upward as intended: the median signed error is about 108 percent for the plain 5th percentile, 176 percent for the trimmed version and 655 percent for the median, across 131 code-years, and the chosen estimator sits at or above 0.9 times the published rate in 117 of them. The detailed table shows the estimate falling below the published rate for a few codes and years, for example the assessment codes where implied units per line are well under one.
+
+
 
 
 
@@ -423,6 +431,9 @@ Tables: `d2_rate`, `d2_rate_validation`, `d2_implied`, `d2_npi_month`, `d2_score
 
 ## Detector 1: ghost networks
 
+**In plain language.** This detector builds a network of 31,706 nursing home, home health and hospice enrollments linked by shared owners, managing employees, addresses, phones, faxes, authorised officials, EINs and mailing addresses, then splits it into 1,962 communities of two or more providers. Owner identities are merged conservatively, using record identifiers, exact keys and a probabilistic model that only links a pair when the match probability is at least 0.95 and a location field also agrees, and very large hubs such as national chains are held out so they do not absorb the graph. Each community is scored on structure (rapid incorporation bursts, address and phone sharing, owners tied to several members, share of very new entities), on market context, and on links to exclusion, revocation and termination lists, with 138 communities meeting the eligibility rules for the ranked list. Because the enrollment files only contain providers that are still enrolled, revoked providers cannot serve as held out labels, so only the structure-only score is tested against any label link: against a base rate of 0.370 it reaches 0.60 precision in the top 10 and 0.56 through the top 100, with the top-10 figure resting on ten items and not meaningful by itself. The top 200 is heavily concentrated in California, and the section states plainly that every ranked community is a candidate for records review, not a finding.
+
+
 **Graph.** 31,706 enrollments (14,410 SNF, 11,494 HHA, 5,802 HOSPICE) and 466,715 owner or managing-employee rows. Nodes: providers, resolved owner persons (86,804) and organizations (18,936), building and suite-level addresses, NPPES phones, faxes, authorised officials, EINs, mailing addresses, secondary practice locations; CHOW buyer to seller edges. 270,399 nodes and 466,676 edges. 1,193 hub nodes (chains with 25+ facilities, buildings with 25+ tenants, phone numbers on 25+ records, and similar) are held out of component formation so national operators do not swallow the graph; shared buildings, mailing addresses and phones are down-weighted by 1/log2(1 + tenants).
 
 **Identity resolution.** Owner persons are merged on the PECOS associate ID and on an exact key (last name, first three letters, ZIP5), then a Fellegi-Sunter model over six comparison fields (last name with Jaro-Winkler levels, first name with nickname and initial levels, middle initial, ZIP5/ZIP3, city, street number) is fitted by EM on 91,729 blocked candidate pairs (same state and last name, or same state, Soundex and first initial). Pairs are linked when the posterior match probability is at least 0.95 and at least one locational field agrees, so names alone never merge two people. EM fitted lambda = 0.0863, 24 pairs linked. Organizations merge on associate ID, on a normalized name (corporate suffixes stripped) plus state, and on token-set similarity of at least 94 within a state.
@@ -481,6 +492,9 @@ Tables: `d2_rate`, `d2_rate_validation`, `d2_implied`, `d2_npi_month`, `d2_score
 Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_members`, `d1_persons`, `d1_orgs`, `d1_providers`. Code: `detectors/d1_ghost_networks.py`.
 
 ## Detector 3: paid after a screening-trigger action
+
+**In plain language.** This detector looks for Medicaid payments in service months after a provider identifier appeared on a federal or state list that should have triggered a state screening or termination check. It matches on the NPI itself, so the link is exact by identifier, and it counts each NPI-month once whether the NPI billed or rendered the service. Of 16,357 NPIs on a tier-A list with an effective date inside the 2018-01 to 2024-12 window, 391 had paid claims in later service months totalling $55.92M, and 197 were paid in six or more later months ($50.65M). The section is explicit that these are not improper payments: a Medicare revocation is not by itself a Medicaid payment bar, appeals and reinstatements exist, and some claims may have been recouped later. Rows where the listed name shares no token with the NPPES record are set aside as tier C and excluded from the headline (557 rows, $260.43M), administrative revocations are held as tier B, and the cross-state termination results (6,364 NPIs, $1,475.66M) are presented as a screening queue rather than a finding because state termination codes are uneven.
+
 
 **Rule.** An NPI appears on a federal or state "must not be paid" list with an effective date, and Medicaid (T-MSIS provider spending, service months 2018-01 to 2024-12) shows paid claims in service months strictly after that month and, where the source gives one, before the window end (Medicare re-enrollment bar expiry, state reinstatement date). Dollars count each NPI-month once whether the NPI billed or rendered. Tier A grounds only: Medicare revocations under 42 CFR 424.535(a)(2),(3),(4),(5),(7),(8),(10),(12),(13),(14),(18),(19),(20),(22),(23); every OIG LEIE exclusion without a state waiver; California, New York and Texas Medicaid exclusion lists (rows carrying an NPI). Administrative revocations ((a)(1) noncompliance, (a)(6), (a)(9) alone, (a)(11), (a)(17), (a)(21)) are kept in the tables as tier B and excluded from the headline.
 
@@ -609,15 +623,18 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 
 ## Unified provider risk score
 
+**In plain language.** This section combines the separate detectors into one row per provider identifier, assigning a tier, a score and written reasons. Tiers run from documented list actions with later paid service months, through physically impossible billing volume across multiple organizations, network structure with a list link, structure or single-organization volume, down to informational. The score starts at a tier base of 90, 75, 60, 45 or 25, adds 8 points for each extra strong finding that independently reached the same identifier up to 16 points, adds up to 9 points based on the log of dollars at risk, and is capped at 100. Dollars at risk come only from the detector that set the tier, are never summed and never taken from a weaker indicator, so a small documented-action case cannot be inflated past a larger one. Counts by tier are 391 identifiers and $56.96M at tier 1, 602 and $2,676.69M at tier 2, 6,096 and $1,058.33M at tier 3, 1,998 and $4,875.43M at tier 4, and 2,115 and $2,771.60M at tier 5, with no identifiers reached independently by two or more detectors, which the section notes is the strongest corroboration the pipeline can produce. Every row, including the top 25 listed, is a candidate for records review and not a finding.
+
+
 **Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action. Tier 2: physically impossible personal-service volume billed by three or more organizations in a month, more than 24 hours per patient per day, or over Minnesota's own daily cap. Tier 3: member of an eligible provider community with a label link. Tier 4: structure only, or single-organization impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers), never a sum and never borrowed from a weaker indicator, so a single-organization volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
 
 | tier | meaning | NPIs | $M at risk | reached by 2+ detectors |
 |---|---|---|---|---|
 | 1 | documented action, then payment | 391 | 56.96 | 0 |
-| 2 | impossible volume with concurrency | 603 | 2,682.82 | 0 |
-| 3 | network structure with a list link | 6,173 | 1,138.73 | 0 |
-| 4 | structure or single-organization volume | 1,993 | 4,862.62 | 0 |
-| 5 | informational | 2,119 | 2,771.37 | 0 |
+| 2 | impossible volume with concurrency | 602 | 2,676.69 | 0 |
+| 3 | network structure with a list link | 6,096 | 1,058.33 | 0 |
+| 4 | structure or single-organization volume | 1,998 | 4,875.43 | 0 |
+| 5 | informational | 2,115 | 2,771.60 | 0 |
 
 0 NPIs were reached by two or more detectors independently; corroboration is the strongest signal the pipeline produces and it is weighted accordingly.
 
@@ -655,36 +672,40 @@ Table: `provider_risk`. Code: `detectors/risk_score.py`. Every row is a referral
 
 ## Entity resolution adjudication
 
-**In plain language.** This section checks the record-linkage step that decides whether two owner records refer to the same person. A sample of 400 borderline pairs, those with a Fellegi-Sunter posterior probability between 0.2 and 0.98, was sent to a large language model, which saw the same six fields the statistical model uses and returned a structured yes or no verdict. Those verdicts were then compared with the statistical model's own decision, which counts a pair as a match at a posterior of 0.95 or above. The two approaches agreed on only 3.8% of all adjudicated pairs, and on just 1.8% of the 341 pairs the language model rated high confidence; in the reported band the model called 4% of pairs the same person while the statistical model called 100% of them the same. These adjudications are stored for human review and do not change the graph on their own, and the pairs where the model confidently says same while the statistical model says different form the review queue for the next matcher iteration.
+**In plain language.** This section checks the rule that decides when two owner records refer to the same person. A sample of 224 owner-person pairs was reviewed: every pair the rule accepted, meaning a match probability of at least 0.95 plus agreement on location and on a real name, along with the strongest pairs the rule turned down. A language model was given the same six fields the statistical matching model uses and asked to judge each pair independently, and its verdict was compared to the rule's final decision rather than to the raw probability, because that probability is unreliable for pairs that share only a city, a state and a first initial. The model agreed with the applied decision on 94.6% of all pairs and on 100.0% of the 196 pairs it rated high confidence; among the 200 rejected pairs it called about 1% the same person, and among the 24 merged pairs it called 58% the same person. These judgments are stored for human review and do not alter the graph on their own, and pairs where the model confidently says same but the rule said different form the queue for the next round of matcher tuning.
 
 
-**Method.** 400 borderline owner-person pairs (Fellegi-Sunter posterior between 0.2 and 0.98) were adjudicated by Claude (claude-opus-5, structured output, Message Batches API, batch msgbatch_01EQDcm7LjVzwCPGc7MFdmvc) from the same six fields the EM model sees. The model's verdict is compared with the EM decision (match at posterior 0.95 or above).
+**Method.** 224 owner-person pairs were adjudicated: every pair the applied merge rule accepted (posterior at or above 0.95 plus a locational agreement and real name agreement) and the highest-posterior pairs it rejected. They were judged by Claude (claude-opus-5, structured output, Message Batches API, batch msgbatch_01We4rtEVHfz66XGSusawhHA) from the same six fields the EM model sees. The model's verdict is compared with the applied decision, not the raw posterior: the EM posterior alone is miscalibrated for pairs that agree only on city, state and a name initial, which is exactly why the rule requires a locational agreement.
 
-Agreement with the EM decision: 3.8% over all adjudicated pairs, 1.8% over the 341 pairs the model rated high confidence.
+Agreement with the applied merge decision: 94.6% over all adjudicated pairs, 100.0% over the 196 pairs the model rated high confidence.
 
-| posterior band | pairs | model says same | EM says same |
+| pairs | pairs | model says same | EM says same |
 |---|---|---|---|
-| (0.98, 1.0] | 400 | 0.04 | 1.00 |
+| rejected by the rule | 200 | 0.01 | 0.00 |
+| merged by the rule | 24 | 0.58 | 1.00 |
 
 Adjudications are stored in `d1_er_adjudications` for human review and do not change the graph automatically; pairs where the model says same with high confidence and the EM said different are the review queue for the next matcher iteration.
 
 ## Network factor desk
 
+**In plain language.** This desk profiles every provider network that has at least three providers, scoring 30 factors grouped into seven families: formation timing, ownership, addresses and contacts, public list exposure, market conditions, money, and identity and enrollment. Each factor is reported three ways: its raw value, its percentile among all networks measured in the risky direction, and a robust z-score. Six of the factors track rate of change, and they are clipped, converted to robust z-scores, and averaged into a single momentum number with an outlook label of rising fast, rising, steady, or cooling. Across the 914 networks with an outlook, 388 are steady, 276 rising, 151 cooling, and 99 rising fast; among the top ten ranked networks shown, momentum z-scores run from 0.25 to 1.66. The section states that momentum is indicative only, that no outcome data yet exist to calibrate it, and that it never changes a network's tier."}
+
+
 **What it is.** For every provider network with three or more providers, the desk measures 30 factors in seven families: formation timing (incorporation bursts, share of new companies, formation velocity, company age), ownership (owners on several providers, concentration, managing-employee share, association-date bursts, changes of ownership), addresses and contacts (shared buildings, suites, phones, officials, addresses of revoked companies, office plazas), list exposure (members and owners on public lists), market (county saturation, its three-year trend, moratorium history), money (Medicaid 2024, Medicare 2023, Medicaid growth 2022 to 2024, dollar concentration, billing share) and identity and enrollment (NPI issued close to incorporation, deactivated NPIs, multi-state footprint, chain share). Each factor carries its value, its percentile among all such networks in the risky direction, and a robust z-score.
 
 **Momentum.** Six rate-of-change factors (formation velocity, new-company share, Medicaid growth, owner association bursts, saturation trend and ownership changes) are averaged as clipped robust z-scores into one momentum number with an outlook label: rising fast (z at or above 1), rising (0.3 to 1), steady, cooling. This is an indicative reading of what is moving, not a validated forecast; no outcome data exist yet to calibrate it, and it never changes a tier.
 
-Outlook across networks: steady 403, rising 255, cooling 145, rising fast 102.
+Outlook across networks: steady 388, rising 276, cooling 151, rising fast 99.
 
 | network | rank | momentum z | outlook |
 |---|---|---|---|
-| D1-00001 | 1 | 0.23 | steady |
-| D1-00002 | 2 | 1.06 | rising fast |
-| D1-00003 | 3 | 1.65 | rising fast |
-| D1-00004 | 4 | 0.74 | rising |
-| D1-00005 | 5 | 1.53 | rising fast |
-| D1-00006 | 6 | 0.73 | rising |
-| D1-00007 | 7 | 1.35 | rising fast |
-| D1-00008 | 8 | 1.37 | rising fast |
-| D1-00009 | 9 | 0.73 | rising |
-| D1-00010 | 10 | 1.36 | rising fast |
+| D1-00001 | 1 | 0.25 | steady |
+| D1-00002 | 2 | 0.41 | rising |
+| D1-00003 | 3 | 1.28 | rising fast |
+| D1-00004 | 4 | 0.76 | rising |
+| D1-00005 | 5 | 1.15 | rising fast |
+| D1-00006 | 6 | 1.57 | rising fast |
+| D1-00007 | 7 | 1.25 | rising fast |
+| D1-00008 | 8 | 1.66 | rising fast |
+| D1-00009 | 9 | 0.71 | rising |
+| D1-00010 | 10 | 0.79 | rising |
