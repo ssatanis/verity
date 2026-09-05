@@ -49,13 +49,25 @@ def strict_schema(schema: dict) -> dict:
             for v in node: walk(v)
     walk(schema); return schema
 
+_ID_MAP: dict = {}
+def _safe_id(cid: str) -> str:
+    """Batch custom ids allow only letters, digits, underscore and dash, up to 64 characters; keep a reversible map for anything else."""
+    import hashlib
+    safe = re.sub(r"[^A-Za-z0-9_-]", "-", cid)
+    if safe != cid or len(safe) > 64: safe = (safe[:40] + "-" + hashlib.sha1(cid.encode()).hexdigest()[:16])
+    return safe[:64]
+
 def batch_requests(items, schema: Type[T], system: str, model: str = None, effort: str = "medium", max_tokens: int = 4000):
     """Build Message Batches API requests with a JSON schema output format. items: iterable of (custom_id, user_text)."""
     from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
     from anthropic.types.messages.batch_create_params import Request
     fmt = {"type": "json_schema", "schema": strict_schema(schema.model_json_schema())}
-    return [Request(custom_id=cid, params=MessageCreateParamsNonStreaming(model=model or MODEL, max_tokens=max_tokens, system=system, output_config={"effort": effort, "format": fmt},
-                                                                          messages=[{"role": "user", "content": txt}])) for cid, txt in items]
+    reqs = []
+    for cid, txt in items:
+        safe = _safe_id(str(cid)); _ID_MAP[safe] = str(cid)
+        reqs.append(Request(custom_id=safe, params=MessageCreateParamsNonStreaming(model=model or MODEL, max_tokens=max_tokens, system=system, output_config={"effort": effort, "format": fmt},
+                                                                                     messages=[{"role": "user", "content": txt}])))
+    return reqs
 def batch_run(requests, poll_seconds=30, max_wait=6 * 3600):
     """Submit a batch and wait for it. Returns {custom_id: parsed JSON or {'error': ...}}."""
     import time
@@ -69,7 +81,7 @@ def batch_run(requests, poll_seconds=30, max_wait=6 * 3600):
     for res in client().messages.batches.results(b.id):
         if res.result.type == "succeeded":
             txt = "".join(blk.text for blk in res.result.message.content if blk.type == "text")
-            try: out[res.custom_id] = clean_text(json.loads(txt))
-            except Exception as e: out[res.custom_id] = {"error": f"unparseable: {e}", "raw": txt[:200]}
-        else: out[res.custom_id] = {"error": res.result.type}
+            try: out[_ID_MAP.get(res.custom_id, res.custom_id)] = clean_text(json.loads(txt))
+            except Exception as e: out[_ID_MAP.get(res.custom_id, res.custom_id)] = {"error": f"unparseable: {e}", "raw": txt[:200]}
+        else: out[_ID_MAP.get(res.custom_id, res.custom_id)] = {"error": res.result.type}
     return out, b.id

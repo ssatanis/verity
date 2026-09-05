@@ -632,3 +632,15 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 | 25 | 1447395736 | BHUPINDER BHANDARI MD INC | 2 | CA | 1 | 95.70 | ['D3'] | 526,010.00 | Listed on the CA Medicaid exclusion list and the Medicare revocation list since November 23, 2022; Medicaid still paid claims in 9 later months, $526,010 in total |
 
 Table: `provider_risk`. Code: `detectors/risk_score.py`. Every row is a referral candidate for records review, not a finding.
+
+## Entity resolution adjudication
+
+**Method.** 400 borderline owner-person pairs (Fellegi-Sunter posterior between 0.2 and 0.98) were adjudicated by Claude (claude-opus-5, structured output, Message Batches API, batch msgbatch_013d4dp25htnnzwiYw6dRijT) from the same six fields the EM model sees. The model's verdict is compared with the EM decision (match at posterior 0.95 or above).
+
+Agreement with the EM decision: 2.8% over all adjudicated pairs, 60.0% over the 5 pairs the model rated high confidence.
+
+| posterior band | pairs | model says same | EM says same |
+|---|---|---|---|
+| (0.98, 1.0] | 400 | 0.03 | 1.00 |
+
+Adjudications are stored in `d1_er_adjudications` for human review and do not change the graph automatically; pairs where the model says same with high confidence and the EM said different are the review queue for the next matcher iteration.
