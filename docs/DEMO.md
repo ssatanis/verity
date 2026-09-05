@@ -3,7 +3,7 @@
 Persona on screen: Maria Ortega, SIU lead at a Medicaid managed care plan. Every sentence below describes records; nothing asserts fraud.
 
 1. **Landing (15 s).** "Integrity before the payment goes out." Verity screens every enrolled provider against fourteen public datasets and ranks referral candidates on an explicit evidence hierarchy. Scroll to the three numerals: tier 1 candidates, dollars paid after a screening trigger, ranked communities.
-2. **Console login (10 s).** Reviewer sign in. The console names organizations, so access is controlled. Press Cmd+K anywhere to search any provider in the country or jump to a page.
+2. **Console (10 s).** Open the console. Press Cmd+K anywhere to search any provider in the country or jump to a page.
 3. **Overview (20 s).** Tier KPIs, the county map (one figure per NPI, never summed across detectors), the top referral candidates and top communities.
 4. **Candidates (25 s).** One row per provider: tier, detectors, score, dollars at risk from the tier-defining detector, reasons. Filter to tier 1. Point at a provider corroborated by two detectors.
 5. **Provider page (30 s).** Public list actions, service months after the action with the identity match tier and the file dates, implied hours by month with the rate-free lower bound, the communities the NPI belongs to. Click "Draft packet": Claude Opus 5 drafts from the evidence rows only; every finding cites row ids; grounds come from the 42 CFR mapping; caveats list what to rule out. Click "PDF".

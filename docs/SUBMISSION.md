@@ -26,7 +26,7 @@ This document is the written companion to the console and the Methods page. It s
 ## 3. Feasibility and deployment potential
 
 - **Cost.** The full warehouse rebuilds in about fifteen minutes on a laptop; the serving tables fit in a small Postgres instance; model calls are batched and cost cents per packet.
-- **Security.** No beneficiary data and no claim lines. Public provider-level datasets only. The console is access controlled; packets are stored in a private bucket; the case chat can only call read-only evidence tools.
+- **Security.** No beneficiary data and no claim lines. Public provider-level datasets only. For the hackathon demo the console is open; in a deployment it sits behind the health plan's single sign-on. Packets are stored in a private bucket; the case chat can only call read-only evidence tools.
 - **Regulation.** Grounds are mapped from evidence types to 42 CFR 455.416, 455.436, 455.23, 455.410, 455.104, 455.432, 455.450, 1001.1901 and 424.535, never from keywords. Packets describe records and dates and never assert intent, so they survive a challenge.
 - **Integration.** A plan connects its own claims warehouse for pre-payment holds; Verity supplies the provider score and the packet. Weekly refresh of LEIE, SAM and NPPES satisfies the monthly check in 42 CFR 455.436.
 - **Adoption.** The persona is the SIU lead at a Medicaid managed care plan (see section 6). The first sale is a one-week pilot on one state's providers.
@@ -54,6 +54,6 @@ AI is used where judgment over text is needed and never where arithmetic suffice
 
 **Persona.** Maria Ortega, SIU lead at a Medicaid managed care plan with 600,000 members in one state. She has four investigators, a queue of tips, and a records-request process that takes weeks. She needs a ranked list she can defend to her compliance officer, evidence she can paste into a state referral, and a way to say no quickly to a false lead. She does not want to be told a provider is a fraud; she wants to know what the public record shows and what to rule out.
 
-**Decisions that follow from the persona.** Indicators, never accusations. Tier and reasons on every row. Dollars at risk counted once. Caveats listed before the recommendation. A PDF she can attach. A chat that only cites rows. A reviewer decision that feeds back with a reason. Exact search by NPI or legal name, not fuzzy search that would surface look-alikes. Access control on the console because rows name organizations.
+**Decisions that follow from the persona.** Indicators, never accusations. Tier and reasons on every row. Dollars at risk counted once. Caveats listed before the recommendation. A PDF she can attach. A chat that only cites rows. A reviewer decision that feeds back with a reason. Exact search by NPI or legal name, not fuzzy search that would surface look-alikes. Rows name organizations, so a deployment puts the console behind the plan's single sign-on.
 
 **Craft.** Flag Blue (#002856), white and black; Garamond for headings and large figures, Open Sans for body; square corners throughout; large numerals with captions and footnotes; contrast ratios above 7:1 for body text.

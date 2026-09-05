@@ -68,7 +68,7 @@ source .envrc                       # puts ~/.local/node/bin on PATH
 cd web && npm install && npm run dev  # http://localhost:3000 (landing) and /app (console)
 .venv/bin/uvicorn api.main:app --reload --port 8000   # evidence, packets, reviews, /verify, Blue Button
 ```
-Deploy `web/` to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) `VERITY_CONSOLE_PASSWORD`, `VERITY_SESSION_SECRET` and, optionally, `ANTHROPIC_API_KEY` for Claude-drafted packets and the case chat; without a key the packet builder is deterministic and still cites every row.
+Deploy `web/` to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) and, optionally, `ANTHROPIC_API_KEY` for Claude-drafted packets and the case chat; without a key the packet builder is deterministic and still cites every row.
 
 ## The three detectors
 
@@ -140,4 +140,4 @@ here is public federal data, with no PII or PHI.
 - Search and provider pages use the CMS NPPES Registry API (version 2.1, no key, refreshed daily), so any NPI in the country can be opened; the serving tables add tiers and indicators, and the local API adds Medicaid figures when it is running.
 - Press Cmd+K (Ctrl+K on Windows) anywhere for a command palette: provider search plus page navigation.
 - The network page carries a factor desk: thirty factors in seven families with percentiles and robust z-scores, and an indicative momentum reading (`detectors/d1_factor_desk.py`, table `network_factors`).
-- The console password lives in `web/.env.local` as `VERITY_CONSOLE_PASSWORD`; it is not stored in the repository.
+- The console is open for the demo (no sign in).

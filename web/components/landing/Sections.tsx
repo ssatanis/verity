@@ -119,7 +119,7 @@ export function HowItWorks() {
   );
 }
 export function Security() {
-  const items = [["No patient data", "Public provider-level datasets only. No patients, no claim lines, nothing beyond the public record."], ["A person decides", "Every packet is a draft for a reviewer, every action is signed by a person, and the console is access controlled."], ["Runs anywhere", "Hosted today, or inside your own environment. The warehouse rebuilds from public files in minutes and refreshes weekly."], ["Holds up", "Every number traces to a public record, and the Methods page says what each evaluation can and cannot support."]];
+  const items = [["No patient data", "Public provider-level datasets only. No patients, no claim lines, nothing beyond the public record."], ["A person decides", "Every packet is a draft for a reviewer, every action is signed by a person, and a deployment puts the console behind your identity provider."], ["Runs anywhere", "Hosted today, or inside your own environment. The warehouse rebuilds from public files in minutes and refreshes weekly."], ["Holds up", "Every number traces to a public record, and the Methods page says what each evaluation can and cannot support."]];
   return (
     <section id="security" className={`${W} py-24`}>
       <div className="grid md:grid-cols-[1fr_3fr] gap-12">

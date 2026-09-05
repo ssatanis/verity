@@ -6,7 +6,7 @@ export default function Legal() {
   const sections = [
     ["terms", "Terms and Conditions", [
       "Verity is a screening product built on public federal and state datasets. Every row in the console is an indicator for a human reviewer to verify against the cited source records. Nothing in the console, a packet or the case chat is a finding of fraud, abuse or intent, and nothing may be represented as one.",
-      "Access to the console is limited to reviewers who have agreed to treat every row as an indicator, to verify the cited records before any action, and not to publish or redistribute rows that name a provider.",
+      "Access to the console is intended for reviewers who have agreed to treat every row as an indicator, to verify the cited records before any action, and not to publish or redistribute rows that name a provider.",
       "Regulatory citations are provided to orient a reviewer to the applicable screening and enrollment rules (42 CFR Parts 455, 1001 and 424). They are not legal advice. Payment suspension and enrollment actions are decisions of the responsible state agency or health plan under their own procedures.",
     ]],
     ["privacy", "Privacy Policy", [
@@ -15,7 +15,7 @@ export default function Legal() {
       "Contact ss4497@cornell.edu for questions about the data, to request the removal of a row that names you or your organization, or to correct a record.",
     ]],
     ["security", "Security", [
-      "The console sits behind a reviewer sign in. Packets are stored in a private bucket. The case chat can only call read-only evidence tools over the serving tables, and every model output is validated against the evidence list before it is shown.",
+      "In a deployment the console sits behind the plan's identity provider; for the demo it is open. Packets are stored in a private bucket. The case chat can only call read-only evidence tools over the serving tables, and every model output is validated against the evidence list before it is shown.",
       "The warehouse rebuilds from public files in minutes and can run entirely inside a customer's own environment. No customer data is sent to a model provider; only public evidence rows are.",
       "Report a security concern to ss4497@cornell.edu.",
     ]],

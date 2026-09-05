@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 type Hit = { npi: string; name: string; city?: string; state?: string; entity_type?: string; tier?: number | null; source: string };
 const NAV = [["Home", "/", "Landing page"], ["Overview", "/app", "Tiers, map, top providers and networks"], ["Providers", "/app/candidates", "Every flagged provider, ranked"], ["Networks", "/app/clusters", "Groups of providers that belong together"], ["Addresses hosting many providers", "/app/plazas", "Office plazas and shared suites"], ["Paid after a list action", "/app/flags?detector=D3", "Detail view"], ["Hours per day", "/app/flags?detector=D2", "Detail view"], ["Methods", "/app/methods", "How the numbers are made"], ["Terms, privacy and security", "/legal", ""]];
 export function CommandPalette() {
   const [open, setOpen] = useState(false); const [q, setQ] = useState(""); const [hits, setHits] = useState<Hit[]>([]); const [busy, setBusy] = useState(false); const [ix, setIx] = useState(0);
-  const router = useRouter(); const path = usePathname(); const input = useRef<HTMLInputElement>(null); const t = useRef<any>(null);
+  const router = useRouter(); const input = useRef<HTMLInputElement>(null); const t = useRef<any>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen(o => !o); } else if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
@@ -29,7 +29,6 @@ export function CommandPalette() {
     else if (e.key === "Enter") { e.preventDefault(); if (items.length) go(ix); else if (q.trim()) { setOpen(false); router.push(`/app/search?q=${encodeURIComponent(q.trim())}`); } }
   }
   if (!open) return null;
-  const gated = !path.startsWith("/app");
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" style={{ background: "rgba(0,40,86,0.35)" }} onMouseDown={() => setOpen(false)}>
       <div className="w-full max-w-2xl bg-white" style={{ border: "1px solid var(--blue)", boxShadow: "0 24px 60px rgba(0,40,86,0.25)" }} onMouseDown={e => e.stopPropagation()}>
@@ -40,7 +39,6 @@ export function CommandPalette() {
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {busy && <div className="px-4 py-2 text-[12px] text-[var(--ink-3)]">Searching</div>}
-          {gated && q.trim().length >= 2 && !hits.length && !busy && <div className="px-4 py-2 text-[12px] text-[var(--ink-3)]">Sign in to the console to search providers.</div>}
           {items.map((it, i) => (
             <button key={it.href + i} onMouseEnter={() => setIx(i)} onClick={() => go(i)} className="w-full text-left px-4 py-3 flex items-center gap-3" style={{ background: i === ix ? "var(--accent-2)" : "transparent", borderTop: "1px solid var(--line)" }}>
               {it.kind === "provider" ? (it.tier ? <span className={`tier tier-${it.tier}`}>{it.tier}</span> : <span className="tier" style={{ borderColor: "var(--line)", color: "var(--ink-3)" }}>&nbsp;</span>) : <span className="serif text-[15px] w-[26px] text-center" style={{ color: "var(--blue)" }}>→</span>}

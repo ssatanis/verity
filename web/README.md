@@ -22,7 +22,5 @@ Import the `web/` directory as the project root. Environment variables:
 | `SUPABASE_SECRET_KEY` | server | the `sb_secret_...` key (packets and reviews) |
 | `ANTHROPIC_API_KEY` | server, optional | enables Claude-drafted packets, the Ask this case chat and reviewer-note classification; without it the deterministic builder is used and the chat returns 503 |
 | `VERITY_MODEL` | server, optional | defaults to `claude-opus-5`; note classification uses `claude-haiku-4-5` |
-| `VERITY_CONSOLE_PASSWORD` | server | password for the reviewer gate on `/app` and `/api`; leave unset only for local development |
-| `VERITY_SESSION_SECRET` | server | random string that signs the session cookie |
 
 Nothing in the app needs the DuckDB warehouse; every page reads Supabase tables that `ingest/sync_outputs.py` fills.
