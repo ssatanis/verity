@@ -403,60 +403,60 @@ Tables: `d2_rate`, `d2_rate_validation`, `d2_implied`, `d2_npi_month`, `d2_score
 
 ## Detector 1: ghost networks
 
-**Graph.** 31,706 enrollments (14,410 SNF, 11,494 HHA, 5,802 HOSPICE) and 466,715 owner or managing-employee rows. Nodes: providers, resolved owner persons (88,546) and organisations (18,936), building and suite-level addresses, NPPES phones, faxes, authorised officials, EINs, mailing addresses, secondary practice locations; CHOW buyer to seller edges. 272,170 nodes and 591,201 edges. 1,197 hub nodes (chains with 25+ facilities, buildings with 25+ tenants, phone numbers on 25+ records, and similar) are held out of component formation so national operators do not swallow the graph; shared buildings, mailing addresses and phones are down-weighted by 1/log2(1 + tenants).
+**Graph.** 31,706 enrollments (14,410 SNF, 11,494 HHA, 5,802 HOSPICE) and 466,715 owner or managing-employee rows. Nodes: providers, resolved owner persons (88,546) and organisations (18,936), building and suite-level addresses, NPPES phones, faxes, authorised officials, EINs, mailing addresses, secondary practice locations; CHOW buyer to seller edges. 272,165 nodes and 469,115 edges. 1,193 hub nodes (chains with 25+ facilities, buildings with 25+ tenants, phone numbers on 25+ records, and similar) are held out of component formation so national operators do not swallow the graph; shared buildings, mailing addresses and phones are down-weighted by 1/log2(1 + tenants).
 
 **Identity resolution.** Owner persons are merged on the PECOS associate ID and on an exact key (last name, first three letters, ZIP5), then a Fellegi-Sunter model over six comparison fields (last name with Jaro-Winkler levels, first name with nickname and initial levels, middle initial, ZIP5/ZIP3, city, street number) is fitted by EM on 165,918 blocked candidate pairs (same state and last name, or same state, Soundex and first initial). Pairs are linked when the posterior match probability is at least 0.95 and at least one locational field agrees, so names alone never merge two people. EM fitted lambda = 0.0525, 738 pairs linked. Organisations merge on associate ID, on a normalised name (corporate suffixes stripped) plus state, and on token-set similarity of at least 94 within a state.
 
-**Communities.** Connected components of the hub-free graph, with Leiden (RB configuration, resolution 1.0) applied to components above 120 providers: 1,935 communities with two or more providers.
+**Communities.** Connected components of the hub-free graph, with Leiden (RB configuration, resolution 1.0) applied to components above 120 providers: 1,930 communities with two or more providers.
 
 **Features per community.** n_prov by type and distinct organisations; incorporation bursts over distinct organisations formed 2019 or later (most organisations incorporated inside any 90, 180 or 365 day window; NPPES enumeration date when the incorporation date is missing); for-profit share; share of members formed since 2021; largest number of members at one building and at one suite; phone, fax, authorised-official, mailing-address and EIN sharing; owners tied to three or more members; label links (member NPIs on LEIE, SAM, Medicare revocations, state exclusion lists, Medicaid for-cause terminations, NPI deactivations; owner-name links to LEIE and SAM at high (name + ZIP5) or medium (name + state) confidence); CMS Market Saturation providers per 10k FFS beneficiaries for the dominant county and service, as a robust z on the log scale across all counties; county moratorium flag; Medicaid 2024 and all-years dollars (billing NPI) and Medicare 2023 hospice/HHA payments (PAC PUF).
 
-**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organisations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3). Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner (307 communities are scored but held out: consolidation is not a ghost network), at least three distinct organisations, at least one organisation formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. 139 communities are eligible.
+**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organisations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3). Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner (303 communities are scored but held out: consolidation is not a ghost network), at least three distinct organisations, at least one organisation formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. 134 communities are eligible.
 
-**Evaluation.** The CMS enrollment files only contain providers that are still enrolled, so Medicare revocations cannot be held out as labels (only 0.0000 of communities contain a member revoked or excluded in 2023 or 2024: the revoked ones have already left the file). The structure-only score, which uses no label information, is instead evaluated against any label link (member NPI on LEIE, SAM, the revoked list, a state exclusion list or a for-cause Medicaid termination; owner name on LEIE or SAM; address shared with an excluded or revoked entity). Base rate 0.367; precision at K of the structure-only score among communities of three or more distinct organisations, chains excluded: P@10 = 0.70 (one-sided binomial p = 0.034), P@25 = 0.60 (one-sided binomial p = 0.015), P@50 = 0.56 (one-sided binomial p = 0.004), P@100 = 0.54 (one-sided binomial p = 0.000), P@250 = 0.48 (one-sided binomial p = 0.000). Read this honestly: the top-10 figure is ten items and is not statistically meaningful on its own; the label set is incomplete (it cannot contain providers that have already left the enrollment file) and it overlaps the inputs of the full risk score, so only the structure-only score is evaluated against it. 71,964 addresses of LEIE-excluded entities and revoked organisations were indexed for the address test.
+**Evaluation.** The CMS enrollment files only contain providers that are still enrolled, so Medicare revocations cannot be held out as labels (only 0.0000 of communities contain a member revoked or excluded in 2023 or 2024: the revoked ones have already left the file). The structure-only score, which uses no label information, is instead evaluated against any label link (member NPI on LEIE, SAM, the revoked list, a state exclusion list or a for-cause Medicaid termination; owner name on LEIE or SAM; address shared with an excluded or revoked entity). Base rate 0.356; precision at K of the structure-only score among communities of three or more distinct organisations, chains excluded: P@10 = 0.60 (one-sided binomial p = 0.102), P@25 = 0.60 (one-sided binomial p = 0.011), P@50 = 0.56 (one-sided binomial p = 0.003), P@100 = 0.56 (one-sided binomial p = 0.000), P@250 = 0.48 (one-sided binomial p = 0.000). Read this honestly: the top-10 figure is ten items and is not statistically meaningful on its own; the label set is incomplete (it cannot contain providers that have already left the enrollment file) and it overlaps the inputs of the full risk score, so only the structure-only score is evaluated against it. 71,964 addresses of LEIE-excluded entities and revoked organisations were indexed for the address test.
 
 | state | communities in top 200 | providers | Medicaid 2024 $M |
 |---|---|---|---|
-| CA | 60 | 3,036 | 145.20 |
-| TX | 15 | 701 | 229.90 |
-| FL | 11 | 233 | 429.70 |
-| OH | 8 | 329 | 195.90 |
-| IL | 7 | 332 | 3.60 |
+| CA | 58 | 2,975 | 154.90 |
+| TX | 15 | 764 | 200.40 |
+| FL | 12 | 271 | 469.60 |
+| OH | 9 | 278 | 184.90 |
+| IL | 5 | 217 | 3.30 |
+| GA | 4 | 232 | 22.70 |
 | NV | 4 | 122 | 0.00 |
-| MA | 4 | 128 | 33.40 |
-| LA | 3 | 116 | 3.80 |
 | MI | 3 | 18 | 0.00 |
-| AZ | 3 | 56 | 13.00 |
+| AZ | 3 | 75 | 3.00 |
+| PA | 2 | 76 | 18.50 |
 
 **Top 25.**
 
 | cluster | n | hospice | HHA | SNF | city | score | burst90 | addr | owner_multi | phone | excl | revoked | Medicaid term | sat z | Medicaid 2024 $M | Medicare 2023 $M |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| D1-00001 | 3 | 0 | 3 | 0 | Van Nuys, CA | 18.69 | 3 | 1 | 1 | 2 | 1.50 | 0.00 | 0 | 1.20 | 0.00 | 0.00 |
-| D1-00002 | 14 | 2 | 12 | 0 | Glendale, CA | 18.61 | 5 | 9 | 0 | 1 | 6.00 | 0.00 | 0 | 1.20 | 0.05 | 1.89 |
-| D1-00003 | 6 | 0 | 6 | 0 | Burbank, CA | 16.62 | 3 | 5 | 0 | 1 | 2.50 | 0.00 | 0 | 1.20 | 0.00 | 1.67 |
-| D1-00004 | 7 | 0 | 7 | 0 | Glendale, CA | 14.74 | 4 | 5 | 1 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 0.38 |
-| D1-00005 | 66 | 13 | 52 | 1 | Burbank, CA | 14.29 | 15 | 7 | 4 | 3 | 15.00 | 0.00 | 0 | 1.20 | 0.17 | 45.28 |
-| D1-00006 | 52 | 4 | 2 | 46 | Suffolk, VA | 13.56 | 9 | 3 | 41 | 2 | 1.00 | 0.00 | 3 | 0.50 | 1.38 | 23.81 |
-| D1-00007 | 37 | 8 | 27 | 2 | Burbank, CA | 13.41 | 5 | 10 | 4 | 3 | 3.50 | 0.00 | 0 | 1.20 | 0.00 | 7.39 |
-| D1-00008 | 10 | 0 | 10 | 0 | Glendale, CA | 13.33 | 3 | 7 | 0 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 2.10 |
-| D1-00009 | 21 | 15 | 6 | 0 | San Antonio, TX | 13.31 | 8 | 5 | 1 | 1 | 1.50 | 0.00 | 0 | 0.20 | 0.08 | 21.81 |
-| D1-00010 | 15 | 10 | 4 | 1 | Dallas, TX | 13.28 | 4 | 4 | 13 | 1 | 1.50 | 0.00 | 0 | -0.10 | 0.10 | 25.04 |
-| D1-00011 | 91 | 32 | 59 | 0 | Van Nuys, CA | 13.24 | 20 | 11 | 16 | 3 | 23.00 | 0.00 | 0 | 1.20 | 9.46 | 66.10 |
-| D1-00012 | 35 | 6 | 29 | 0 | Glendale, CA | 12.93 | 6 | 8 | 2 | 1 | 4.00 | 0.00 | 0 | 1.20 | 0.91 | 12.39 |
-| D1-00013 | 32 | 8 | 24 | 0 | Van Nuys, CA | 12.79 | 7 | 7 | 0 | 1 | 5.50 | 0.00 | 0 | 1.20 | 0.00 | 8.27 |
-| D1-00014 | 33 | 5 | 25 | 3 | Mission Hills, CA | 12.78 | 5 | 10 | 3 | 1 | 3.00 | 0.00 | 0 | 1.20 | 0.62 | 63.66 |
-| D1-00015 | 98 | 33 | 65 | 0 | Los Angeles, CA | 12.74 | 20 | 9 | 16 | 2 | 23.00 | 0.00 | 0 | 1.20 | 0.44 | 49.54 |
-| D1-00016 | 68 | 15 | 53 | 0 | Valley Village, CA | 12.67 | 10 | 9 | 10 | 3 | 5.00 | 0.00 | 0 | 1.20 | 2.15 | 30.20 |
-| D1-00017 | 19 | 12 | 7 | 0 | Houston, TX | 12.66 | 4 | 4 | 6 | 1 | 5.00 | 0.00 | 0 | -0.20 | 7.86 | 9.16 |
-| D1-00018 | 88 | 17 | 71 | 0 | Van Nuys, CA | 12.66 | 12 | 17 | 7 | 2 | 15.50 | 0.00 | 0 | 1.20 | 1.99 | 61.35 |
-| D1-00019 | 97 | 27 | 64 | 6 | Van Nuys, CA | 12.63 | 15 | 14 | 15 | 2 | 25.50 | 0.00 | 0 | 1.20 | 1.59 | 31.82 |
-| D1-00020 | 66 | 22 | 44 | 0 | Burbank, CA | 12.40 | 10 | 4 | 8 | 2 | 4.50 | 0.00 | 0 | 1.20 | 1.64 | 54.19 |
-| D1-00021 | 35 | 12 | 23 | 0 | Northridge, CA | 12.37 | 5 | 8 | 2 | 1 | 4.00 | 0.50 | 0 | 1.20 | 2.66 | 15.79 |
-| D1-00022 | 27 | 8 | 19 | 0 | Glendale, CA | 12.32 | 5 | 3 | 6 | 1 | 6.50 | 0.00 | 0 | 1.20 | 0.42 | 38.73 |
-| D1-00023 | 102 | 40 | 62 | 0 | Encino, CA | 12.10 | 11 | 7 | 12 | 3 | 20.00 | 0.00 | 0 | 1.20 | 2.98 | 73.81 |
-| D1-00024 | 30 | 11 | 19 | 0 | Burbank, CA | 11.99 | 6 | 5 | 5 | 1 | 3.00 | 0.00 | 0 | 1.20 | 9.34 | 11.77 |
-| D1-00025 | 38 | 5 | 11 | 22 | Greenville, SC | 11.86 | 4 | 2 | 28 | 2 | 3.00 | 0.00 | 0 | -1.00 | 11.52 | 70.37 |
+| D1-00001 | 3 | 0 | 3 | 0 | Van Nuys, CA | 18.75 | 3 | 1 | 1 | 2 | 1.50 | 0.00 | 0 | 1.20 | 0.00 | 0.00 |
+| D1-00002 | 19 | 7 | 11 | 1 | Anaheim, CA | 16.53 | 6 | 3 | 3 | 2 | 4.00 | 0.00 | 0 | 1.20 | 0.17 | 18.60 |
+| D1-00003 | 35 | 2 | 1 | 32 | Suffolk, VA | 16.17 | 7 | 3 | 37 | 2 | 0.50 | 0.00 | 3 | 0.50 | 0.00 | 10.06 |
+| D1-00004 | 16 | 2 | 14 | 0 | Glendale, CA | 15.49 | 3 | 6 | 0 | 1 | 6.00 | 0.00 | 0 | 1.20 | 0.00 | 4.74 |
+| D1-00005 | 14 | 3 | 11 | 0 | Glendale, CA | 15.22 | 4 | 6 | 1 | 1 | 6.00 | 0.00 | 0 | 1.20 | 0.00 | 8.02 |
+| D1-00006 | 129 | 1 | 10 | 118 | Richmond, VA | 15.21 | 39 | 2 | 113 | 3 | 1.00 | 0.00 | 0 | 0.10 | 5.27 | 8.30 |
+| D1-00007 | 34 | 6 | 28 | 0 | Glendale, CA | 15.06 | 7 | 10 | 0 | 3 | 8.50 | 0.00 | 0 | 1.20 | 0.05 | 14.01 |
+| D1-00008 | 61 | 13 | 48 | 0 | Glendale, CA | 14.79 | 12 | 10 | 7 | 2 | 16.00 | 0.00 | 0 | 1.20 | 0.86 | 21.11 |
+| D1-00009 | 7 | 0 | 7 | 0 | Glendale, CA | 14.75 | 4 | 5 | 1 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 0.38 |
+| D1-00010 | 107 | 34 | 73 | 0 | Van Nuys, CA | 14.24 | 27 | 6 | 16 | 3 | 18.00 | 0.00 | 0 | 1.20 | 2.74 | 46.11 |
+| D1-00011 | 35 | 7 | 28 | 0 | Burbank, CA | 13.50 | 5 | 9 | 4 | 3 | 3.00 | 0.00 | 0 | 1.20 | 0.00 | 7.37 |
+| D1-00012 | 21 | 15 | 6 | 0 | San Antonio, TX | 13.34 | 8 | 5 | 1 | 1 | 1.50 | 0.00 | 0 | 0.20 | 0.08 | 21.81 |
+| D1-00013 | 33 | 5 | 25 | 3 | Mission Hills, CA | 13.14 | 5 | 10 | 3 | 1 | 3.00 | 0.00 | 0 | 1.20 | 0.62 | 63.66 |
+| D1-00014 | 73 | 15 | 58 | 0 | Van Nuys, CA | 12.98 | 10 | 17 | 7 | 2 | 9.50 | 0.00 | 0 | 1.20 | 1.13 | 55.12 |
+| D1-00015 | 44 | 4 | 40 | 0 | Valley Village, CA | 12.98 | 9 | 9 | 3 | 3 | 2.00 | 0.00 | 0 | 1.20 | 0.00 | 18.09 |
+| D1-00016 | 38 | 12 | 26 | 0 | Northridge, CA | 12.91 | 6 | 9 | 2 | 1 | 4.00 | 0.50 | 0 | 1.20 | 2.66 | 16.98 |
+| D1-00017 | 81 | 14 | 65 | 2 | Van Nuys, CA | 12.63 | 11 | 6 | 6 | 3 | 15.50 | 0.00 | 0 | 1.20 | 0.01 | 35.10 |
+| D1-00018 | 33 | 12 | 21 | 0 | Burbank, CA | 12.58 | 7 | 5 | 5 | 1 | 4.50 | 0.00 | 0 | 1.20 | 9.34 | 15.90 |
+| D1-00019 | 62 | 9 | 53 | 0 | Glendale, CA | 12.50 | 7 | 11 | 5 | 2 | 15.00 | 0.00 | 0 | 1.20 | 3.52 | 47.20 |
+| D1-00020 | 142 | 34 | 108 | 0 | Van Nuys, CA | 12.46 | 20 | 14 | 17 | 3 | 38.50 | 0.00 | 0 | 1.20 | 0.59 | 61.28 |
+| D1-00021 | 62 | 21 | 35 | 6 | Encino, CA | 12.46 | 10 | 14 | 9 | 1 | 19.00 | 0.00 | 0 | 1.20 | 1.50 | 23.56 |
+| D1-00022 | 34 | 15 | 19 | 0 | Anaheim, CA | 12.32 | 7 | 4 | 5 | 1 | 7.50 | 0.00 | 0 | 1.20 | 0.00 | 24.38 |
+| D1-00023 | 38 | 5 | 11 | 22 | Greenville, SC | 12.29 | 4 | 2 | 28 | 2 | 3.00 | 0.00 | 0 | -1.00 | 11.52 | 70.37 |
+| D1-00024 | 46 | 11 | 8 | 27 | Montclair, CA | 12.10 | 6 | 8 | 13 | 1 | 3.00 | 0.00 | 0 | 0.00 | 5.73 | 24.40 |
+| D1-00025 | 112 | 41 | 71 | 0 | Burbank, CA | 12.00 | 14 | 10 | 11 | 2 | 13.50 | 0.00 | 0 | 1.20 | 5.09 | 84.61 |
 
 Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_members`, `d1_persons`, `d1_orgs`, `d1_providers`. Code: `detectors/d1_ghost_networks.py`.
 
@@ -594,7 +594,7 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 |---|---|---|---|---|
 | 1 | documented action, then payment | 402 | 62.79 | 3 |
 | 2 | impossible volume with concurrency | 555 | 2,465.42 | 0 |
-| 3 | network structure with a list link | 6,098 | 1,111.06 | 0 |
+| 3 | network structure with a list link | 5,965 | 1,091.88 | 0 |
 | 4 | structure or single-organisation volume | 1,815 | 4,447.44 | 0 |
 | 5 | informational | 2,684 | 3,462.83 | 0 |
 
@@ -615,10 +615,10 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 | 9 | 1619941614 | HISHAM SADEK | 1 | IL | 1 | 96.30 | ['D3', 'D2'] | 2,029,469.00 | on STATE_EXCL_IN from 2015-07-15, Medicaid paid in 54 later months ($2029469) |
 | 10 | 1861407637 | HEALTHSMART PACIFIC INC | 2 | CA | 1 | 96.20 | ['D3'] | 1,639,221.00 | on OIG_LEIE from 2021-04-20, Medicaid paid in 34 later months ($1639221) |
 | 11 | 1447440359 | DOYLE'S YELLOW CHECKER CAB, INC | 2 | ND | 1 | 96.20 | ['D3'] | 1,506,469.00 | on STATE_EXCL_ND from 2024-01-24, Medicaid paid in 11 later months ($1506469) |
-| 12 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | VA | 1 | 96.10 | ['D3'] | 1,327,754.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 23 later months ($1327754) |
+| 12 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | VA | 1 | 96.10 | ['D3'] | 1,327,755.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 23 later months ($1327755) |
 | 13 | 1457414286 | DM OPTICAL INC | 2 | NY | 1 | 96.10 | ['D3'] | 1,183,544.00 | on STATE_EXCL_NY from 2016-09-22, Medicaid paid in 26 later months ($1183544) |
 | 14 | 1194744185 | QUALITY HEALTHCARE MANAGEMENT INC | 2 | NY | 1 | 96.00 | ['D3'] | 1,092,507.00 | on STATE_EXCL_KY from 2023-10-07, Medicaid paid in 14 later months ($1092507) |
-| 15 | 1780780031 | DAVID SMITH | 1 | NC | 1 | 96.00 | ['D3'] | 1,063,751.00 | on MEDICARE_REVOKED,STATE_EXCL_SC from 2021-08-30, Medicaid paid in 7 later months ($1063751) |
+| 15 | 1780780031 | DAVID SMITH | 1 | NC | 1 | 96.00 | ['D3'] | 1,063,751.00 | on STATE_EXCL_SC,MEDICARE_REVOKED from 2021-08-30, Medicaid paid in 7 later months ($1063751) |
 | 16 | 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | NJ | 1 | 96.00 | ['D3'] | 1,043,387.00 | on STATE_EXCL_NY,MEDICARE_REVOKED from 2022-10-31, Medicaid paid in 7 later months ($1043387) |
 | 17 | 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | TX | 1 | 96.00 | ['D3'] | 960,939.00 | on MEDICARE_REVOKED from 2020-03-02, Medicaid paid in 19 later months ($960939) |
 | 18 | 1871571406 | MOHAMED ASWAD | 1 | NM | 1 | 96.00 | ['D3'] | 901,321.00 | on OIG_LEIE from 2016-01-20, Medicaid paid in 55 later months ($901321) |

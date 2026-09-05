@@ -122,3 +122,15 @@ Reference: `data/bluebutton/v3-data-dictionary.csv` (every Blue Button field and
 
 VA Lighthouse, No Surprises Act IDR files, hospital price transparency MRFs (per hospital). There is no private data in this project; everything
 here is public federal data, with no PII or PHI.
+
+### Scripts added on 2026-09-05 (evening)
+
+| script | what it does |
+|---|---|
+| `detectors/risk_score.py` | one row per provider: tier 1 to 5, corroboration bonus, dollars at risk (max across detectors) |
+| `scripts/export_static.py` | writes `web/public/fallback/*.json` so the console renders if Supabase is paused |
+| `scripts/ground_truth_check.py` | profiles named enforcement cases and large health-system controls into `docs/validation.md` |
+| `scripts/apply_timecode_qa.py` | reloads the time-code table after QA edits (DuckDB and Postgres) |
+| `ingest/07_state_exclusions_claude.py` | fifty-state exclusion lists extracted with Claude (PDF, sheet, HTML); status in `docs/state_lists_status.md` |
+| `scripts/timecode_qa_claude.py`, `scripts/sam_match_claude.py`, `scripts/er_tiebreak_batch.py`, `scripts/methods_narrative_claude.py` | Batch API jobs with reports in `docs/` |
+| `scripts/pregenerate_packets.py` | drafts Claude packets for the top subjects so the console opens with packets in place |

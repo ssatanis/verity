@@ -25,7 +25,7 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
           <h1 className="display serif text-[48px]">{name}</h1>
           <p className="text-[13px] text-[var(--ink-3)] mt-3">NPI {npi} · {(p?.entity_type ?? risk?.entity_type) === "2" ? "organisation" : "individual"} · {p?.city ?? risk?.city}, {p?.state ?? risk?.state} · taxonomy {p?.taxonomy ?? risk?.taxonomy} · Medicaid home state {p?.medicaid_state ?? risk?.medicaid_state ?? "not stated"}{p?.deact_date ? ` · NPI deactivated ${p.deact_date}` : ""}</p>
         </div>
-        {risk && <div className="kpi min-w-[260px]"><div className="flex items-center gap-3"><Tier n={risk.tier} /><div><div className="eyebrow">Evidence tier</div><div className="serif text-[20px]">{risk.tier_label}</div></div></div><div className="text-[12px] text-[var(--ink-2)] mt-3">{risk.reasons}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">score {Number(risk.score).toFixed(0)} · rank {risk.rank} · {money(risk.dollars_at_risk)} at risk (highest single detector) · {(risk.detectors as string[])?.join(" ")}</div></div>}
+        {risk && <div className="kpi min-w-[260px]"><div className="flex items-center gap-3"><Tier n={risk.tier} /><div><div className="eyebrow">Evidence tier</div><div className="serif text-[20px]">{risk.tier_label}</div></div></div><div className="text-[12px] text-[var(--ink-2)] mt-3">{risk.reasons}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">score {Number(risk.score).toFixed(0)} · rank {risk.rank} · {money(risk.dollars_at_risk)} at risk (tier-defining detector) · {(risk.detectors as string[])?.join(" ")}</div></div>}
       </div>
       <div className="grid md:grid-cols-[1.4fr_1fr] gap-6 mt-8">
         <div className="space-y-6">

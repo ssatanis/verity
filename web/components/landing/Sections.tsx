@@ -81,7 +81,7 @@ export function Hierarchy() {
   return (
     <section style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24 grid md:grid-cols-[1fr_1.4fr] gap-12`}>
-        <div><h2 className="display serif text-[54px] md:text-[64px]" style={{ color: "var(--blue)" }}>Every Candidate<br />Carries Its Tier</h2><p className="text-[16px] leading-7 mt-8 max-w-md" style={{ color: "var(--ink-2)" }}>The score is a tier base, a bonus for every detector that reached the provider independently, and a bounded dollar term. Dollars at risk count each provider once and are never summed across detectors. Every row is a candidate for records review, not a finding.</p></div>
+        <div><h2 className="display serif text-[54px] md:text-[64px]" style={{ color: "var(--blue)" }}>Every Candidate<br />Carries Its Tier</h2><p className="text-[16px] leading-7 mt-8 max-w-md" style={{ color: "var(--ink-2)" }}>The score is a tier base, a bonus for every strong finding that reached the provider independently, and a bounded dollar term. Dollars at risk come from the detector that set the tier, count each provider once, and are never summed. Every row is a candidate for records review, not a finding.</p></div>
         <div className="lrule pl-10">{tiers.map(([n, h]) => <div key={n} className="flex items-center gap-8 py-6 rule first:border-t-0"><span className="serif" style={{ color: "var(--blue)", fontSize: 44, lineHeight: 1, width: 48 }}>{n}</span><span className="serif text-[26px]" style={{ color: "var(--ink)" }}>{h}</span></div>)}</div>
       </div>
     </section>

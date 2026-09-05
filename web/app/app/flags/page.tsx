@@ -10,7 +10,7 @@ export default async function Flags({ searchParams }: { searchParams: Promise<{ 
   const byNpi = new Map<string, any>(); for (const f of data ?? []) if (!byNpi.has(f.npi)) byNpi.set(f.npi, f);
   const rows = [...byNpi.values()];
   const S = (summ?.value as any) ?? {}; const idTiers: any[] = S.id_match_headline ?? []; const fileDates: any[] = S.file_dates ?? [];
-  const idLabel: Record<string, string> = { exact_npi_name_verified: "exact NPI, name verified", exact_npi_not_in_nppes: "exact NPI, no NPPES record", exact_npi_unnamed_source: "exact NPI, list gives no name", exact_npi_name_conflict: "exact NPI, name conflict (set aside as tier C)" };
+  const idLabel: Record<string, string> = { exact_npi_name_verified: "exact NPI, name verified", exact_npi_not_in_nppes: "exact NPI, no NPPES record", exact_npi_unnamed_source: "exact NPI, list gives no name", exact_npi_name_conflict: "exact NPI, name conflict (set aside as tier C)", name_match_model_high: "no NPI on the list; name matched by model at high confidence (tier B)" };
   return (
     <div>
       <div className="eyebrow">Indicators</div>

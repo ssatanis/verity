@@ -61,6 +61,13 @@ assert ok / tot > 0.999, "check-digit macro is wrong"
 TIER_A_CFR = "(2|3|4|5|7|8|10|12|13|14|18|19|20|22|23)"
 TIER_A_TMSIS = "('60','62','65','66','67','70','71','72','74','75','78','81')"
 ACTIVE = "('02','03','04','05','06')"
+# exclusion rows without an NPI that scripts/sam_match_claude.py matched to an NPPES record by name (model, high confidence): tier B, reported separately, never in the headline
+NAME_MATCH_UNION = ""
+if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'sam_npi_matches'").fetchone()[0]:
+    NAME_MATCH_UNION = """UNION ALL
+  SELECT m.npi, m.source || '_NAME', CAST(m.event_dt AS DATE), NULL::DATE, 'name-matched by model at high confidence: ' || COALESCE(m.exclusion_type, ''), m.state, 'B',
+         COALESCE(NULLIF(m.busname, ''), trim(COALESCE(m.firstname, '') || ' ' || COALESCE(m.lastname, ''))), 'name_match'
+  FROM sam_npi_matches m WHERE m.same_entity AND m.confidence = 'high' AND m.event_dt IS NOT NULL AND npi_luhn_ok(m.npi)"""
 run("d3_events", f"""
 CREATE OR REPLACE TABLE d3_events AS
 WITH latest AS (   -- latest enrollment status per NPI and state (a later active segment means the termination was resolved)
@@ -98,6 +105,7 @@ ev AS (
   SELECT e.npi, 'TMSIS_TERM_' || e.status_cd, MIN(e.start_dt), NULL::DATE, e.status_desc, e.state, 'A', NULL, e.prvdr_type_desc
   FROM enroll e JOIN latest l ON l.npi = e.npi AND l.state = e.state AND l.status_cd = e.status_cd
   WHERE e.status_cd IN {TIER_A_TMSIS} GROUP BY e.npi, e.state, e.status_cd, e.status_desc, e.prvdr_type_desc
+  {NAME_MATCH_UNION}
 )
 SELECT DISTINCT ev.npi, ev.source, ev.event_dt, ev.window_end, ev.reason, ev.source_state,
        -- a state-list NPI whose NPPES name shares no token with the list entry is downgraded: the NPI field on those lists can carry an employer's NPI
@@ -110,7 +118,8 @@ SELECT DISTINCT ev.npi, ev.source, ev.event_dt, ev.window_end, ev.reason, ev.sou
        CASE WHEN n.npi IS NULL OR ev.source_name IS NULL THEN NULL
             ELSE names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, '')) END AS name_agrees_with_nppes,
        -- identity match tier: every event here carries the NPI itself (exact match); the tier records how far the identity could be verified
-       CASE WHEN n.npi IS NULL THEN 'exact_npi_not_in_nppes'
+       CASE WHEN ev.source_type = 'name_match' THEN 'name_match_model_high'
+            WHEN n.npi IS NULL THEN 'exact_npi_not_in_nppes'
             WHEN ev.source_name IS NULL THEN 'exact_npi_unnamed_source'
             WHEN names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, '')) THEN 'exact_npi_name_verified'
             ELSE 'exact_npi_name_conflict' END AS id_match

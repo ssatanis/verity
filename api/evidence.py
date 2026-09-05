@@ -44,8 +44,9 @@ def provider_evidence(npi):
         leie = pg.execute("SELECT * FROM public.leie WHERE npi = %s", (npi,)).fetchall()
         enr = pg.execute("SELECT * FROM public.enrollments WHERE npi = %s", (npi,)).fetchall()
         clusters = pg.execute("SELECT c.id, c.summary, c.score, c.rank FROM public.cluster_members m JOIN public.clusters c ON c.id = m.cluster_id WHERE m.npi = %s", (npi,)).fetchall()
-    if not p and not flags: return None
-    return dict(kind="provider", provider=p, flags=flags, revoked=rev, leie=leie, enrollments=enr, clusters=clusters)
+        risk = pg.execute("SELECT npi, name, tier, tier_label, detectors, score, dollars_at_risk, reasons, rank FROM public.provider_risk WHERE npi = %s", (npi,)).fetchone()
+    if not p and not flags and not risk: return None
+    return dict(kind="provider", provider=p or dict(npi=npi, name=(risk or {}).get("name")), flags=flags, revoked=rev, leie=leie, enrollments=enr, clusters=clusters, risk=risk)
 
 def evidence_lines(ev):
     """Flat list of (source, statement) pairs, the citation trail every packet sentence must map to."""
@@ -70,6 +71,8 @@ def evidence_lines(ev):
     else:
         p = ev["provider"] or {}
         L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organisation' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
+        r = ev.get("risk")
+        if r: L.append(("provider_risk", f"Evidence tier {r['tier']} ({r['tier_label']}); detectors {', '.join(r['detectors'] or [])}; dollars at risk ${float(r['dollars_at_risk'] or 0):,.0f} (figure of the detector that set the tier, not a sum); reasons: {r['reasons']}."))
         for r in ev["revoked"]: L.append(("Revocation_Extract", f"Revoked {r['revoked_dt']} under {r['revocation_rsn']}; re-enrollment bar to {r['reenroll_bar_dt']}."))
         for r in ev["leie"]: L.append(("OIG LEIE", f"Excluded {r['excl_dt']} under section 1128 {r['excltype']} ({r['general']})."))
         for fl in ev["flags"]:

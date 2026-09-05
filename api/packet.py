@@ -34,14 +34,33 @@ def _title(ev):
     if ev["kind"] == "cluster": return f"Referral candidate packet: provider community {ev['cluster']['id']}"
     p = ev["provider"] or {}; return f"Referral candidate packet: NPI {ev.get('provider', {}).get('npi') or ''} {p.get('name') or ''}".strip()
 
+# caveats keyed by evidence type (mirrors web/lib/packet.ts): the ordinary explanations a reviewer must rule out first
+CAVEATS = {
+    "MEDICARE_REVOKED_PAID_AFTER": "A revocation can be reversed on appeal or through a corrective action plan; confirm the current enrollment status with the state and in PECOS before acting.",
+    "OIG_LEIE_PAID_AFTER": "Check the LEIE for a reinstatement date; services dated before the exclusion but billed after it are lawful.",
+    "SAM_PAID_AFTER": "SAM debarments from agencies other than HHS restrict federal contracting; confirm that the state's own screening policy applies to them.",
+    "STATE_EXCL_PAID_AFTER": "State lists carry reinstatements and administrative terminations; confirm the action type with the listing agency.",
+    "NPPES_DEACTIVATED_PAID_AFTER": "An NPI deactivated after a death or retirement can still receive lawful late claims for services rendered before the deactivation date.",
+    "IMPOSSIBLE_HOURS": "The rendering NPI on Medicaid claims is often the supervising clinician under state convention; confirm which organisations employ or contract with this clinician before treating the hours as one person's work.",
+    "PER_PATIENT_IMPOSSIBLE": "Per-patient hours can exceed the calendar under legitimate group or crisis services when the code is billed per staff member; confirm the code's billing unit with the state.",
+    "MN_DAILY_CAP": "State caps carry prior-authorisation exceptions; confirm whether an exception was on file.",
+    "UMBRELLA_VOLUME": "One organisation billing under a supervising NPI is common and lawful in several states; this is a records request, not a finding.",
+    "GROWTH_ANOMALY": "Rapid growth and concentration on one code describe many legitimate new specialty agencies; this indicator is informational.",
+    "NETWORK_SHARED_OWNERS": "Common ownership across several enrollments is lawful and ordinary; the indicator is the combination with formation timing, shared suites and list links.",
+    "NETWORK_INCORPORATION_BURST": "Incorporation bursts also occur when a legitimate operator expands or restructures.",
+    "NETWORK_SHARED_ADDRESS": "Shared suites and phones are ordinary in medical office buildings and with registered-agent, accountant or answering-service addresses; the address alone proves nothing.",
+    "NETWORK_ADDRESS_OF_REVOKED_ENTITY": "A previous tenant's revocation does not attach to the current tenant; the link shows only that the address recurs.",
+    "NETWORK_OWNER_ON_LEIE": "An owner match to the LEIE or SAM is a name match at the stated confidence; confirm identity with date of birth or address before relying on it.",
+    "NETWORK_MEMBER_ON_LIST": "A list hit on one member does not extend to the other members without a records review.",
+}
+
 def deterministic_packet(ev):
     lines = evidence_lines(ev); types = evidence_types(ev); grounds = grounds_for_types(types)
     subject = ev["cluster"]["id"] if ev["kind"] == "cluster" else ev["provider"]["npi"]
     findings = [dict(text=l[1], evidence_ids=[i]) for i, l in enumerate(lines[1:], start=1)][:30]
-    caveats = ["Screening indicator only: the detector has a measured false positive rate and every fact must be verified against the source rows before action.",
-               "Several states permit clinics to bill under a supervising clinician's NPI, and telehealth or locum tenens arrangements can concentrate volume under one NPI.",
-               "Medicare revocations and state exclusions can be appealed, reversed or reinstated; payments after an action can reflect claims later recouped.",
-               "Shared addresses can reflect a common landlord or billing agent rather than common ownership."]
+    caveats = ["Screening indicator only: every fact must be verified against the cited source rows before any action, and the packet describes records and dates, never intent."]
+    caveats += [CAVEATS[t] for t in types if t in CAVEATS]
+    if not types: caveats.append("No detector evidence type was derived for this subject; the packet lists the public records only.")
     return dict(title=_title(ev), subject_type=ev["kind"], subject_id=subject, generated_at=dt.datetime.now(dt.timezone.utc).isoformat(), model="deterministic",
                 summary=lines[0][1] if lines else "", findings=findings, grounds=grounds, evidence_types=types,
                 recommendation="Request the provider's records for the flagged service months, verify the cited public records against the source datasets, run the 42 CFR 455.436 database checks, and, if the records do not resolve the pattern, refer to the state Medicaid program integrity unit and the Medicaid Fraud Control Unit under 42 CFR 455.23(d).",

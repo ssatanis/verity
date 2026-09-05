@@ -15,7 +15,7 @@ export default async function Candidates({ searchParams }: { searchParams: Promi
     <div>
       <div className="eyebrow">Referral candidates</div>
       <h1 className="display serif text-[54px] mt-2">One row per provider, ranked by what the record can prove.</h1>
-      <p className="text-[13.5px] text-[var(--ink-2)] mt-4 max-w-3xl leading-6">Tier is the evidence hierarchy; score adds a bonus for every detector that reached the provider independently and a bounded dollar term. Dollars at risk is the highest single-detector figure for the provider, never a sum. Every row is a candidate for records review, not a finding.</p>
+      <p className="text-[13.5px] text-[var(--ink-2)] mt-4 max-w-3xl leading-6">Tier is the evidence hierarchy; score adds a bonus for every strong finding that reached the provider independently (a tier A list action, concurrent impossible volume, or a ranked community) and a bounded dollar term. Dollars at risk is the figure from the detector that set the tier, never a sum and never borrowed from a weaker indicator. Every row is a candidate for records review, not a finding.</p>
       <div className="flex flex-wrap gap-2 mt-6 text-[12px] items-center">
         <Link href="/app/candidates" className={`tag ${!tier ? "tag-ink" : ""}`}>All tiers</Link>
         {[1, 2, 3, 4, 5].map(t => <Link key={t} href={qs({ tier: String(t), page: undefined })} className={`tag ${tier === String(t) ? "tag-ink" : ""}`}>Tier {t} <span className="opacity-60">{tc[t] ?? 0}</span></Link>)}
