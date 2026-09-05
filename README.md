@@ -134,3 +134,10 @@ here is public federal data, with no PII or PHI.
 | `ingest/07_state_exclusions_claude.py` | fifty-state exclusion lists extracted with Claude (PDF, sheet, HTML); status in `docs/state_lists_status.md` |
 | `scripts/timecode_qa_claude.py`, `scripts/sam_match_claude.py`, `scripts/er_tiebreak_batch.py`, `scripts/methods_narrative_claude.py` | Batch API jobs with reports in `docs/` |
 | `scripts/pregenerate_packets.py` | drafts Claude packets for the top subjects so the console opens with packets in place |
+
+### Console notes (2026-09-05, evening)
+
+- Search and provider pages use the CMS NPPES Registry API (version 2.1, no key, refreshed daily), so any NPI in the country can be opened; the serving tables add tiers and indicators, and the local API adds Medicaid figures when it is running.
+- Press Cmd+K (Ctrl+K on Windows) anywhere for a command palette: provider search plus page navigation.
+- The network page carries a factor desk: thirty factors in seven families with percentiles and robust z-scores, and an indicative momentum reading (`detectors/d1_factor_desk.py`, table `network_factors`).
+- The console password lives in `web/.env.local` as `VERITY_CONSOLE_PASSWORD`; it is not stored in the repository.
