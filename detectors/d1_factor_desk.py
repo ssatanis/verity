@@ -151,7 +151,7 @@ def pct_and_z(g):
         if g.direction.iloc[0] == "-": rank = 1 - rank + 1 / ok.sum(); zz = -zz
         pct[ok] = (100 * rank).round(1); z[ok] = zz.round(2)
     g = g.copy(); g["percentile"] = pct; g["z"] = z; return g
-D = D.groupby("factor", group_keys=False).apply(pct_and_z)
+D = pd.concat([pct_and_z(g) for _, g in D.groupby("factor")], ignore_index=True)
 
 # momentum: rate-of-change factors combined into one indicative outlook per network
 MOM = ["velocity", "new_share", "medicaid_growth", "owner_burst", "sat_trend", "chow"]

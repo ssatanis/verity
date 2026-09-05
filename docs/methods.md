@@ -680,3 +680,24 @@ Agreement with the EM decision: 3.8% over all adjudicated pairs, 1.8% over the 3
 | (0.98, 1.0] | 400 | 0.04 | 1.00 |
 
 Adjudications are stored in `d1_er_adjudications` for human review and do not change the graph automatically; pairs where the model says same with high confidence and the EM said different are the review queue for the next matcher iteration.
+
+## Network factor desk
+
+**What it is.** For every provider network with three or more providers, the desk measures 30 factors in seven families: formation timing (incorporation bursts, share of new companies, formation velocity, company age), ownership (owners on several providers, concentration, managing-employee share, association-date bursts, changes of ownership), addresses and contacts (shared buildings, suites, phones, officials, addresses of revoked companies, office plazas), list exposure (members and owners on public lists), market (county saturation, its three-year trend, moratorium history), money (Medicaid 2024, Medicare 2023, Medicaid growth 2022 to 2024, dollar concentration, billing share) and identity and enrollment (NPI issued close to incorporation, deactivated NPIs, multi-state footprint, chain share). Each factor carries its value, its percentile among all such networks in the risky direction, and a robust z-score.
+
+**Momentum.** Six rate-of-change factors (formation velocity, new-company share, Medicaid growth, owner association bursts, saturation trend and ownership changes) are averaged as clipped robust z-scores into one momentum number with an outlook label: rising fast (z at or above 1), rising (0.3 to 1), steady, cooling. This is an indicative reading of what is moving, not a validated forecast; no outcome data exist yet to calibrate it, and it never changes a tier.
+
+Outlook across networks: steady 403, rising 255, cooling 145, rising fast 102.
+
+| network | rank | momentum z | outlook |
+|---|---|---|---|
+| D1-00001 | 1 | 0.23 | steady |
+| D1-00002 | 2 | 1.06 | rising fast |
+| D1-00003 | 3 | 1.65 | rising fast |
+| D1-00004 | 4 | 0.74 | rising |
+| D1-00005 | 5 | 1.53 | rising fast |
+| D1-00006 | 6 | 0.73 | rising |
+| D1-00007 | 7 | 1.35 | rising fast |
+| D1-00008 | 8 | 1.37 | rising fast |
+| D1-00009 | 9 | 0.73 | rising |
+| D1-00010 | 10 | 1.36 | rising fast |
