@@ -200,3 +200,21 @@ create index if not exists network_factors_cluster_idx on public.network_factors
 alter table public.network_factors enable row level security;
 drop policy if exists "public read network_factors" on public.network_factors;
 create policy "public read network_factors" on public.network_factors for select using (true);
+
+-- fuzzy provider search (trigram similarity) with optional state and city filters
+create extension if not exists pg_trgm;
+create index if not exists providers_name_trgm on public.providers using gin (name gin_trgm_ops);
+create index if not exists provider_risk_name_trgm on public.provider_risk using gin (name gin_trgm_ops);
+create or replace function public.search_providers(q text, st text default null, ct text default null, lim int default 12)
+returns table (npi text, name text, city text, state text, entity_type text, tier int, sim real)
+language sql stable as $$
+  with u as (
+    select r.npi, r.name, r.city, r.state, r.entity_type, r.tier, similarity(r.name, q) as sim from public.provider_risk r
+    union all
+    select p.npi, p.name, p.city, p.state, p.entity_type, null::int, similarity(p.name, q) from public.providers p
+    where not exists (select 1 from public.provider_risk r2 where r2.npi = p.npi)
+  )
+  select npi, name, city, state, entity_type, tier, sim from u
+  where sim > 0.25 and (st is null or state = upper(st)) and (ct is null or city ilike ct || '%')
+  order by sim desc, tier nulls last limit lim
+$$;

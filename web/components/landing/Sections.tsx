@@ -14,7 +14,7 @@ export function Hero() {
           <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Every Medicaid Dollar,<br />Verified Before<br />It Is Paid</h1></Rise>
         </div>
         <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16" style={{ pointerEvents: "none" }}>
-          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-3xl">Verity checks every Medicare and Medicaid provider against fourteen public federal and state datasets, ranks the ones worth a closer look by how strong the public record is, and hands investigators a packet in which every sentence points to the record behind it.</p></Rise>
+          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">Fourteen public datasets. Every Medicare and Medicaid provider. One ranked queue, and a packet in which every sentence cites the record behind it.</p></Rise>
         </div>
       </div>
     </section>
@@ -24,9 +24,9 @@ export function WhatWeDo() {
   return (
     <section id="what" style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24 grid md:grid-cols-[1fr_3fr] gap-12`}>
-        <div className="eyebrow text-[15px]">What we do</div>
+        <div className="text-[17px]" style={{ color: "var(--blue)" }}>What we do</div>
         <div className="lrule pl-10">
-          <Reveal><p className="serif text-[34px] md:text-[46px] leading-[1.18]" style={{ color: "var(--blue)" }}>Our ambition is that every dollar a health plan pays a provider is a dollar it can defend. We bring public enrollment, ownership, exclusion and spending records together into one picture, so that investigators see the pattern before the payment clears.</p>
+          <Reveal><p className="serif text-[28px] md:text-[36px] leading-[1.22]" style={{ color: "var(--blue)" }}>Our ambition is that every dollar a health plan pays a provider is a dollar it can defend. We bring public enrollment, ownership, exclusion and spending records together into one picture, so that investigators see the pattern before the payment clears.</p>
           <Link href="/app" className="btn mt-12">Explore the Console</Link></Reveal>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function Security() {
   return (
     <section id="security" className={`${W} py-24`}>
       <div className="grid md:grid-cols-[1fr_3fr] gap-12">
-        <div className="eyebrow text-[15px]">Security and deployment</div>
+        <div className="text-[17px]" style={{ color: "var(--blue)" }}>Security and deployment</div>
         <div className="lrule pl-10">
           <Reveal><p className="serif text-[34px] md:text-[42px] leading-[1.2]" style={{ color: "var(--blue)" }}>Built to be audited. Verity is designed for the compliance review that comes before any deployment inside a health plan.</p></Reveal>
           <div className="grid md:grid-cols-4 gap-8 mt-14">{items.map(([h, t]) => <div key={h}><h3 className="serif text-[24px]" style={{ color: "var(--ink)" }}>{h}</h3><p className="text-[14px] leading-6 mt-3" style={{ color: "var(--ink-2)" }}>{t}</p></div>)}</div>

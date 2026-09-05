@@ -37,6 +37,17 @@ def provider(npi: str) -> dict | None:
                 "SELECT substr(month, 1, 4) AS yr, SUM(paid), COUNT(*) FROM spend_any_month WHERE npi = ? GROUP BY 1 ORDER BY 1", (npi,)).fetchall()]
         except Exception: out["spend_by_year"] = []
         try:
+            out["medicare_by_year"] = [dict(program=r[0], year=int(r[1]), services=float(r[2] or 0), beneficiaries=float(r[3] or 0), paid=float(r[4] or 0)) for r in con.execute(
+                "SELECT program, year, services, beneficiaries, paid FROM medicare_billing WHERE npi = ? ORDER BY program, year", (npi,)).fetchall()]
+        except Exception: out["medicare_by_year"] = []
+        try:
+            out["medicaid_top_codes"] = [dict(code=r[0], paid=float(r[1] or 0), months=int(r[2] or 0)) for r in con.execute(
+                "SELECT hcpcs, SUM(paid), COUNT(DISTINCT month) FROM spend WHERE servicing_npi = ? OR billing_npi = ? GROUP BY 1 ORDER BY 2 DESC LIMIT 12", (npi, npi)).fetchall()]
+        except Exception: out["medicaid_top_codes"] = []
+        try:
+            out["medicaid_roles"] = dict(con.execute("SELECT role, SUM(paid) FROM (SELECT 'billing' AS role, paid FROM spend_bill_month WHERE npi = ? UNION ALL SELECT 'servicing', paid FROM spend_srv_month WHERE npi = ?) GROUP BY 1", (npi, npi)).fetchall())
+        except Exception: out["medicaid_roles"] = {}
+        try:
             out["lists"] = {"revoked": con.execute("SELECT COUNT(*) FROM revoked WHERE npi = ?", (npi,)).fetchone()[0], "leie": con.execute("SELECT COUNT(*) FROM leie WHERE npi = ?", (npi,)).fetchone()[0],
                             "sam": con.execute("SELECT COUNT(*) FROM sam WHERE npi = ?", (npi,)).fetchone()[0], "state": con.execute("SELECT COUNT(*) FROM state_exclusions WHERE npi = ?", (npi,)).fetchone()[0]}
         except Exception: out["lists"] = {}

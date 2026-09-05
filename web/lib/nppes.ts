@@ -55,3 +55,16 @@ export async function nppesSearch(q: string, limit = 12): Promise<NppesRecord[]>
   for (const s of settled) if (s.status === "fulfilled") for (const r of s.value) if (!seen.has(r.npi)) { seen.add(r.npi); out.push(r); }
   return out.slice(0, limit);
 }
+
+// Name search with optional city and state, for queries such as "mayo clinic rochester mn".
+export async function nppesSearchIn(name: string, city?: string, state?: string, limit = 12): Promise<NppesRecord[]> {
+  const term = name.trim(); if (term.length < 2) return [];
+  const lim = String(Math.min(50, Math.max(1, limit))); const loc: Record<string, string> = {}; if (city) loc.city = city; if (state) loc.state = state;
+  const words = term.replace(/[^A-Za-z0-9&'.,\- ]/g, "").split(/\s+/).filter(Boolean);
+  const tasks: Promise<NppesRecord[]>[] = [call({ organization_name: `${term}*`, limit: lim, ...loc })];
+  if (words.length >= 2) { tasks.push(call({ first_name: `${words[0]}*`, last_name: `${words[words.length - 1]}*`, use_first_name_alias: "False", limit: lim, ...loc })); tasks.push(call({ last_name: `${words[0]}*`, first_name: `${words[words.length - 1]}*`, use_first_name_alias: "False", limit: lim, ...loc })); }
+  else tasks.push(call({ last_name: `${words[0]}*`, limit: lim, ...loc }));
+  const settled = await Promise.allSettled(tasks); const out: NppesRecord[] = []; const seen = new Set<string>();
+  for (const s of settled) if (s.status === "fulfilled") for (const r of s.value) if (!seen.has(r.npi)) { seen.add(r.npi); out.push(r); }
+  return out.slice(0, limit);
+}
