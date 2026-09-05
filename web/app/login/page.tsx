@@ -14,7 +14,7 @@ function Form() {
   }
   return (
     <form onSubmit={go} className="card p-8 w-full max-w-sm">
-      <Logo size={30} />
+      <div className="flex items-center justify-between"><Logo size={30} /><a href="/" className="link text-[12px]">Back to home</a></div>
       <h1 className="serif text-[34px] mt-8 leading-none">Reviewer sign in</h1>
       <p className="text-[13px] text-[var(--ink-3)] mt-3">The console lists referral candidates by name. Access is limited to reviewers who have agreed to treat every row as an indicator to verify, not a finding.</p>
       <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Console password" className="w-full mt-6" autoFocus />

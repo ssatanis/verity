@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
-// three-colour palette: flag blue, black, white; node kinds are told apart by fill, opacity and outline
+// three-color palette: flag blue, black, white; node kinds are told apart by fill, opacity and outline
 const COLOR: Record<string, string> = { provider: "#002856", person: "#000000", org: "#ffffff", addr: "#7f93ab", unit: "#7f93ab", phone: "#808080", fax: "#808080", ao: "#ffffff", mail: "#7f93ab", ein: "#000000" };
 const STROKE: Record<string, string> = { provider: "#002856", person: "#000000", org: "#002856", addr: "#7f93ab", unit: "#002856", phone: "#808080", fax: "#808080", ao: "#000000", mail: "#7f93ab", ein: "#002856" };
 export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edges: any[] }; height?: number }) {
@@ -37,7 +37,7 @@ export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edg
       {sel && (
         <div className="absolute right-2 top-2 bg-white border border-[var(--ink)] p-3 text-[12px] max-w-xs">
           <div className="font-medium">{sel.label || sel.id}</div>
-          <div className="text-[var(--ink-3)]">{sel.kind}{sel.ptype ? ` · ${sel.ptype}` : ""}{sel.city ? ` · ${sel.city}, ${sel.state}` : ""}{sel.inc_date ? ` · inc ${sel.inc_date}` : ""}{sel.prov_degree ? ` · ${sel.prov_degree} providers` : ""}</div>
+          <div className="text-[var(--ink-3)]">{sel.kind}{sel.ptype ? `, ${sel.ptype}` : ""}{sel.city ? `, ${sel.city}, ${sel.state}` : ""}{sel.inc_date ? `, inc ${sel.inc_date}` : ""}{sel.prov_degree ? `, ${sel.prov_degree} providers` : ""}</div>
           {sel.labels?.length ? <div className="text-[var(--danger)] mt-1">{sel.labels.join(", ")}</div> : null}
           {sel.owner_labels?.length ? <div className="text-[var(--danger)] mt-1">{sel.owner_labels.map((l: any) => l.join(" ")).join("; ")}</div> : null}
           {sel.npi && <a className="link mt-1 inline-block" href={`/app/providers/${sel.npi}`}>NPI {sel.npi}</a>}

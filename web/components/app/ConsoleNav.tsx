@@ -15,7 +15,7 @@ export function ConsoleNav() {
           <Link href="/"><Logo size={24} /></Link>
           <nav className="hidden md:flex gap-7 text-[14px]">{nav.map(([n, h]) => <Link key={h} href={h} className={active(h) ? "font-semibold" : "hover:text-[var(--blue)]"} style={{ color: active(h) ? "var(--blue)" : "var(--ink)" }}>{n}</Link>)}</nav>
         </div>
-        <div className="flex-1 max-w-md hidden sm:block"><SearchBox /></div>
+        <div className="flex-1 max-w-md hidden sm:flex items-center gap-2"><div className="flex-1"><SearchBox /></div><span className="hidden lg:inline text-[11px] text-[var(--ink-3)] whitespace-nowrap">⌘K</span></div>
         <button className="md:hidden p-2" aria-label="Menu" onClick={() => setOpen(o => !o)}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}</svg></button>
       </div>
       {open && <div className="md:hidden px-4 pb-4 flex flex-col gap-3 bg-white" style={{ borderTop: "1px solid var(--line)" }}><div className="pt-3 sm:hidden"><SearchBox /></div>{nav.map(([n, h]) => <Link key={h} href={h} onClick={() => setOpen(false)} className="pt-3 text-[15px]">{n}</Link>)}</div>}

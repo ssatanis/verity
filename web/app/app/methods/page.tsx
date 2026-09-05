@@ -23,12 +23,12 @@ export default async function Methods() {
   return (
     <div className="max-w-4xl">
       <div className="eyebrow">Methods</div>
-      <h1 className="display serif text-[40px] md:text-[54px] mt-2">How Verity makes its numbers.</h1>
+      <h1 className="display serif text-[34px] md:text-[44px] mt-2">How Verity makes its numbers.</h1>
       <p className="text-[15px] text-[var(--ink-2)] mt-4 leading-7">Everything on this site comes from public records. This page explains, in plain terms, what each detector looks for, how a provider ends up with a tier and a score, and how much each result can be trusted. The full technical write-up is at the bottom.</p>
 
       <section className="mt-12">
         <h2 className="serif text-[32px]" style={{ color: "var(--blue)" }}>The data</h2>
-        <p className="text-[14px] leading-7 mt-3">Fourteen public datasets: Medicaid provider spending and enrollment for every state ({num(t.spend_rows)} spending rows, 2018 to 2024), Medicare enrollments and their owners, the national provider registry ({num(t.nppes)} providers), the OIG exclusion list, SAM.gov exclusions, Medicare revocations, market saturation, quality data, Census geography, state exclusion lists and state fee schedules. Every provider number is validated with its check digit, addresses are standardised, and names are parsed before anything is joined.</p>
+        <p className="text-[14px] leading-7 mt-3">Fourteen public datasets: Medicaid provider spending and enrollment for every state ({num(t.spend_rows)} spending rows, 2018 to 2024), Medicare enrollments and their owners, the national provider registry ({num(t.nppes)} providers), the OIG exclusion list, SAM.gov exclusions, Medicare revocations, market saturation, quality data, Census geography, state exclusion lists and state fee schedules. Every provider number is validated with its check digit, addresses are standardized, and names are parsed before anything is joined.</p>
       </section>
 
       <section className="mt-12">
@@ -48,7 +48,7 @@ export default async function Methods() {
         <Eq>{String.raw`\text{hours}_{\text{lower}} = \frac{\sum_{\text{codes}} \text{lines}_c \cdot \text{minutes}_c}{60}`}</Eq>
         <p className="text-[14px] leading-7">The point estimate divides dollars by a unit price, using the published state rate where one exists and a conservative estimate elsewhere. The conservative figure uses 1.5 times that price, which lowers the hours. A month is flagged only when the conservative hours per calendar day exceed 24:</p>
         <Eq>{String.raw`\frac{\text{hours}_{\text{conservative}}}{\text{days in month}} > 24`}</Eq>
-        <p className="text-[14px] leading-7">Only codes that a clinician must deliver in person count toward an individual's hours; aide, technician and agency codes are billed under a supervising provider by design and are reported separately. Because several states let clinics bill under a supervising clinician, hours beyond a day from a single organisation are tier B. Tier A needs the hours to come from three or more billing organisations in the same month, more than 24 hours per patient per day, or a breach of a state's own daily cap.</p>
+        <p className="text-[14px] leading-7">Only codes that a clinician must deliver in person count toward an individual's hours; aide, technician and agency codes are billed under a supervising provider by design and are reported separately. Because several states let clinics bill under a supervising clinician, hours beyond a day from a single organization are tier B. Tier A needs the hours to come from three or more billing organizations in the same month, more than 24 hours per patient per day, or a breach of a state's own daily cap.</p>
         <div className="grid md:grid-cols-2 gap-5 mt-5">
           <div className="card p-5"><div className="eyebrow mb-3">Dollars in flagged months by tier, $ millions</div><Bars rows={d2tiers} /><p className="text-[12px] text-[var(--ink-3)] mt-3">Tier C is informational (over 12 hours a day, or agency volume under one clinician) and stays out of the referral queue.</p></div>
           <div className="card p-5"><div className="eyebrow mb-3">What was found, by number of providers</div><Bars rows={d2labels} /></div>
@@ -68,7 +68,7 @@ export default async function Methods() {
 
       <section className="mt-12">
         <h2 className="serif text-[32px]" style={{ color: "var(--blue)" }}>One score per provider</h2>
-        <p className="text-[14px] leading-7 mt-3">Every provider any detector reached gets a tier that says what the public record can prove: 1, on a public list and still paid afterwards; 2, more hours than a day holds across several organisations; 3, part of a ranked network that touches a public list; 4, network structure alone or hours beyond a day under one organisation; 5, worth knowing. The score adds a bonus when strong findings from different detectors agree, and a small term for the dollars involved:</p>
+        <p className="text-[14px] leading-7 mt-3">Every provider any detector reached gets a tier that says what the public record can prove: 1, on a public list and still paid afterwards; 2, more hours than a day holds across several organizations; 3, part of a ranked network that touches a public list; 4, network structure alone or hours beyond a day under one organization; 5, worth knowing. The score adds a bonus when strong findings from different detectors agree, and a small term for the dollars involved:</p>
         <Eq>{String.raw`\text{score} = \min\Big(100,\; \text{base}_{\text{tier}} + 8\,\max(n_{\text{strong}} - 1, 0) + \min\big(9, \log_{10} \text{dollars}\big)\Big)`}</Eq>
         <p className="text-[14px] leading-7">with tier bases of 90, 75, 60, 45 and 25. Dollars come from the detector that set the tier and are never summed across detectors, so a weak indicator cannot lift a small case above a large one. Across the country: {num(t.risk_tier1)} providers in tier 1, {num(t.risk_tier2)} in tier 2, and {num(t.risk_corroborated)} confirmed independently by two detectors.</p>
       </section>

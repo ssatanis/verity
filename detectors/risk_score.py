@@ -2,10 +2,10 @@
 """Unified provider risk: one row per NPI with a tier, a score and the detectors behind it. The hierarchy is explicit.
 
   Tier 1  documented action, then payment: on a tier-A federal or state list and Medicaid service months after it (D3 tier A)
-  Tier 2  physically impossible volume with concurrency: impossible personal-service hours billed by three or more organisations in a
+  Tier 2  physically impossible volume with concurrency: impossible personal-service hours billed by three or more organizations in a
           month, more than 24 hours per patient per day, or over Minnesota's own daily cap (D2 tier A)
   Tier 3  network structure plus a label link: member of an eligible community whose label family is present (D1)
-  Tier 4  structure only, or single-organisation impossibility, or growth anomaly (D1 eligible without label link, D2 tier B)
+  Tier 4  structure only, or single-organization impossibility, or growth anomaly (D1 eligible without label link, D2 tier B)
   Tier 5  informational (D3 tier B, D2 umbrella volume, community membership below the ranked list)
 
   score = tier base (90, 75, 60, 45, 25) + 8 for each additional detector that independently reached the NPI (cap 16)
@@ -69,11 +69,11 @@ con.execute("""
 CREATE OR REPLACE TABLE provider_risk AS
 SELECT *, LEAST(100.0, (CASE tier WHEN 1 THEN 90 WHEN 2 THEN 75 WHEN 3 THEN 60 WHEN 4 THEN 45 ELSE 25 END) + LEAST(16, 8 * GREATEST(n_strong - 1, 0)) + LEAST(9.0, LOG10(GREATEST(dollars_at_risk, 1)))) AS score,
        CASE tier WHEN 1 THEN 'documented action, then payment' WHEN 2 THEN 'impossible volume with concurrency' WHEN 3 THEN 'network structure with a list link'
-                 WHEN 4 THEN 'structure or single-organisation volume' ELSE 'informational' END AS tier_label,
+                 WHEN 4 THEN 'structure or single-organization volume' ELSE 'informational' END AS tier_label,
        concat_ws('; ',
          CASE WHEN d3_a = 1 THEN 'Listed on ' || pretty_source(d3_sources) || ' since ' || strftime(d3_first_event, '%B %-d, %Y') || '; Medicaid still paid claims in ' || d3_months || ' later months, $' || format('{:,}', CAST(ROUND(d3_paid_after) AS BIGINT)) || ' in total' END,
-         CASE WHEN d2_tier = 'A' THEN 'Billed more hands-on hours than a day holds in ' || months_impossible || ' month(s), peaking at ' || ROUND(peak_hours_per_day, 1) || ' hours per day across ' || max_billing_orgs || ' billing organisations' END,
-         CASE WHEN d2_tier = 'B' THEN 'Hours beyond a day in ' || months_impossible || ' month(s) under one organisation, which can be supervisory billing; records needed' END,
+         CASE WHEN d2_tier = 'A' THEN 'Billed more hands-on hours than a day holds in ' || months_impossible || ' month(s), peaking at ' || ROUND(peak_hours_per_day, 1) || ' hours per day across ' || max_billing_orgs || ' billing organizations' END,
+         CASE WHEN d2_tier = 'B' THEN 'Hours beyond a day in ' || months_impossible || ' month(s) under one organization, which can be supervisory billing; records needed' END,
          CASE WHEN months_over_mn_cap > 0 THEN 'Over the state daily cap in ' || months_over_mn_cap || ' month(s)' END,
          CASE WHEN d1_eligible THEN 'Part of provider network ' || d1_cluster_id || ', ranked ' || d1_rank || ' nationally' END,
          CASE WHEN n_strong >= 2 THEN 'Confirmed independently by ' || n_strong || ' detectors' WHEN n_detectors >= 2 THEN 'A second detector adds a weaker signal' END) AS reasons
@@ -85,7 +85,7 @@ S["top"] = q("SELECT rank, npi, name, entity_type, state, tier, ROUND(score,1), 
 S["corroborated"] = q("SELECT COUNT(*) FROM provider_risk WHERE n_strong >= 2")
 for k, v in S.items(): print(f"== {k}"); [print("  ", r) for r in v]
 body = f"""
-**Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action. Tier 2: physically impossible personal-service volume billed by three or more organisations in a month, more than 24 hours per patient per day, or over Minnesota's own daily cap. Tier 3: member of an eligible provider community with a label link. Tier 4: structure only, or single-organisation impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers), never a sum and never borrowed from a weaker indicator, so a single-organisation volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
+**Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action. Tier 2: physically impossible personal-service volume billed by three or more organizations in a month, more than 24 hours per patient per day, or over Minnesota's own daily cap. Tier 3: member of an eligible provider community with a label link. Tier 4: structure only, or single-organization impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers), never a sum and never borrowed from a weaker indicator, so a single-organization volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
 
 {md_table(S["tiers"], ["tier","meaning","NPIs","$M at risk","reached by 2+ detectors"])}
 

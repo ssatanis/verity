@@ -5,7 +5,7 @@ Design (see docs/RISK_SCORE_V2.md):
   1. Cohort and label.  Every NPI with >= $1,000 of Medicaid payments in 2018-2022. Label y = 1 if the NPI received a fraud-authority
      OIG exclusion (1128(a)(1),(a)(2),(a)(3),(b)(7)) or an integrity-ground Medicare revocation (42 CFR 424.535(a)(2),(3),(4),(5),(7),(8),
      (10),(12),(13),(14),(18),(19),(20),(22),(23)) dated 2023-01-01 or later. Features use only 2018-2022 data, so the test is out of time.
-  2. Features.  Volume, growth, ramp (max month over trailing 6-month median), concentration, concurrency (billing organisations),
+  2. Features.  Volume, growth, ramp (max month over trailing 6-month median), concentration, concurrency (billing organizations),
      patients, impossible-hour months and peak implied hours (Detector 2 restricted to <= 2022), prior administrative history, entity type.
   3. Model.  Weight-of-evidence binning per feature (reported with information value), logistic regression on the WOE features
      (additive log-odds, the same structure as Fellegi-Sunter and credit scorecards), isotonic calibration on a held-out 30 percent.
@@ -29,7 +29,7 @@ FRAUD_LEIE = "('1128a1','1128a2','1128a3','1128b7')"
 INTEGRITY = r"'\(A\)\((2|3|4|5|7|8|10|12|13|14|18|19|20|22|23)\)'"
 
 def features(end_month):
-    """Per-NPI behavioural features from spend_any_month up to end_month (inclusive), plus D2 and history features. Cached to parquet."""
+    """Per-NPI behavioral features from spend_any_month up to end_month (inclusive), plus D2 and history features. Cached to parquet."""
     cache = f"data/cache_risk_v2/features_{end_month}.parquet"
     if os.path.exists(cache): return pd.read_parquet(cache)
     df = con.execute(f"""

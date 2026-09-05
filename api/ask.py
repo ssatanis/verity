@@ -56,7 +56,7 @@ def make_tools(subject_type: str, subject_id: str):
         return json.dumps({"revoked": rev, "leie": leie}, default=str)
     @beta_tool
     def get_payment_timeline() -> str:
-        """Detector flags with dates and dollars: for D3 the action date, first and last Medicaid service month after it and dollars; for D2 each flagged month with implied hours, patients, billing organisations and codes."""
+        """Detector flags with dates and dollars: for D3 the action date, first and last Medicaid service month after it and dollars; for D2 each flagged month with implied hours, patients, billing organizations and codes."""
         with _conn() as c:
             npis = _npis(subject_type, subject_id, c)
             rows = c.execute("SELECT npi, detector, tier, month, metric, value, threshold, dollars, evidence FROM public.flags WHERE npi = ANY(%s) ORDER BY month LIMIT 200", (npis,)).fetchall()

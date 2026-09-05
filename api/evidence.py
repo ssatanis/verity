@@ -53,10 +53,10 @@ def evidence_lines(ev):
     L = []
     if ev["kind"] == "cluster":
         c = ev["cluster"]; f = c["features"]
-        L.append(("clusters", f"Community {c['id']} ({c['n_providers']} providers: {c['n_hospice']} hospice, {c['n_hha']} home health, {c['n_snf']} SNF) centred on {c['city']}; risk score {float(c['score']):.2f}, rank {c['rank']}."))
+        L.append(("clusters", f"Community {c['id']} ({c['n_providers']} providers: {c['n_hospice']} hospice, {c['n_hha']} home health, {c['n_snf']} SNF) centered on {c['city']}; risk score {float(c['score']):.2f}, rank {c['rank']}."))
         if f.get("burst_90", 0) >= 2: L.append(("hospice/hha/snf enrollment files, INCORPORATION DATE", f"{f['burst_90']} members were incorporated within a 90-day window {f.get('burst_90_span')}."))
         if max(f.get("addr_share", 0), f.get("unit_share", 0)) >= 2: L.append(("enrollment ADDRESS LINE 1 / NPPES practice location", f"Up to {max(f['addr_share'], f['unit_share'])} members share one practice address{' (same suite)' if f.get('unit_share',0) >= 2 else ''}."))
-        if f.get("owner_multi", 0): L.append(("All-Owners files, resolved persons and organisations", f"{f['owner_multi']} owner(s) are tied to three or more members (largest: {f['max_owner_degree']})."))
+        if f.get("owner_multi", 0): L.append(("All-Owners files, resolved persons and organizations", f"{f['owner_multi']} owner(s) are tied to three or more members (largest: {f['max_owner_degree']})."))
         if f.get("phone_share", 0) >= 2: L.append(("NPPES practice telephone", f"{f['phone_share']} members list the same telephone number."))
         for src, npis in (f.get("prov_labels") or {}).items(): L.append((src, f"Member NPI(s) {', '.join(npis)} appear on {src}."))
         for h in f.get("owner_hits") or []: L.append((h[1], f"Owner '{h[0]}' matches {h[1]} at {h[2]} confidence (effective {h[3]})."))
@@ -70,7 +70,7 @@ def evidence_lines(ev):
             L.append((f"flags/{fl['detector']}", f"NPI {fl['npi']} {fl['metric']} = {float(fl['value'] or 0):,.2f} (threshold {fl['threshold']}) in {fl['month']}; ${float(fl['dollars'] or 0):,.0f}; {e.get('label') or e.get('source') or ''}."))
     else:
         p = ev["provider"] or {}
-        L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organisation' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
+        L.append(("providers/NPPES", f"NPI {p.get('npi')} {p.get('name')} ({'organization' if p.get('entity_type')=='2' else 'individual'}), {p.get('city')}, {p.get('state')}; taxonomy {p.get('taxonomy')}; Medicaid home state {p.get('medicaid_state')}."))
         r = ev.get("risk")
         if r: L.append(("provider_risk", f"Evidence tier {r['tier']} ({r['tier_label']}); detectors {', '.join(r['detectors'] or [])}; dollars at risk ${float(r['dollars_at_risk'] or 0):,.0f} (figure of the detector that set the tier, not a sum); reasons: {r['reasons']}."))
         for r in ev["revoked"]: L.append(("Revocation_Extract", f"Revoked {r['revoked_dt']} under {r['revocation_rsn']}; re-enrollment bar to {r['reenroll_bar_dt']}."))
@@ -78,7 +78,7 @@ def evidence_lines(ev):
         for fl in ev["flags"]:
             e = fl["evidence"] if isinstance(fl["evidence"], dict) else json.loads(fl["evidence"] or "{}")
             if fl["detector"] == "D3": L.append(("flags/D3 + T-MSIS spending", f"After the {e.get('source')} action of {e.get('event_dt')} ({e.get('reason')}), Medicaid paid ${float(e.get('paid_after') or 0):,.0f} across {e.get('months_paid_after')} service months ({e.get('first_month_after')} to {e.get('last_month_after')}); ${float(e.get('paid_before_12m') or 0):,.0f} in the 12 months before."))
-            else: L.append(("flags/D2 + T-MSIS spending", f"{fl['month']}: {e.get('label')}; implied hours per {e.get('test_basis','day')} {float(fl['value'] or 0):.1f} (lower bound {float(e.get('hours_lb_per_day') or 0):.1f}, point {float(e.get('hours_pt_per_day') or 0):.1f}); ${float(e.get('paid') or 0):,.0f}; codes {e.get('codes')}; {e.get('n_billing_orgs')} billing organisations; rate source {e.get('rate_sources')}."))
+            else: L.append(("flags/D2 + T-MSIS spending", f"{fl['month']}: {e.get('label')}; implied hours per {e.get('test_basis','day')} {float(fl['value'] or 0):.1f} (lower bound {float(e.get('hours_lb_per_day') or 0):.1f}, point {float(e.get('hours_pt_per_day') or 0):.1f}); ${float(e.get('paid') or 0):,.0f}; codes {e.get('codes')}; {e.get('n_billing_orgs')} billing organizations; rate source {e.get('rate_sources')}."))
         for en in ev["enrollments"]: L.append(("enrollments", f"Enrolled as {en['ptype']} {en['org_name']} ({en['enrollment_id']}), incorporated {en['inc_date']}, {en['city']}, {en['state']}."))
         for c in ev["clusters"]: L.append(("clusters", f"Member of community {c['id']} (rank {c['rank']}, score {float(c['score']):.2f}): {c['summary']}"))
     return L

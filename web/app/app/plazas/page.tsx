@@ -7,8 +7,8 @@ export default async function Plazas({ searchParams }: { searchParams: Promise<{
   const { data } = await q;
   return (
     <div>
-      <div className="eyebrow">Provider networks · addresses</div>
-      <h1 className="display serif text-[40px] md:text-[54px] mt-2">Addresses that host many providers.</h1>
+      <div className="eyebrow">Provider networks, addresses</div>
+      <h1 className="display serif text-[34px] md:text-[44px] mt-2">Addresses that host many providers.</h1>
       <p className="text-[13.5px] text-[var(--ink-2)] mt-4 max-w-3xl leading-6">Los Angeles County counted dozens of hospices registered at one Van Nuys office plaza. This table lists every address with eight or more hospice, home health or nursing facility enrollments, how many formed since 2019, how many are on a public list, and whether a revoked or excluded company is registered there. Large medical office buildings appear here too; an address is a lead, not a finding.</p>
       <div className="card mt-6 overflow-x-auto"><table className="table">
         <thead><tr><th>address</th><th>city</th><th>providers</th><th>hospice</th><th>HHA</th><th>SNF</th><th>formed since 2019</th><th>on a list</th><th>revoked company here</th><th>providers</th></tr></thead>

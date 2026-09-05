@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 export function AskCase({ subjectType, subjectId }: { subjectType: "cluster" | "provider"; subjectId: string }) {
   const [q, setQ] = useState(""); const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const suggestions = subjectType === "cluster" ? ["Which owners connect the most members?", "Which members are on a list, and when?", "What happened in the incorporation burst window?"] : ["What is the timeline of the action and the payments after it?", "Which organisations billed under this NPI in the flagged months?", "What must a reviewer rule out before acting?"];
+  const suggestions = subjectType === "cluster" ? ["Which owners connect the most members?", "Which members are on a list, and when?", "What happened in the incorporation burst window?"] : ["What is the timeline of the action and the payments after it?", "Which organizations billed under this NPI in the flagged months?", "What must a reviewer rule out before acting?"];
   async function ask(text: string) {
     if (!text.trim() || busy) return; setBusy(true); setQ("");
     const history = turns.map(t => ({ role: t.role, content: t.content }));

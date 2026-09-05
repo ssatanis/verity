@@ -62,7 +62,7 @@ export function Stats({ stats }: { stats: Record<string, any> }) {
 export function Detectors() {
   const d = [
     ["01", "Ghost Networks", "Groups of newly formed hospices, home health agencies and nursing facilities that share owners, suites, phone numbers or officials, often at the address of a company that was already revoked. Verity resolves who owns what and ranks each network by how unusual its structure is.", "/app/clusters"],
-    ["02", "Impossible Days", "Medicaid billing turned into hours of hands-on care. When one clinician is billed for more hours than a day holds, across several unrelated organisations in the same month, the volume cannot be one person's work.", "/app/flags?detector=D2"],
+    ["02", "Impossible Days", "Medicaid billing turned into hours of hands-on care. When one clinician is billed for more hours than a day holds, across several unrelated organizations in the same month, the volume cannot be one person's work.", "/app/flags?detector=D2"],
     ["03", "Paid After a Screening Trigger", "Providers revoked by Medicare, excluded by the OIG, debarred in SAM.gov or excluded by a state, whom Medicaid kept paying after the action. Matched by exact NPI with the name verified.", "/app/flags?detector=D3"],
   ];
   return (
@@ -78,7 +78,7 @@ export function Detectors() {
   );
 }
 export function Hierarchy() {
-  const tiers = [["1", "On a public list, and still paid afterwards"], ["2", "More hours than a day holds, across several organisations"], ["3", "Part of a suspicious network that touches a public list"], ["4", "Network structure alone, or hours beyond a day under one organisation"], ["5", "Worth knowing, not yet a referral"]];
+  const tiers = [["1", "On a public list, and still paid afterwards"], ["2", "More hours than a day holds, across several organizations"], ["3", "Part of a suspicious network that touches a public list"], ["4", "Network structure alone, or hours beyond a day under one organization"], ["5", "Worth knowing, not yet a referral"]];
   return (
     <section style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24 grid md:grid-cols-[1fr_1.4fr] gap-12`}>
@@ -103,7 +103,7 @@ export function WhoWeServe() {
   );
 }
 export function HowItWorks() {
-  const steps = [["Gather", "Fourteen public datasets: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardise addresses, and work out which owner records are the same person, with borderline cases adjudicated by a model."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject. The reason given is filed under the kind of evidence that was wrong, and the ranking adjusts."]];
+  const steps = [["Gather", "Fourteen public datasets: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardize addresses, and work out which owner records are the same person, with borderline cases adjudicated by a model."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject. The reason given is filed under the kind of evidence that was wrong, and the ranking adjusts."]];
   return (
     <section id="how" style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24`}>

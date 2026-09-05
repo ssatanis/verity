@@ -1,4 +1,4 @@
-// Small, dependency-free bar chart in the three-colour palette.
+// Small, dependency-free bar chart in the three-color palette.
 export function Bars({ rows, unit = "", max, height = 180 }: { rows: [string, number, string?][]; unit?: string; max?: number; height?: number }) {
   const m = max ?? Math.max(...rows.map(r => r[1]), 1);
   return (

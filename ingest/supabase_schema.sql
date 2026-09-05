@@ -190,3 +190,13 @@ alter table public.hub_addresses enable row level security;
 drop policy if exists "public read" on public.hub_addresses; create policy "public read" on public.hub_addresses for select using (true);
 create index if not exists providers_name_idx on public.providers (lower(name) text_pattern_ops);
 alter table public.reviews add column if not exists notes_family text;
+
+-- factor desk: thirty factors per provider network with percentile and robust z, plus a momentum row
+create table if not exists public.network_factors (
+  cluster_id text not null, factor text not null, family text, label text, unit text, direction text, note text,
+  value numeric, percentile numeric, z numeric, outlook text, primary key (cluster_id, factor)
+);
+create index if not exists network_factors_cluster_idx on public.network_factors (cluster_id);
+alter table public.network_factors enable row level security;
+drop policy if exists "public read network_factors" on public.network_factors;
+create policy "public read network_factors" on public.network_factors for select using (true);

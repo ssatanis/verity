@@ -167,7 +167,7 @@ def ask_case(body: AskIn):
 
 @app.get("/search")
 def search_any(q: str = Query(..., min_length=2), limit: int = 10):
-    """Search every NPI in NPPES by number prefix or name (organisation, or last and first name)."""
+    """Search every NPI in NPPES by number prefix or name (organization, or last and first name)."""
     try: return {"hits": lookup.search(q, limit)}
     except Exception as e: raise HTTPException(503, f"warehouse busy: {str(e)[:80]}")
 
@@ -178,3 +178,11 @@ def provider_any(npi: str):
     except Exception as e: raise HTTPException(503, f"warehouse busy: {str(e)[:80]}")
     if not r: raise HTTPException(404, "NPI not in NPPES")
     return r
+
+
+@app.get("/")
+def index():
+    """Service index so the API answers at its root."""
+    return {"service": "Verity API", "docs": "/docs", "health": "/health",
+            "routes": ["/search?q=", "/provider/{npi}", "/clusters", "/providers/{npi}", "/packets", "/reviews", "/ask", "/verify", "/sam/lookup"],
+            "model": llm.MODEL, "agent": llm.ready()}

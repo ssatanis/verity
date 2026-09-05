@@ -21,6 +21,10 @@ def copy(table, cols, sql, truncate=True):
     pg.commit(); os.remove(tmp); print(f"synced {table:<18} {n:>9,} rows {time.time()-t:5.1f}s", flush=True); return n
 have = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()}
 counts = {}
+if "d1_factors" in have:
+    counts["network_factors"] = copy("network_factors", "cluster_id, factor, family, label, unit, direction, note, value, percentile, z, outlook",
+        """SELECT d.cluster_id, d.factor, d.family, d.label, d.unit, d.direction, d.note, d.value, d.percentile, d.z, d.outlook
+           FROM d1_factors d JOIN clusters c USING (cluster_id) WHERE c.eligible OR c.rank <= 600""")
 if "clusters" in have:
     counts["clusters"] = copy("clusters", "id, detector, state, county, county_fips, score, dollars_at_risk, n_providers, summary, features, rank, eligible, chain_or_pe, n_hospice, n_hha, n_snf, city, structure_score, label_score, context_score, dollars_medicare, graph, lat, lon",
         """SELECT c.cluster_id, 'D1', c.state, cc.county_name, c.county_fips,

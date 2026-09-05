@@ -12,7 +12,7 @@ export default function Legal() {
     ["privacy", "Privacy Policy", [
       "Verity processes provider-level public records only: enrollment, ownership, exclusion, revocation and aggregate spending files published by CMS, HHS OIG, SAM.gov, NPPES, the Census Bureau and state Medicaid agencies. It holds no beneficiary data, no claim lines and no protected health information.",
       "The console stores reviewer decisions and notes to improve the ranking. Notes are classified by an automated model into an evidence family; the note text is retained for audit and is visible to other reviewers of the same packet.",
-      "Contact ss4497@cornell.edu for questions about the data, to request the removal of a row that names you or your organisation, or to correct a record.",
+      "Contact ss4497@cornell.edu for questions about the data, to request the removal of a row that names you or your organization, or to correct a record.",
     ]],
     ["security", "Security", [
       "The console sits behind a reviewer sign in. Packets are stored in a private bucket. The case chat can only call read-only evidence tools over the serving tables, and every model output is validated against the evidence list before it is shown.",

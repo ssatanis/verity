@@ -98,7 +98,7 @@ ev AS (
   SELECT e.npi, 'TMSIS_DECEASED', MIN(e.start_dt), NULL::DATE,
          'Medicaid enrollment terminated: provider deceased (T-MSIS status 80)' || CASE WHEN n.deact_date IS NOT NULL THEN '; NPI deactivated in NPPES ' || CAST(n.deact_date AS VARCHAR) ELSE '' END,
          e.state, CASE WHEN n.deact_date IS NOT NULL THEN 'A' ELSE 'B' END, NULL, e.prvdr_type_desc
-  FROM enroll e JOIN nppes n ON n.npi = e.npi AND n.entity_type = '1'          -- individuals only: organisations cannot be deceased
+  FROM enroll e JOIN nppes n ON n.npi = e.npi AND n.entity_type = '1'          -- individuals only: organizations cannot be deceased
   JOIN latest l ON l.npi = e.npi AND l.state = e.state AND l.status_cd = '80'   -- deceased must be the latest status in that state
   WHERE e.status_cd = '80' AND e.start_dt >= DATE '2015-01-01' GROUP BY e.npi, e.state, e.prvdr_type_desc, n.deact_date
   UNION ALL
@@ -278,9 +278,9 @@ body = f"""
 
 {md_table(S["enrolled_after_by_state"], ["Medicaid state","NPIs"])}
 
-**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organisations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: {de.get('A',[0,0,0,0])[1]:,} NPIs, ${de.get('A',[0,0,0,0])[2]:,.2f}M paid after; tier B (no NPPES corroboration): {de.get('B',[0,0,0,0])[1]:,} NPIs, ${de.get('B',[0,0,0,0])[2]:,.2f}M.
+**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organizations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: {de.get('A',[0,0,0,0])[1]:,} NPIs, ${de.get('A',[0,0,0,0])[2]:,.2f}M paid after; tier B (no NPPES corroboration): {de.get('B',[0,0,0,0])[1]:,} NPIs, ${de.get('B',[0,0,0,0])[2]:,.2f}M.
 
-**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organisations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: {cs[1]:,} NPIs ({cs[0]:,} state pairs), {cs[2]:,} of them also on a federal or state exclusion list, {cs[4]:,} with Medicaid dollars after the termination (${cs[3]:,.2f}M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
+**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organizations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: {cs[1]:,} NPIs ({cs[0]:,} state pairs), {cs[2]:,} of them also on a federal or state exclusion list, {cs[4]:,} with Medicaid dollars after the termination (${cs[3]:,.2f}M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
 
 {md_table(S["crossstate_by_code"], ["code","reason","NPIs","$M after"])}
 

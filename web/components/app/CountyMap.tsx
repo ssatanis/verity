@@ -41,7 +41,7 @@ export function CountyMap({ counties, height = 520 }: { counties: County[]; heig
     <div className="relative" style={{ height }}>
       <svg ref={ref} className="w-full h-full" />
       <div className="absolute left-3 bottom-3 text-[11px] text-[var(--ink-3)] bg-white/90 px-2 py-1">Dollars at stake by county. Darker is more. Scroll to zoom, click a county for details.</div>
-      {h && !sel && <div className="absolute left-3 top-3 bg-white px-3 py-2 text-[12px]" style={{ border: "1px solid var(--blue)" }}><b>{h.county_name}, {h.state}</b> · {money(h.dollars_at_risk)} · {h.n_providers_flagged} providers · {h.n_clusters} networks</div>}
+      {h && !sel && <div className="absolute left-3 top-3 bg-white px-3 py-2 text-[12px]" style={{ border: "1px solid var(--blue)" }}><b>{h.county_name}, {h.state}</b>, {money(h.dollars_at_risk)}, {h.n_providers_flagged} providers, {h.n_clusters} networks</div>}
       {sel && (
         <aside className="absolute top-0 right-0 bottom-0 w-full sm:w-[380px] bg-white overflow-y-auto" style={{ borderLeft: "1px solid var(--blue)", boxShadow: "-8px 0 24px rgba(0,40,86,0.08)" }}>
           <div className="p-5">

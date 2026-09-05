@@ -17,14 +17,14 @@ export default async function Overview() {
   const t = (summ?.find((s: any) => s.key === "totals")?.value as any) ?? {};
   const kpis = [
     { l: "On a public list, still paid afterwards", v: num(t.risk_tier1), s: `${money(t.d3_dollars_after)} paid after the action`, href: "/app/candidates?tier=1" },
-    { l: "More hours than a day holds, across organisations", v: num(t.risk_tier2), s: `${num(t.d2_npis_impossible)} clinicians with at least one such month`, href: "/app/candidates?tier=2" },
+    { l: "More hours than a day holds, across organizations", v: num(t.risk_tier2), s: `${num(t.d2_npis_impossible)} clinicians with at least one such month`, href: "/app/candidates?tier=2" },
     { l: "Flagged by two detectors independently", v: num(t.risk_corroborated), s: "the strongest signal the system produces", href: "/app/candidates" },
     { l: "Provider networks ranked", v: num(t.d1_clusters_eligible), s: `${money(t.d1_dollars_top200)} Medicaid 2024 in the top 200`, href: "/app/clusters" },
   ];
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-        <div><div className="eyebrow">Overview</div><h1 className="display serif text-[40px] md:text-[54px] mt-2">Who to look at first, and why.</h1><p className="text-[13px] text-[var(--ink-3)] mt-3">Medicaid spending 2018 to 2024 for every state, Medicare enrollments as of July 2026, exclusion lists as of September 2026. {num(t.spend_rows)} spending rows scanned.</p></div>
+        <div><div className="eyebrow">Overview</div><h1 className="display serif text-[34px] md:text-[44px] mt-2">Who to look at first, and why.</h1><p className="text-[13px] text-[var(--ink-3)] mt-3">Medicaid spending 2018 to 2024 for every state, Medicare enrollments as of July 2026, exclusion lists as of September 2026. {num(t.spend_rows)} spending rows scanned.</p></div>
         <Link href="/app/methods" className="link text-[13px] shrink-0">How the numbers are made</Link>
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-px mb-6" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
@@ -43,7 +43,7 @@ export default async function Overview() {
             <Link key={c.id} href={`/app/clusters/${c.id}`} className="block py-3 rule hover:bg-[var(--paper-2)]">
               <div className="flex justify-between text-[13px]"><span className="serif text-[17px]">{c.summary}</span><span className="serif text-[17px]" style={{ color: "var(--blue)" }}>{Number(c.score).toFixed(0)}</span></div>
               <div className="text-[11.5px] text-[var(--ink-2)] mt-1 line-clamp-2">{facts.slice(0, 2).join(" ")}</div>
-              <div className="text-[11px] text-[var(--ink-3)] mt-1">{c.id} · {money(c.dollars_at_risk)} Medicaid 2024</div>
+              <div className="text-[11px] text-[var(--ink-3)] mt-1">{c.id}, {money(c.dollars_at_risk)} Medicaid 2024</div>
             </Link>); })}
         </div>
       </div>

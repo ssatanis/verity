@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Recover NPIs for exclusion entries that carry none. LEIE and SAM (HHS) rows without an NPI are matched to NPPES candidates by
-deterministic blocking (same state; individuals on exact last name and first name, businesses on the normalised organisation name),
+deterministic blocking (same state; individuals on exact last name and first name, businesses on the normalized organization name),
 then Claude judges each candidate pair (structured output, Batch API) with a confidence and a reason. Only 'yes' with high confidence
 becomes a name-matched event, and Detector 3 reports those separately as tier B. Writes sam_npi_matches in DuckDB and docs/name_matching.md.
 Usage: .venv/bin/python scripts/sam_match_claude.py [--limit 600]"""
@@ -11,10 +11,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROO
 import llm
 ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int, default=600); a = ap.parse_args()
 class Judgement(BaseModel):
-    same_entity: bool = Field(description="True only if the exclusion entry and the NPPES record are the same person or organisation")
+    same_entity: bool = Field(description="True only if the exclusion entry and the NPPES record are the same person or organization")
     confidence: str = Field(description="high, medium or low")
     reason: str = Field(description="One sentence citing the fields that agree or conflict")
-SYS = "You decide whether a health care exclusion list entry (name, address) and an NPPES provider record (name, practice address, taxonomy) refer to the same person or organisation. Common names in large cities need address agreement; a name-only match is low confidence. Do not use em dashes."
+SYS = "You decide whether a health care exclusion list entry (name, address) and an NPPES provider record (name, practice address, taxonomy) refer to the same person or organization. Common names in large cities need address agreement; a name-only match is low confidence. Do not use em dashes."
 con = duckdb.connect("data/verity.duckdb")
 con.execute("CREATE OR REPLACE MACRO okey(n) AS trim(regexp_replace(regexp_replace(upper(COALESCE(n,'')), '\\b(LLC|INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|PC|LP|LLP|PLLC|THE)\\b', ' ', 'g'), '[^A-Z0-9 ]| +', ' ', 'g'))")
 cands = con.execute(f"""

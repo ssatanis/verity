@@ -28,7 +28,7 @@ export function SearchBox({ autoFocus = false, large = false }: { autoFocus?: bo
           {busy && !hits.length && <div className="px-3 py-2 text-[12px] text-[var(--ink-3)]">Searching</div>}
           {hits.map(h => (
             <button key={h.npi} type="button" onClick={() => { router.push(`/app/providers/${h.npi}`); setOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-[var(--paper-2)] flex items-center justify-between gap-3" style={{ borderTop: "1px solid var(--line)" }}>
-              <span><span className="text-[13px]">{h.name || h.npi}</span><span className="block text-[11px] text-[var(--ink-3)]">{h.npi} · {h.entity_type === "2" ? "organisation" : "individual"}{h.city ? ` · ${h.city}, ${h.state}` : h.state ? ` · ${h.state}` : ""}</span></span>
+              <span><span className="text-[13px]">{h.name || h.npi}</span><span className="block text-[11px] text-[var(--ink-3)]">{h.npi}, {h.entity_type === "2" ? "organization" : "individual"}{h.city ? `, ${h.city}, ${h.state}` : h.state ? `, ${h.state}` : ""}</span></span>
               {h.tier ? <span className={`tier tier-${h.tier}`}>{h.tier}</span> : <span className="text-[11px] text-[var(--ink-3)]">{h.source === "nppes" ? "no indicators" : ""}</span>}
             </button>
           ))}
