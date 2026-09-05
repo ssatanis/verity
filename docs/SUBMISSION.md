@@ -1,0 +1,57 @@
+# Verity: submission notes for DNHacks 2026 (Health and Public Service)
+
+This document is the written companion to the console and the Methods page. It states the problem, the solution, and how the work maps to the judging criteria. The website itself is written for the buyer and does not restate the problem.
+
+## 1. Problem and real-world impact
+
+**The problem.** Medicaid and Medicare pay first and audit later. The public record already contains the signals that a payment should not go out: an NPI revoked by Medicare or excluded by OIG, an owner who appears on fifteen new hospice enrollments in one quarter, a clinician whose codes imply forty hours of personal service in a day. Those signals sit in fourteen separate files, in three encodings, with no shared key beyond the NPI, and no health plan special investigations unit (SIU) has the time to join them. The result is the pattern seen in Los Angeles County, where a single office plaza in Van Nuys hosted dozens of hospice enrollments, and in the OIG audit that found $50.3 million paid to providers terminated for cause in one state and still paid in others.
+
+**Who carries the loss.** Medicaid managed care plans, Medicare Advantage plans and commercial payers pay these claims out of capitated or premium dollars. Their SIU, payment integrity, credentialing and compliance teams are the end users; the plan's chief financial officer and chief compliance officer are the buyers. State Medicaid program integrity units are the referral destination.
+
+**The solution.** Verity is a pre-payment provider integrity tripwire built entirely on public data. It joins the fourteen datasets into one warehouse, runs three detectors that each answer a different question from a different record, ranks every provider on one explicit evidence hierarchy, and produces a referral candidate packet in which every sentence cites the public row it came from. Nothing in Verity asserts fraud; every output is an indicator for a human to verify.
+
+**Impact.** A plan running Verity sees the network behind a new enrollment at the point of contracting, holds tier 1 and tier 2 candidates for review before adjudication, and sends a state referral with the evidence assembled on day one instead of week three. The same pipeline generalises to any state because it runs on the national T-MSIS extracts.
+
+## 2. Technical execution
+
+- **Warehouse.** DuckDB over 238 million T-MSIS spending rows, 66 million enrollment segments, 11.6 GB of NPPES, PECOS enrollments and All Owners files, LEIE, SAM, Medicare revocations, Market Saturation, Care Compare, Census crosswalks, state exclusion lists and state fee schedules. Encoding repair, NPI check-digit validation (Luhn with the 80840 prefix), address normalisation with usaddress, and name parsing.
+- **Detector 1, ghost networks.** Heterogeneous graph of providers, resolved owner persons (PECOS associate id, exact keys, then a Fellegi-Sunter model fitted by expectation maximisation on 165,918 candidate pairs), owner organisations, buildings, suites, phones, faxes, authorized officials, EINs, mailing addresses, secondary locations and changes of ownership. Hub nodes are held out so that registered agents and medical office buildings do not glue unrelated providers together. Leiden community detection for large components. Features are robust z-scores against all communities; eligibility requires three distinct organisations, one formed since 2021, two independent evidence families and less than half the members in a known chain. Evaluation reports precision at K against public labels with binomial p-values, and states plainly that the labels are incomplete and overlap the score.
+- **Detector 2, impossible days.** Time-based Medicaid codes converted to clinician hours three ways: a rate-free lower bound from claim lines, a point estimate from an estimated unit price, and a conservative estimate at 1.5 times the price. Minnesota uses the published DHS-3945 and EIDBI rates and the state's own daily caps. Personal-service codes are separated from supervisory codes; a clinician billed by three or more organisations in one month is the test for concurrency. Working-day and calendar-day denominators are both reported. A growth-and-concentration indicator flags new billing NPIs with most dollars on one high-vector code.
+- **Detector 3, paid after a screening trigger.** Revocations, exclusions, debarments, state list actions, NPPES deactivations and Medicaid terminations joined to Medicaid service months after the action and before any reinstatement or re-enrollment bar expiry. Identity match tiers (exact NPI with name verified, exact NPI without an NPPES record, name conflicts set aside) and file dates are reported, because "excluded but still enrolled" is often a stale file.
+- **Unified risk score.** One row per provider: tier 1 to 5 by what the record can prove, a bonus for each detector that reached the provider independently, a bounded dollar term, and dollars at risk taken as the highest single-detector figure, never a sum.
+- **Serving layer.** Supabase Postgres and Storage, Next.js 15 console on Vercel, FastAPI service, static JSON fallback for the demo.
+
+## 3. Feasibility and deployment potential
+
+- **Cost.** The full warehouse rebuilds in about fifteen minutes on a laptop; the serving tables fit in a small Postgres instance; model calls are batched and cost cents per packet.
+- **Security.** No beneficiary data and no claim lines. Public provider-level datasets only. The console is access controlled; packets are stored in a private bucket; the case chat can only call read-only evidence tools.
+- **Regulation.** Grounds are mapped from evidence types to 42 CFR 455.416, 455.436, 455.23, 455.410, 455.104, 455.432, 455.450, 1001.1901 and 424.535, never from keywords. Packets describe records and dates and never assert intent, so they survive a challenge.
+- **Integration.** A plan connects its own claims warehouse for pre-payment holds; Verity supplies the provider score and the packet. Weekly refresh of LEIE, SAM and NPPES satisfies the monthly check in 42 CFR 455.436.
+- **Adoption.** The persona is the SIU lead at a Medicaid managed care plan (see section 6). The first sale is a one-week pilot on one state's providers.
+
+## 4. Use of AI
+
+AI is used where judgment over text is needed and never where arithmetic suffices. Every model output is constrained, validated and attributable.
+
+- **Investigator agent (Claude Opus 5, structured output).** Drafts the packet from evidence rows only; findings that cite an id outside the evidence list are dropped and the count is recorded. Grounds come from the mapping table, not the model.
+- **Ask this case (tool runner).** A reviewer chat that can only call six read-only evidence tools over the serving tables; every sentence must carry a bracketed citation to the tool and row.
+- **Reviewer feedback loop (Claude Haiku 4.5).** A rejection note is classified to the evidence family that was wrong; a beta-binomial rule re-weights only that family. Presented as a mechanism: the weights are informational until a few hundred reviews.
+- **Entity resolution tie-breaker (Batch API).** Borderline owner-person pairs adjudicated from the same six fields the EM model sees, with the agreement rate reported.
+- **Fifty-state exclusion lists (Batch API, PDF and sheet input).** State lists in PDF, spreadsheet and HTML extracted with a schema, NPIs check-digit validated, reinstatements excluded.
+- **Time-code table review, SAM name matching, Methods narrative.** Each a batch job with a schema and a human-readable report.
+
+## 5. Reliability, evaluation and trustworthiness
+
+- Unit tests for the check-digit macro, address and person keys, grounds mapping, dash cleaning, strict schemas and packet shape.
+- Ground-truth check against providers named in public enforcement actions and against large academic health systems as controls (docs/validation.md).
+- Methods page generated by the detector code with the significance of every evaluation stated, including where labels overlap the score.
+- Hallucination controls: evidence-id validation in packets, tool-only chat, no free-text grounds, deterministic fallback when no model key is present.
+- Failure modes documented: supervisory billing conventions, stale enrollment files, employer NPIs on state lists, bulk-coded terminations, registered-agent addresses, chains and platforms.
+
+## 6. Design and the user
+
+**Persona.** Maria Ortega, SIU lead at a Medicaid managed care plan with 600,000 members in one state. She has four investigators, a queue of tips, and a records-request process that takes weeks. She needs a ranked list she can defend to her compliance officer, evidence she can paste into a state referral, and a way to say no quickly to a false lead. She does not want to be told a provider is a fraud; she wants to know what the public record shows and what to rule out.
+
+**Decisions that follow from the persona.** Indicators, never accusations. Tier and reasons on every row. Dollars at risk counted once. Caveats listed before the recommendation. A PDF she can attach. A chat that only cites rows. A reviewer decision that feeds back with a reason. Exact search by NPI or legal name, not fuzzy search that would surface look-alikes. Access control on the console because rows name organisations.
+
+**Craft.** Flag Blue (#002856), white and black; Garamond for headings and large figures, Open Sans for body; square corners throughout; large numerals with captions and footnotes; contrast ratios above 7:1 for body text.

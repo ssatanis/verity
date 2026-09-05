@@ -256,7 +256,8 @@ SELECT CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT), 'D2', servicin
                            codes := codes, rate_sources := rate_sources, robust_z := robust_z, baseline_level := baseline_level, baseline_median := baseline_median,
                            mn_capped_hours_cons := mn_capped_hours_cons, mn_cap_allowance_hours := mn_cap_allowance_hours)),
        now()
-FROM d2_scored WHERE label IS NOT NULL""")
+FROM d2_scored WHERE label IS NOT NULL
+QUALIFY row_number() OVER (PARTITION BY CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT) ORDER BY score DESC NULLS LAST) = 1""")
 con.execute("""INSERT INTO flags
 SELECT CAST(hash('D2G' || billing_npi || year) >> 1 AS BIGINT), 'D2', billing_npi, billing_npi, state, CAST(year || '-01-01' AS DATE), dominant_code,
        'growth_and_concentration', dollars_per_patient_month, ref_median, 0.5 + LEAST(GREATEST(COALESCE(intensity_z, 0), 0), 20) / 20.0, paid_year, 'C',
@@ -264,7 +265,8 @@ SELECT CAST(hash('D2G' || billing_npi || year) >> 1 AS BIGINT), 'D2', billing_np
                            dominant_code := dominant_code, concentration := concentration, patient_months := patient_months_year, dollars_per_patient_month := dollars_per_patient_month,
                            ref_median := ref_median, intensity_z := intensity_z, intensity_pct := intensity_pct, enum_date := enum_date, new_npi := new_npi)),
        now()
-FROM d2_growth_flags WHERE label IS NOT NULL""")
+FROM d2_growth_flags WHERE label IS NOT NULL
+QUALIFY row_number() OVER (PARTITION BY CAST(hash('D2G' || billing_npi || year) >> 1 AS BIGINT) ORDER BY paid_year DESC NULLS LAST) = 1""")
 print("D2 flags:", q("SELECT tier, COUNT(*), COUNT(DISTINCT npi) FROM flags WHERE detector='D2' GROUP BY 1"))
 
 # ---------------- 6. summaries and methods ----------------

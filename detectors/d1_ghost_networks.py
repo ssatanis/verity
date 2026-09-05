@@ -301,7 +301,12 @@ log(f"label sets: NPI-labelled providers {sum(1 for n in prov.npi if n in lab_np
 # ------------------------------------------------------------------ D. graph
 G = nx.Graph()
 HUB = {"person": 40, "org": 25, "addr": 25, "unit": 12, "phone": 25, "fax": 25, "ao": 40, "mail": 25, "ein": 60}
+def _bad_key(n):
+    # a pandas NaN survives "if k:" (NaN is truthy) and would create one shared ("addr", nan) node linking every provider without an address
+    k = n[1] if isinstance(n, tuple) else n
+    return k is None or (isinstance(k, float) and math.isnan(k)) or str(k).strip().lower() in ("", "nan", "none", "null")
 def add_edge(u, v, **attr):
+    if _bad_key(u) or _bad_key(v): return
     if G.has_edge(u, v): G[u][v]["weight"] = max(G[u][v]["weight"], attr.get("weight", 1.0))
     else: G.add_edge(u, v, **attr)
 for r in prov.itertuples(index=False):
@@ -361,7 +366,7 @@ for n in G.nodes:
 # ------------------------------------------------------------------ D2. provider plazas (addresses hosting many enrollments)
 plaza_rows = []
 for n, d in G.nodes(data=True):
-    if d["kind"] not in ("addr", "unit") or d.get("prov_degree", 0) < 8: continue
+    if d["kind"] not in ("addr", "unit") or d.get("prov_degree", 0) < 8 or _bad_key(n): continue
     members = [v for v in G.neighbors(n) if G.nodes[v]["kind"] == "provider"]
     md = [G.nodes[v] for v in members]
     plaza_rows.append(dict(address=n[1], level=d["kind"], n_providers=len(members), n_hospice=sum(1 for x in md if x["ptype"] == "HOSPICE"), n_hha=sum(1 for x in md if x["ptype"] == "HHA"),

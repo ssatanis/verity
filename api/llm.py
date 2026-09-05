@@ -18,30 +18,30 @@ def client() -> anthropic.Anthropic:
 def ready() -> bool:
     k = os.environ.get("ANTHROPIC_API_KEY", ""); return k.startswith("sk-ant-")
 DASHES = {"—": ", ", "–": " to ", "‒": "-", "―": ", "}
-def clean_text(s):
-    """House style: no em or en dashes anywhere in model output."""
-    if isinstance(s, str):
-        for k, v in DASHES.items(): s = s.replace(k, v)
-        return re.sub(r"\s+,", ",", s)
-    if isinstance(s, list): return [clean_text(x) for x in s]
-    if isinstance(s, dict): return {k: clean_text(v) for k, v in s.items()}
-    return s
-def parse(schema: Type[T], system: str, user: str, model: str = None, effort: str = "high", max_tokens: int = 16000) -> T:
-    """Structured output validated against a Pydantic schema. Uses adaptive thinking; thinking is billed but not returned."""
-    r = client().messages.parse(model=model or MODEL, max_tokens=max_tokens, system=system, output_config={"effort": effort},
-                                messages=[{"role": "user", "content": user}], output_format=schema)
-    if r.stop_reason == "refusal": raise RuntimeError(f"model refused: {getattr(r.stop_details, 'explanation', '')}")
-    out = r.parsed_output
-    return schema.model_validate(clean_text(out.model_dump()))
-def text(system: str, user: str, model: str = None, effort: str = "medium", max_tokens: int = 8000) -> str:
-    r = client().messages.create(model=model or MODEL, max_tokens=max_tokens, system=system, output_config={"effort": effort}, messages=[{"role": "user", "content": user}])
-    if r.stop_reason == "refusal": raise RuntimeError("model refused")
-    return clean_text("".join(b.text for b in r.content if b.type == "text"))
+def clean_text(x):
+    """Strip em and en dashes from any string, list or dict (house style: no dashes, not even in packets)."""
+    if isinstance(x, str):
+        for k, v in DASHES.items(): x = x.replace(k, v)
+        return re.sub(r"[ \t]{2,}", " ", re.sub(r"\s+,", ",", x))
+    if isinstance(x, list): return [clean_text(v) for v in x]
+    if isinstance(x, dict): return {k: clean_text(v) for k, v in x.items()}
+    return x
+
+def strict_schema(schema: dict) -> dict:
+    """The structured-output endpoint requires additionalProperties=false on every object; Pydantic's model_json_schema omits it."""
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "object" and "additionalProperties" not in node: node["additionalProperties"] = False
+            for v in node.values(): walk(v)
+        elif isinstance(node, list):
+            for v in node: walk(v)
+    walk(schema); return schema
+
 def batch_requests(items, schema: Type[T], system: str, model: str = None, effort: str = "medium", max_tokens: int = 4000):
     """Build Message Batches API requests with a JSON schema output format. items: iterable of (custom_id, user_text)."""
     from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
     from anthropic.types.messages.batch_create_params import Request
-    fmt = {"type": "json_schema", "schema": schema.model_json_schema()}
+    fmt = {"type": "json_schema", "schema": strict_schema(schema.model_json_schema())}
     return [Request(custom_id=cid, params=MessageCreateParamsNonStreaming(model=model or MODEL, max_tokens=max_tokens, system=system, output_config={"effort": effort, "format": fmt},
                                                                           messages=[{"role": "user", "content": txt}])) for cid, txt in items]
 def batch_run(requests, poll_seconds=30, max_wait=6 * 3600):

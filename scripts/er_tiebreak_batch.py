@@ -17,6 +17,10 @@ class Verdict(BaseModel):
 SYS = "You compare two owner records from CMS provider ownership files and decide whether they are the same individual. Fields: last name, first name, middle initial, ZIP5, city, state, street number (the address is the enrollment's address when the owner file has none). Same last name with a different first name is usually a relative, not the same person. Do not use em dashes."
 con = duckdb.connect("data/verity.duckdb")
 c = con.execute(f"""SELECT * FROM d1_er_candidates WHERE posterior >= 0.2 AND posterior < 0.98 ORDER BY random() LIMIT {a.limit}""").df()
+if len(c) < 50:
+    # the EM posterior is sharp; when the 0.2 to 0.98 band is nearly empty, adjudicate the pairs closest to the decision threshold from both sides instead
+    c = con.execute(f"""SELECT * FROM d1_er_candidates ORDER BY abs(posterior - 0.95) LIMIT {a.limit}""").df()
+    print("band nearly empty; using the pairs closest to the 0.95 threshold")
 print(f"borderline pairs sampled: {len(c):,}")
 items = [(f"{int(r.i)}|{int(r.j)}", json.dumps({"record_a": dict(last=r.p_last_i, first=r.p_first_i, middle=r.p_mi_i, zip=r.zip5_i, city=r.city_i, state=r.state_i, street_number=r.street_i),
                                                  "record_b": dict(last=r.p_last_j, first=r.p_first_j, middle=r.p_mi_j, zip=r.zip5_j, city=r.city_j, state=r.state_j, street_number=r.street_j)})) for r in c.itertuples(index=False)]
@@ -29,7 +33,7 @@ con.execute("CREATE OR REPLACE TABLE d1_er_adjudications AS SELECT * FROM c")
 valid = c[c.model_same.notna()]
 agree = float((valid.model_same == valid.em_same).mean()) if len(valid) else float("nan")
 hi = valid[valid.model_conf == "high"]; agree_hi = float((hi.model_same == hi.em_same).mean()) if len(hi) else float("nan")
-band = valid.groupby(pd.cut(valid.posterior, [0.2, 0.5, 0.8, 0.95, 0.98])).agg(n=("model_same", "size"), model_same_rate=("model_same", "mean"), em_same_rate=("em_same", "mean")).reset_index()
+band = valid.groupby(pd.cut(valid.posterior, [-0.001, 0.2, 0.5, 0.8, 0.95, 0.98, 1.0]), observed=True).agg(n=("model_same", "size"), model_same_rate=("model_same", "mean"), em_same_rate=("em_same", "mean")).reset_index()
 body = f"""
 **Method.** {len(valid):,} borderline owner-person pairs (Fellegi-Sunter posterior between 0.2 and 0.98) were adjudicated by Claude (claude-opus-5, structured output, Message Batches API, batch {batch_id}) from the same six fields the EM model sees. The model's verdict is compared with the EM decision (match at posterior 0.95 or above).
 

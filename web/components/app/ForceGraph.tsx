@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
-const COLOR: Record<string, string> = { provider: "#111114", person: "#7a5af8", org: "#2e90fa", addr: "#12b76a", unit: "#12b76a", phone: "#f79009", fax: "#f79009", ao: "#7a5af8", mail: "#12b76a", ein: "#f04438" };
+// three-colour palette: flag blue, black, white; node kinds are told apart by fill, opacity and outline
+const COLOR: Record<string, string> = { provider: "#002856", person: "#000000", org: "#ffffff", addr: "#7f93ab", unit: "#7f93ab", phone: "#808080", fax: "#808080", ao: "#ffffff", mail: "#7f93ab", ein: "#000000" };
+const STROKE: Record<string, string> = { provider: "#002856", person: "#000000", org: "#002856", addr: "#7f93ab", unit: "#002856", phone: "#808080", fax: "#808080", ao: "#000000", mail: "#7f93ab", ein: "#002856" };
 export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edges: any[] }; height?: number }) {
   const ref = useRef<SVGSVGElement>(null);
   const [sel, setSel] = useState<any>(null);
@@ -15,11 +17,11 @@ export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edg
     const sim = d3.forceSimulation(nodes as any).force("link", d3.forceLink(links as any).id((d: any) => d.id).distance((l: any) => (l.weight ? 40 + 60 * (1 - Math.min(l.weight, 1)) : 120)).strength((l: any) => Math.max(0.05, Math.min(l.weight ?? 0.5, 1))))
       .force("charge", d3.forceManyBody().strength(-140)).force("center", d3.forceCenter(width / 2, height / 2)).force("collide", d3.forceCollide(16));
     const g = svg.append("g");
-    const link = g.append("g").selectAll("line").data(links).join("line").attr("stroke", "#d5d5db").attr("stroke-width", (l: any) => 0.6 + 2 * (l.weight ?? 0.3)).attr("stroke-dasharray", (l: any) => (l.weight === 0 ? "3 3" : null));
+    const link = g.append("g").selectAll("line").data(links).join("line").attr("stroke", "#c7d0dd").attr("stroke-width", (l: any) => 0.6 + 2 * (l.weight ?? 0.3)).attr("stroke-dasharray", (l: any) => (l.weight === 0 ? "3 3" : null));
     const node = g.append("g").selectAll("g").data(nodes).join("g").style("cursor", "pointer").on("click", (_: any, d: any) => setSel(d))
       .call(d3.drag<any, any>().on("start", (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }).on("drag", (ev, d) => { d.fx = ev.x; d.fy = ev.y; }).on("end", (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }) as any);
-    node.append("circle").attr("r", (d: any) => (d.kind === "provider" ? 9 : d.hub ? 7 : 5)).attr("fill", (d: any) => (d.hub ? "#fff" : COLOR[d.kind] ?? "#999")).attr("stroke", (d: any) => (d.labels?.length || d.owner_labels?.length ? "#f04438" : d.hub ? "#999" : "#fff")).attr("stroke-width", (d: any) => (d.labels?.length || d.owner_labels?.length ? 2.5 : 1.2));
-    node.append("text").text((d: any) => (d.kind === "provider" ? (d.label || "").slice(0, 26) : d.kind === "person" || d.kind === "org" ? (d.label || "").slice(0, 22) : "")).attr("x", 11).attr("y", 4).attr("font-size", 9).attr("fill", "#4b4b52");
+    node.append("circle").attr("r", (d: any) => (d.kind === "provider" ? 9 : d.hub ? 7 : 5)).attr("fill", (d: any) => (d.hub ? "#fff" : COLOR[d.kind] ?? "#808080")).attr("stroke", (d: any) => (d.labels?.length || d.owner_labels?.length ? "#000000" : d.hub ? "#808080" : STROKE[d.kind] ?? "#808080")).attr("stroke-width", (d: any) => (d.labels?.length || d.owner_labels?.length ? 3 : 1.2)).attr("stroke-dasharray", (d: any) => (d.labels?.length || d.owner_labels?.length ? "2 1.5" : null));
+    node.append("text").text((d: any) => (d.kind === "provider" ? (d.label || "").slice(0, 26) : d.kind === "person" || d.kind === "org" ? (d.label || "").slice(0, 22) : "")).attr("x", 11).attr("y", 4).attr("font-size", 9).attr("fill", "#333333");
     sim.on("tick", () => { link.attr("x1", (d: any) => d.source.x).attr("y1", (d: any) => d.source.y).attr("x2", (d: any) => d.target.x).attr("y2", (d: any) => d.target.y); node.attr("transform", (d: any) => `translate(${d.x},${d.y})`); });
     svg.call(d3.zoom<SVGSVGElement, unknown>().scaleExtent([0.3, 4]).on("zoom", ev => g.attr("transform", ev.transform)) as any);
     return () => { sim.stop(); };
@@ -28,8 +30,8 @@ export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edg
     <div className="relative">
       <svg ref={ref} className="w-full" style={{ height }} />
       <div className="absolute top-2 left-2 flex gap-3 text-[10px] text-[var(--ink-3)] bg-white/90 px-2 py-1">
-        {Object.entries({ provider: "provider", person: "owner (person)", org: "owner (org)", addr: "address", phone: "phone", ein: "EIN" }).map(([k, v]) => <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 inline-block" style={{ background: COLOR[k] }} />{v}</span>)}
-        <span className="flex items-center gap-1"><span className="w-2 h-2 inline-block border-2 border-[var(--danger)]" />on a list</span>
+        {Object.entries({ provider: "provider", person: "owner (person)", org: "owner (org)", addr: "address", phone: "phone", ein: "EIN" }).map(([k, v]) => <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 inline-block" style={{ background: COLOR[k], border: `1px solid ${STROKE[k]}` }} />{v}</span>)}
+        <span className="flex items-center gap-1"><span className="w-2 h-2 inline-block border-2 border-dashed border-black" />on a list</span>
         <span>dashed: hub held out</span>
       </div>
       {sel && (

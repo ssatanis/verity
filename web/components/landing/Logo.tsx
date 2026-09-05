@@ -1,11 +1,13 @@
-export function Logo({ size = 30, withText = true, light = false }: { size?: number; withText?: boolean; light?: boolean }) {
+export function Logo({ size = 28, light = false }: { size?: number; light?: boolean }) {
+  const c = light ? "#ffffff" : "#002856";
   return (
-    <span className="inline-flex items-center gap-2">
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M12 1.5l1.9 6.3L20 9.6l-6.1 1.8L12 17.7l-1.9-6.3L4 9.6l6.1-1.8L12 1.5z" fill={light ? "#fff" : "#0b0b0c"} />
-        <path d="M18.5 15.5l.8 2.7 2.7.8-2.7.8-.8 2.7-.8-2.7-2.7-.8 2.7-.8.8-2.7z" fill={light ? "#fff" : "#0f6e56"} />
+    <span className="inline-flex items-center gap-3" aria-label="Verity">
+      <svg width={size * 1.15} height={size} viewBox="0 0 46 40" fill="none" aria-hidden="true">
+        <rect x="0" y="0" width="14" height="10" fill={c} /><rect x="16" y="0" width="14" height="10" fill={c} /><rect x="32" y="0" width="14" height="10" fill={c} />
+        <rect x="0" y="15" width="21" height="10" fill={c} /><rect x="25" y="15" width="21" height="10" fill={c} />
+        <rect x="0" y="30" width="46" height="10" fill={c} />
       </svg>
-      {withText && <span className="serif" style={{ fontSize: size * 0.95, lineHeight: 1, color: light ? "#fff" : "#0b0b0c" }}>Verity</span>}
+      <span className="serif" style={{ color: c, fontSize: size * 1.25, letterSpacing: "0.14em", lineHeight: 1, fontWeight: 500 }}>VERITY</span>
     </span>
   );
 }

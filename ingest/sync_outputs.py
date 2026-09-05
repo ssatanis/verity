@@ -33,7 +33,8 @@ if "flags" in have:
         """SELECT f.id, f.detector, f.npi, f.billing_npi, f.state, f.month, f.hcpcs, f.metric, f.value, f.threshold, f.score, f.dollars, f.evidence, f.tier,
                   COALESCE(n.org_name, trim(COALESCE(n.first_name,'') || ' ' || COALESCE(n.last_name,''))), n.entity_type
            FROM flags f LEFT JOIN nppes n ON n.npi = f.npi
-           WHERE NOT (f.detector = 'D2' AND f.tier = 'C')""")  # tier C (elevated, informational) stays in DuckDB to keep Postgres inside its disk budget
+           WHERE NOT (f.detector = 'D2' AND f.tier = 'C')
+           QUALIFY row_number() OVER (PARTITION BY f.id ORDER BY f.score DESC) = 1""")  # tier C (elevated, informational) stays in DuckDB to keep Postgres inside its disk budget
 # providers: every NPI referenced by a flag or a cluster member, slim NPPES + Medicaid home state + ZIP centroid
 counts["providers"] = copy("providers", "npi, entity_type, name, org_name, address1, city, state, zip5, phone, taxonomy, enum_date, deact_date, medicaid_state, ao_name, ao_phone, extra, lat, lon, county_fips",
     f"""WITH ids AS ({' UNION '.join(x for x in ['SELECT npi FROM flags'] + (['SELECT npi FROM cluster_members'] if 'cluster_members' in have else []))})

@@ -6,14 +6,14 @@ hcpcs,description,minutes_per_unit,unit_basis,group_divisor,family,fraud_vector,
 97155,Adaptive behavior treatment with protocol modification by QHP,15,per_15min,1,aba,HIGH,,6,CPT; MN cap 6h/day,MN EIDBI core code,Y
 97156,Family adaptive behavior treatment guidance,15,per_15min,1,aba,MED,,4,CPT; MN cap 4h/day,,Y
 97157,Multiple-family group adaptive behavior treatment guidance,15,per_15min,4,aba,MED,,,CPT,group; assume 4 families,Y
-97158,Group adaptive behavior treatment with protocol modification,15,per_15min,4,aba,MED,,,CPT,group; assume 4 patients,N
+97158,Group adaptive behavior treatment with protocol modification,15,per_15min,4,aba,MED,,,CPT,group; assume 4 patients,Y
 0362T,Behavior identification supporting assessment (2 or more technicians),15,per_15min,1,aba,MED,,,CPT,MN EIDBI,N
 0373T,Adaptive behavior treatment with protocol modification (2 or more technicians),15,per_15min,1,aba,HIGH,,8,CPT; MN cap 8h/day,MN EIDBI,N
 0364T,Adaptive behavior treatment by protocol first 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
 0365T,Adaptive behavior treatment by protocol each addl 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
 0366T,Group adaptive behavior treatment by protocol first 30 min (pre-2019),30,per_30min,4,aba,MED,,,CPT,retired 2019; group,N
 0367T,Group adaptive behavior treatment by protocol each addl 30 min (pre-2019),30,per_30min,4,aba,MED,,,CPT,retired 2019; group,N
-0368T,Adaptive behavior treatment with protocol modification first 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
+0368T,Adaptive behavior treatment with protocol modification first 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,Y
 0369T,Adaptive behavior treatment with protocol modification each addl 30 min (pre-2019),30,per_30min,1,aba,MED,,,CPT,retired 2019,N
 90832,Psychotherapy 30 min,30,per_session,1,psychotherapy,MED,,,CPT,,Y
 90833,Psychotherapy 30 min add-on to E/M,30,per_session,1,psychotherapy,MED,,,CPT,,Y
@@ -58,7 +58,7 @@ hcpcs,description,minutes_per_unit,unit_basis,group_divisor,family,fraud_vector,
 96168,Health behavior intervention family with patient each addl 15 min,15,per_15min,1,health_behavior,LOW,,,CPT,,Y
 96170,Health behavior intervention family without patient first 30 min,30,per_30min,1,health_behavior,LOW,,,CPT,,Y
 96171,Health behavior intervention family without patient each addl 15 min,15,per_15min,1,health_behavior,LOW,,,CPT,,Y
-H0004,Behavioral health counseling and therapy per 15 min,15,per_15min,1,behavioral_health,HIGH,,,HCPCS,,N
+H0004,Behavioral health counseling and therapy per 15 min,15,per_15min,1,behavioral_health,HIGH,,,HCPCS,,Y
 H0034,Medication training and support per 15 min,15,per_15min,1,behavioral_health,MED,,,HCPCS,,N
 H0036,Community psychiatric supportive treatment face-to-face per 15 min,15,per_15min,1,behavioral_health,HIGH,,,HCPCS,,N
 H0037,Community psychiatric supportive treatment program per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
@@ -168,31 +168,31 @@ S9484,Crisis intervention mental health services per hour,60,per_hour,1,behavior
 S9485,Crisis intervention mental health services per diem,,per_diem,1,behavioral_health,MED,,,HCPCS,,N
 G0151,PT in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0152,OT in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-G0153,SLP in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0153,SLP in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,Y
 G0155,Clinical social worker in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0156,Home health or hospice aide each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0157,PT assistant in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0158,OT assistant in home health or hospice setting each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-G0159,PT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-G0160,OT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-G0161,SLP maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-G0162,RN management and evaluation of plan of care each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
+G0159,PT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,Y
+G0160,OT maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,Y
+G0161,SLP maintenance program in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,Y
+G0162,RN management and evaluation of plan of care each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,Y
 G0299,Direct skilled nursing by RN in home health or hospice each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0300,Direct skilled nursing by LPN in home health or hospice each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0493,RN observation and assessment in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0494,LPN observation and assessment in home health each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0495,RN training/education of patient or caregiver each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
 G0496,LPN training/education of patient or caregiver each 15 min,15,per_15min,1,home_health,MED,,,HCPCS,,N
-97110,Therapeutic exercises each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97110,Therapeutic exercises each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
 97112,Neuromuscular reeducation each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97113,Aquatic therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97116,Gait training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97113,Aquatic therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97116,Gait training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
 97124,Massage therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
 97140,Manual therapy each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97530,Therapeutic activities each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97533,Sensory integrative techniques each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97535,Self-care/home management training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97537,Community/work reintegration training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97530,Therapeutic activities each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97533,Sensory integrative techniques each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97535,Self-care/home management training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97537,Community/work reintegration training each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
 97542,Wheelchair management each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
 97545,Work hardening initial 2 hours,120,per_session,1,pt_ot,LOW,,,CPT,,N
 97546,Work hardening each addl hour,60,per_hour,1,pt_ot,LOW,,,CPT,,N
@@ -201,8 +201,8 @@ G0496,LPN training/education of patient or caregiver each 15 min,15,per_15min,1,
 97034,Contrast baths each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
 97035,Ultrasound each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
 97036,Hubbard tank each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97129,Therapeutic interventions for cognitive function initial 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97130,Therapeutic interventions for cognitive function each addl 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97129,Therapeutic interventions for cognitive function initial 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97130,Therapeutic interventions for cognitive function each addl 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
 97161,PT evaluation low complexity,20,per_session,1,pt_ot,LOW,,,CPT,typical 20 min,Y
 97162,PT evaluation moderate complexity,30,per_session,1,pt_ot,LOW,,,CPT,typical 30 min,Y
 97163,PT evaluation high complexity,45,per_session,1,pt_ot,LOW,,,CPT,typical 45 min,Y
@@ -211,11 +211,11 @@ G0496,LPN training/education of patient or caregiver each 15 min,15,per_15min,1,
 97166,OT evaluation moderate complexity,45,per_session,1,pt_ot,LOW,,,CPT,typical 45 min,Y
 97167,OT evaluation high complexity,60,per_session,1,pt_ot,LOW,,,CPT,typical 60 min,Y
 97168,OT re-evaluation,30,per_session,1,pt_ot,LOW,,,CPT,typical 30 min,Y
-97750,Physical performance test each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97755,Assistive technology assessment each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97760,Orthotic management and training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97761,Prosthetic training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
-97763,Orthotic/prosthetic management subsequent each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,N
+97750,Physical performance test each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97755,Assistive technology assessment each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97760,Orthotic management and training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97761,Prosthetic training initial each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
+97763,Orthotic/prosthetic management subsequent each 15 min,15,per_15min,1,pt_ot,LOW,,,CPT,,Y
 97802,Medical nutrition therapy initial each 15 min,15,per_15min,1,nutrition,LOW,,,CPT,,Y
 97803,Medical nutrition therapy reassessment each 15 min,15,per_15min,1,nutrition,LOW,,,CPT,,Y
 97804,Medical nutrition therapy group each 30 min,30,per_30min,4,nutrition,LOW,,,CPT,group,Y
@@ -223,14 +223,14 @@ G0496,LPN training/education of patient or caregiver each 15 min,15,per_15min,1,
 97811,Acupuncture without electrical stimulation each addl 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
 97813,Acupuncture with electrical stimulation initial 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
 97814,Acupuncture with electrical stimulation each addl 15 min,15,per_15min,1,acupuncture,LOW,,,CPT,,Y
-92507,Speech/language treatment individual,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
-92508,Speech/language treatment group,60,per_session,4,speech,LOW,,,CPT,untimed group; assume 60 min and 4 patients,N
+92507,Speech/language treatment individual,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,Y
+92508,Speech/language treatment group,60,per_session,4,speech,LOW,,,CPT,untimed group; assume 60 min and 4 patients,Y
 92521,Evaluation of speech fluency,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
 92522,Evaluation of speech sound production,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
 92523,Evaluation of speech sound production with language comprehension,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
 92524,Behavioral and qualitative analysis of voice and resonance,45,per_session,1,speech,LOW,,,CPT,untimed; conservative 45,Y
-92526,Treatment of swallowing dysfunction,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
-92609,Therapeutic services for speech-generating device,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,N
+92526,Treatment of swallowing dysfunction,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,Y
+92609,Therapeutic services for speech-generating device,30,per_session,1,speech,LOW,,,CPT,untimed; conservative 30,Y
 99201,Office visit new patient level 1 (retired 2021),10,per_session,1,em_office,LOW,,,CPT,,Y
 99202,Office visit new patient level 2,15,per_session,1,em_office,LOW,,,CPT,2021 time range 15-29; lower bound,Y
 99203,Office visit new patient level 3,30,per_session,1,em_office,LOW,,,CPT,2021 time range 30-44; lower bound,Y

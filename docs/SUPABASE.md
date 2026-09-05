@@ -79,7 +79,7 @@ centroid and county), `county_risk` (dollars at risk per county by detector, for
 page reads, each detector's summary JSON, and the full text of `docs/methods.md` under key `methods_md`).
 
 The console (`web/app/app/*`) reads all of that with the publishable key. Writes go through two route handlers with the secret key:
-`POST /api/packets` builds a referral packet (deterministic TypeScript builder, optionally polished by OpenAI when `OPENAI_API_KEY`
+`POST /api/packets` builds a referral packet (deterministic TypeScript builder, drafted by Claude when `ANTHROPIC_API_KEY`
 is set on the server) and stores it in `packets` and the private `verity-packets` bucket; `POST /api/reviews` records the reviewer's
 decision in `reviews`, updates the packet status and re-weights the detector's evidence families in `score_weights` (Bayesian update
 with a prior of four pseudo-reviews). The Python API (`api/main.py`) exposes the same operations plus `/verify` and Blue Button.

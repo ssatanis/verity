@@ -1,5 +1,5 @@
 """Unit tests for the pieces the detectors depend on (no warehouse needed)."""
-import importlib.util, os, re, sys, types
+import importlib.util, json, os, re, sys, types
 import duckdb, numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, os.path.join(ROOT, "detectors")); sys.path.insert(0, os.path.join(ROOT, "api"))
 
@@ -66,4 +66,4 @@ def test_packet_grounds_and_evidence_shape():
               revoked=[dict(npi="1234567893", revoked_dt="2018-08-31", revocation_rsn="424.535(A)(3) Felonies", reenroll_bar_dt="2028-08-31")], leie=[], enrollments=[], clusters=[])
     p = packet.deterministic_packet(ev)
     cfrs = {g["cfr"] for g in p["grounds"]}
-    assert {"424.535(a)(12)", "455.416(c)", "455.23"} <= cfrs and p["findings"] and all(all(0 <= i < len(p["evidence"]) for i in f["evidence_ids"]) for f in p["findings"])
+    assert {"455.416(c)", "455.436", "455.23"} <= cfrs and "—" not in json.dumps(p) and "–" not in json.dumps(p) and p["findings"] and all(all(0 <= i < len(p["evidence"]) for i in f["evidence_ids"]) for f in p["findings"])

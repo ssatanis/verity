@@ -6,6 +6,10 @@ Read `docs/Verity_Brief.md` for the judge analysis, the idea, the demo script, a
 number behind the demo. `docs/SUPABASE.md` explains how the warehouse, Supabase Storage and Postgres fit together. `docs/DATA.md` is the
 data dictionary and join keys.
 
+## Problem and solution
+
+See [docs/SUBMISSION.md](docs/SUBMISSION.md) for the problem statement, the solution, the persona, and the mapping to the DNHacks judging criteria. In one line: Medicaid and Medicare pay first and audit later, the public record already carries the signals that a payment should not go out, and Verity joins fourteen public datasets into one ranked, cited, human-reviewed referral queue for health plans.
+
 ## Layout
 
 ```
@@ -34,10 +38,10 @@ logs/                    build and detector logs (gitignored)
 
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env      # then paste the Supabase keys and OPENAI_API_KEY
+cp .env.example .env      # then paste the Supabase keys, ANTHROPIC_API_KEY and SAM_API_KEY
 ```
 Python 3.14 with DuckDB 1.5.5, pandas 3, pyarrow 25, networkx, leidenalg/igraph, scikit-learn, rapidfuzz, usaddress, nameparser,
-FastAPI, openai + openai-agents, psycopg. Exact versions in `requirements.txt`.
+FastAPI, anthropic (Claude Opus 5 for packets and the case chat, Batch API for list extraction and QA), psycopg. Exact versions in `requirements.txt`.
 
 The web app needs Node 20+: `cd web && npm install && npm run dev`.
 
@@ -64,7 +68,7 @@ source .envrc                       # puts ~/.local/node/bin on PATH
 cd web && npm install && npm run dev  # http://localhost:3000 (landing) and /app (console)
 .venv/bin/uvicorn api.main:app --reload --port 8000   # evidence, packets, reviews, /verify, Blue Button
 ```
-Deploy `web/` to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) and, optionally, `OPENAI_API_KEY` for the model-drafted packets; without a key the packet builder is deterministic and still cites every row.
+Deploy `web/` to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) `VERITY_CONSOLE_PASSWORD`, `VERITY_SESSION_SECRET` and, optionally, `ANTHROPIC_API_KEY` for Claude-drafted packets and the case chat; without a key the packet builder is deterministic and still cites every row.
 
 ## The three detectors
 

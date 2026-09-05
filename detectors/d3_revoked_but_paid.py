@@ -101,18 +101,25 @@ ev AS (
 )
 SELECT DISTINCT ev.npi, ev.source, ev.event_dt, ev.window_end, ev.reason, ev.source_state,
        -- a state-list NPI whose NPPES name shares no token with the list entry is downgraded: the NPI field on those lists can carry an employer's NPI
-       CASE WHEN ev.source LIKE 'STATE_EXCL_%' AND n.npi IS NOT NULL AND ev.source_name IS NOT NULL
+       -- any list row whose name shares no token with the NPPES record for that NPI is set aside as tier C, whatever the source:
+       -- the identifier alone is not enough to name a provider in a referral
+       CASE WHEN n.npi IS NOT NULL AND ev.source_name IS NOT NULL
                  AND NOT names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, ''))
             THEN 'C' ELSE ev.tier END AS tier,
        ev.source_name, ev.source_type,
        CASE WHEN n.npi IS NULL OR ev.source_name IS NULL THEN NULL
-            ELSE names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, '')) END AS name_agrees_with_nppes
+            ELSE names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, '')) END AS name_agrees_with_nppes,
+       -- identity match tier: every event here carries the NPI itself (exact match); the tier records how far the identity could be verified
+       CASE WHEN n.npi IS NULL THEN 'exact_npi_not_in_nppes'
+            WHEN ev.source_name IS NULL THEN 'exact_npi_unnamed_source'
+            WHEN names_agree(ev.source_name, COALESCE(n.org_name, '') || ' ' || COALESCE(n.first_name, '') || ' ' || COALESCE(n.last_name, '')) THEN 'exact_npi_name_verified'
+            ELSE 'exact_npi_name_conflict' END AS id_match
 FROM ev LEFT JOIN nppes n ON n.npi = ev.npi""")
 
 run("d3_paid_after", """
 CREATE OR REPLACE TABLE d3_paid_after AS
 WITH after AS (
-  SELECT e.npi, e.source, e.event_dt, e.window_end, e.reason, e.tier, e.source_state, e.source_name, e.source_type,
+  SELECT e.npi, e.source, e.event_dt, e.window_end, e.reason, e.tier, e.source_state, e.source_name, e.source_type, e.id_match,
          COUNT(*) AS months_paid_after, MIN(s.month) AS first_month_after, MAX(s.month) AS last_month_after,
          SUM(s.paid) AS paid_after, SUM(s.paid_as_billing) AS paid_after_as_billing, SUM(s.paid_as_servicing) AS paid_after_as_servicing,
          MAX(s.max_patients) AS max_patients_after, SUM(s.lines) AS lines_after, MAX(s.n_counterparties) AS max_counterparties_after
@@ -128,7 +135,9 @@ before AS (
   GROUP BY ALL)
 SELECT a.*, COALESCE(b.paid_before_12m, 0) AS paid_before_12m, COALESCE(b.months_paid_before_12m, 0) AS months_paid_before_12m,
        date_diff('month', date_trunc('month', a.event_dt), CAST(a.last_month_after || '-01' AS DATE)) AS months_span_after
-FROM after a LEFT JOIN before b USING (npi, source, event_dt)""")
+FROM after a LEFT JOIN before b USING (npi, source, event_dt)
+-- one row per NPI, source and action date: list files can repeat an action with a different window end or spelling of the name
+QUALIFY row_number() OVER (PARTITION BY a.npi, a.source, a.event_dt ORDER BY a.tier, a.paid_after DESC) = 1""")
 
 run("d3_enrolled_after", f"""
 CREATE OR REPLACE TABLE d3_enrolled_after AS
@@ -180,6 +189,7 @@ run("d3_npi", """
 CREATE OR REPLACE TABLE d3_npi AS
 WITH first_ev AS (
   SELECT npi, MIN(event_dt) AS first_event_dt, string_agg(DISTINCT source, ',') AS sources, COUNT(DISTINCT source) AS n_sources, bool_and(COALESCE(name_agrees_with_nppes, TRUE)) AS names_agree,
+         CASE WHEN bool_and(id_match = 'exact_npi_name_verified') THEN 'exact_npi_name_verified' ELSE string_agg(DISTINCT id_match, ',') END AS id_match,
          CASE WHEN bool_or(window_end IS NULL) THEN NULL ELSE MAX(window_end) END AS window_end
   FROM d3_events WHERE tier = 'A' AND (source IN ('MEDICARE_REVOKED','OIG_LEIE') OR source LIKE 'STATE_EXCL_%') GROUP BY 1)
 SELECT f.*, n.entity_type, COALESCE(n.org_name, trim(COALESCE(n.first_name,'') || ' ' || COALESCE(n.last_name,''))) AS nppes_name, n.state AS nppes_state, ps.state AS medicaid_home_state,
@@ -201,9 +211,10 @@ SELECT CAST(hash(npi || 'D3' || source || CAST(event_dt AS VARCHAR) || COALESCE(
                            taxonomy := taxonomy, medicaid_home_state := medicaid_home_state, months_paid_after := months_paid_after, first_month_after := first_month_after,
                            last_month_after := last_month_after, paid_after := paid_after, paid_after_as_billing := paid_after_as_billing,
                            paid_after_as_servicing := paid_after_as_servicing, max_patients_after := max_patients_after, paid_before_12m := paid_before_12m,
-                           n_active_segments_after := n_active_segments_after, nppes_deact_date := nppes_deact_date)),
+                           n_active_segments_after := n_active_segments_after, nppes_deact_date := nppes_deact_date, id_match := id_match)),
        now()
-FROM d3_top""")
+FROM d3_top
+QUALIFY row_number() OVER (PARTITION BY CAST(hash(npi || 'D3' || source || CAST(event_dt AS VARCHAR) || COALESCE(reason, '') || COALESCE(first_month_after, '')) >> 1 AS BIGINT) ORDER BY paid_after DESC) = 1""")
 print("D3 flags:", con.execute("SELECT COUNT(*), COUNT(DISTINCT npi) FROM flags WHERE detector='D3'").fetchone())
 
 # ---- summary ----
@@ -226,6 +237,20 @@ S["by_year"] = q("""SELECT year(first_event_dt) yr, COUNT(*) FILTER (WHERE paid_
 S["top20"] = q("""SELECT npi, nppes_name, entity_type, sources, first_event_dt, medicaid_home_state, months_paid_after, first_month_after, last_month_after, ROUND(paid_after) paid_after, names_agree
                   FROM d3_npi WHERE paid_after > 0 ORDER BY paid_after DESC LIMIT 20""")
 S["tier_c"] = q("""SELECT COUNT(*), ROUND(SUM(paid_after)/1e6,2) FROM d3_paid_after WHERE tier='C'""")
+S["id_match"] = q("""SELECT id_match, tier, COUNT(DISTINCT npi) AS npis_paid_after, ROUND(SUM(paid_after)/1e6,2) AS millions_after
+                     FROM d3_paid_after WHERE source NOT LIKE 'TMSIS_%' GROUP BY 1,2 ORDER BY 1, 2""")
+S["id_match_headline"] = q("""SELECT id_match, COUNT(*) FILTER (WHERE paid_after > 0), ROUND(SUM(paid_after)/1e6,2) FROM d3_npi GROUP BY 1 ORDER BY 2 DESC""")
+def _d(sql):
+    try: return str(con.execute(sql).fetchone()[0])
+    except Exception as e: return "n/a"
+S["file_dates"] = [["T-MSIS provider spending, latest service month", _d("SELECT MAX(month) FROM spend_any_month")],
+                   ["T-MSIS enrollment segments, latest segment start", _d("SELECT MAX(start_dt) FROM enroll")],
+                   ["T-MSIS enrollment segments, latest dated segment end", _d("SELECT MAX(end_dt) FROM enroll WHERE end_dt <= DATE '2026-12-31'")],
+                   ["Medicare revocations, latest effective date", _d("SELECT MAX(revoked_dt) FROM revoked")],
+                   ["OIG LEIE, latest exclusion date", _d("SELECT MAX(excl_dt) FROM leie")],
+                   ["SAM.gov, latest active date", _d("SELECT MAX(active_dt) FROM sam WHERE active_dt <= current_date")],
+                   ["State exclusion lists, latest action date", _d("SELECT MAX(excl_dt) FROM state_exclusions")],
+                   ["NPPES, latest deactivation date", _d("SELECT MAX(deact_date) FROM nppes")]]
 S["top_deceased"] = q("""SELECT npi, nppes_name, source_state, event_dt, nppes_deact_date, months_paid_after, first_month_after, last_month_after, ROUND(paid_after) paid_after FROM d3_top WHERE source='TMSIS_DECEASED' AND tier='A' ORDER BY paid_after DESC LIMIT 10""")
 S["top_crossstate"] = q("""SELECT npi, nppes_name, entity_type, term_state, term_reason, term_dt, active_state, active_end, ROUND(paid_after_term) paid_after, federal_sources FROM d3_crossstate ORDER BY (federal_sources IS NOT NULL) DESC, paid_after_term DESC LIMIT 12""")
 for k, v in S.items(): print(f"\n== {k}"); [print("  ", r) for r in v]
@@ -240,7 +265,7 @@ body = f"""
 
 {md_table(S["by_source"], ["source","tier","NPIs paid after","$M after","median $ per NPI","max months"])}
 
-**Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). State-list rows whose name shares no token with the NPPES record for that NPI are set aside as tier C (the California list's provider-number field can carry an employer's NPI; {S['tier_c'][0][0]:,} such rows, ${S['tier_c'][0][1]:,.2f}M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.\n\n**Still enrolled.** {S["enrolled_after"][0][0]:,} NPIs revoked by Medicare (tier A) or excluded by OIG still hold an active Medicaid enrollment segment (T-MSIS status 02-06) more than 90 days after the action.
+**Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). Rows on any list whose name shares no token with the NPPES record for that NPI are set aside as tier C, whatever the source (the California list's provider-number field can carry an employer's NPI, and a revocation can name a practice rather than the individual; {S['tier_c'][0][0]:,} such rows, ${S['tier_c'][0][1]:,.2f}M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.\n\n**Match tiers.** Every event in this detector carries the NPI itself, so the match is exact by identifier; the tier records how far the identity could be verified against NPPES. Rows without an NPI on the source list are handled separately by the name-matching script (scripts/sam_match_claude.py) and never enter the headline. Counts are NPIs with Medicaid service months after the action, tier A and B lists combined, TMSIS terminations excluded.\n\n{md_table(S["id_match"], ["identity match", "tier", "NPIs paid after", "$M after"])}\n\n**File dates.** "Excluded but still enrolled" is often an artefact of a stale enrollment file, so the headline never relies on enrollment status: it counts paid service months in T-MSIS after the action. The enrollment-segment figures below are reported separately and carry the file's own dates.\n\n{md_table(S["file_dates"], ["file", "latest date in the file"])}\n\n**Still enrolled.** {S["enrolled_after"][0][0]:,} NPIs revoked by Medicare (tier A) or excluded by OIG still hold an active Medicaid enrollment segment (T-MSIS status 02-06) more than 90 days after the action.
 
 {md_table(S["enrolled_after_by_state"], ["Medicaid state","NPIs"])}
 

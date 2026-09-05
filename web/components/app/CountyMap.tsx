@@ -20,15 +20,15 @@ export function CountyMap({ counties, height = 520 }: { counties: County[]; heig
     // us-atlas ships counties-10m in lon/lat here (bbox -179..180), so project with Albers USA; if a build ever ships it pre-projected, draw as-is
     const b = d3.geoBounds(feats0); const isDegrees = b[0][0] >= -181 && b[1][0] <= 181 && b[1][1] <= 91;
     const path = isDegrees ? d3.geoPath(d3.geoAlbersUsa().fitSize([width, 610], feats0)) : d3.geoPath();
-    const color = d3.scaleSequentialLog([1e4, max], t => d3.interpolateRgb("#eef2f6", "#111114")(t));
+    const color = d3.scaleSequentialLog([1e4, max], t => d3.interpolateRgb("#dfe6f0", "#002856")(t));
     const g = svg.append("g");
     const feats = feats0;
     g.append("g").selectAll("path").data(feats.features).join("path")
-      .attr("d", path as any).attr("fill", (d: any) => { const c = byFips.get(d.id); return c && Number(c.dollars_at_risk) > 0 ? color(Number(c.dollars_at_risk)) : "#f4f4f6"; })
+      .attr("d", path as any).attr("fill", (d: any) => { const c = byFips.get(d.id); return c && Number(c.dollars_at_risk) > 0 ? color(Number(c.dollars_at_risk)) : "#f5f5f5"; })
       .attr("stroke", "#fff").attr("stroke-width", 0.3)
       .on("mousemove", (ev: any, d: any) => { const c = byFips.get(d.id); if (c) setTip({ x: ev.offsetX, y: ev.offsetY, c }); })
       .on("mouseleave", () => setTip(null));
-    g.append("path").datum(topojson.mesh(topo, topo.objects.states, (a: any, b: any) => a !== b)).attr("fill", "none").attr("stroke", "#c9c9cf").attr("stroke-width", 0.6).attr("d", path as any);
+    g.append("path").datum(topojson.mesh(topo, topo.objects.states, (a: any, b: any) => a !== b)).attr("fill", "none").attr("stroke", "#ffffff").attr("stroke-width", 0.6).attr("d", path as any);
     const zoom = d3.zoom<SVGSVGElement, unknown>().scaleExtent([1, 8]).on("zoom", (ev) => g.attr("transform", ev.transform));
     svg.call(zoom as any);
     svg.attr("viewBox", `0 0 ${width} 610`);

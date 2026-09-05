@@ -464,25 +464,68 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 
 **Rule.** An NPI appears on a federal or state "must not be paid" list with an effective date, and Medicaid (T-MSIS provider spending, service months 2018-01 to 2024-12) shows paid claims in service months strictly after that month and, where the source gives one, before the window end (Medicare re-enrollment bar expiry, state reinstatement date). Dollars count each NPI-month once whether the NPI billed or rendered. Tier A grounds only: Medicare revocations under 42 CFR 424.535(a)(2),(3),(4),(5),(7),(8),(10),(12),(13),(14),(18),(19),(20),(22),(23); every OIG LEIE exclusion without a state waiver; California, New York and Texas Medicaid exclusion lists (rows carrying an NPI). Administrative revocations ((a)(1) noncompliance, (a)(6), (a)(9) alone, (a)(11), (a)(17), (a)(21)) are kept in the tables as tier B and excluded from the headline.
 
-**Headline.** 15,708 NPIs are on a tier-A list with an effective date inside the data window; 353 of them have Medicaid claims with service months after the action, totalling $50.36M; 174 were paid in six or more months after the action ($45.38M). These are dollars paid after an action that should have triggered a state screening check under 42 CFR 455.436 (monthly LEIE, SAM and NPPES checks) and, for for-cause Medicare terminations and other states' terminations, a termination decision under 42 CFR 455.416. They are not "improper payments": a Medicare revocation is not by itself a Medicaid payment bar, appeals and reinstatements exist, and some payments may reflect claims that were later recouped. OIG's audit of providers terminated in one state and paid in others found $50.3M across 584 providers, so the order of magnitude is consistent.
+**Headline.** 17,499 NPIs are on a tier-A list with an effective date inside the data window; 402 of them have Medicaid claims with service months after the action, totalling $58.07M; 202 were paid in six or more months after the action ($52.79M). These are dollars paid after an action that should have triggered a state screening check under 42 CFR 455.436 (monthly LEIE, SAM and NPPES checks) and, for for-cause Medicare terminations and other states' terminations, a termination decision under 42 CFR 455.416. They are not "improper payments": a Medicare revocation is not by itself a Medicaid payment bar, appeals and reinstatements exist, and some payments may reflect claims that were later recouped. OIG's audit of providers terminated in one state and paid in others found $50.3M across 584 providers, so the order of magnitude is consistent.
 
 | source | tier | NPIs paid after | $M after | median $ per NPI | max months |
 |---|---|---|---|---|---|
 | NPPES_DEACTIVATED | B | 511 | 231.20 | 5,352.00 | 84 |
-| MEDICARE_REVOKED | A | 270 | 39.64 | 13,607.00 | 67 |
+| MEDICARE_REVOKED | A | 270 | 32.36 | 12,584.00 | 67 |
 | MEDICARE_REVOKED | B | 66 | 25.72 | 25,525.00 | 84 |
 | STATE_EXCL_CA | C | 14 | 23.38 | 27,660.00 | 46 |
 | OIG_LEIE | A | 14 | 8.07 | 67,706.00 | 55 |
 | STATE_EXCL_CA | A | 81 | 7.22 | 12,029.00 | 52 |
-| TMSIS_DECEASED | B | 19 | 4.01 | 40,795.00 | 81 |
+| TMSIS_DECEASED | B | 20 | 4.04 | 40,210.00 | 81 |
 | STATE_EXCL_NY | A | 35 | 3.45 | 7,470.00 | 78 |
+| STATE_EXCL_KY | A | 25 | 2.71 | 16,320.00 | 41 |
 | STATE_EXCL_TX | A | 6 | 2.33 | 54,286.00 | 33 |
 | STATE_EXCL_TX | B | 3 | 2.28 | 90,573.00 | 25 |
+| STATE_EXCL_IN | A | 4 | 2.19 | 78,698.00 | 54 |
+| STATE_EXCL_WA | C | 1 | 1.68 | 1,677,349.00 | 28 |
+| STATE_EXCL_ND | A | 1 | 1.51 | 1,506,469.00 | 11 |
+| STATE_EXCL_WA | A | 6 | 1.11 | 68,330.00 | 83 |
+| STATE_EXCL_KY | C | 2 | 0.24 | 120,054.00 | 10 |
+| STATE_EXCL_MO | A | 8 | 0.19 | 4,761.00 | 69 |
+| STATE_EXCL_CO | A | 7 | 0.12 | 3,047.00 | 38 |
 | SAM_OPM | B | 5 | 0.11 | 2,266.00 | 27 |
+| STATE_EXCL_MD | A | 5 | 0.08 | 5,888.00 | 26 |
+| STATE_EXCL_AZ | A | 2 | 0.06 | 31,240.00 | 2 |
+| STATE_EXCL_SC | C | 2 | 0.06 | 28,649.00 | 4 |
+| STATE_EXCL_SC | A | 8 | 0.05 | 1,342.00 | 32 |
+| STATE_EXCL_CO | C | 1 | 0.05 | 47,488.00 | 1 |
 | STATE_EXCL_NY | C | 5 | 0.04 | 6,519.00 | 3 |
+| STATE_EXCL_MI | C | 1 | 0.04 | 38,205.00 | 3 |
 | STATE_EXCL_TX | C | 1 | 0.01 | 13,635.00 | 7 |
+| STATE_EXCL_AZ | C | 1 | 0.00 | 3,150.00 | 10 |
+| STATE_EXCL_MS | C | 1 | 0.00 | 0.00 | 8 |
+| STATE_EXCL_MT | A | 1 | 0.00 | 100.00 | 1 |
+| STATE_EXCL_MI | A | 1 | 0.00 | 306.00 | 1 |
+| STATE_EXCL_MS | A | 1 | 0.00 | 0.00 | 4 |
+| STATE_EXCL_NH | A | 1 | 0.00 | 444.00 | 2 |
 
-**Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). State-list rows whose name shares no token with the NPPES record for that NPI are set aside as tier C (the California list's provider-number field can carry an employer's NPI; 20 such rows, $23.43M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.
+**Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). State-list rows whose name shares no token with the NPPES record for that NPI are set aside as tier C (the California list's provider-number field can carry an employer's NPI; 29 such rows, $25.49M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.
+
+**Match tiers.** Every event in this detector carries the NPI itself, so the match is exact by identifier; the tier records how far the identity could be verified against NPPES. Rows without an NPI on the source list are handled separately by the name-matching script (scripts/sam_match_claude.py) and never enter the headline. Counts are NPIs with Medicaid service months after the action, tier A and B lists combined, TMSIS terminations excluded.
+
+| identity match | tier | NPIs paid after | $M after |
+|---|---|---|---|
+| exact_npi_name_conflict | A | 11 | 2.15 |
+| exact_npi_name_conflict | B | 516 | 232.80 |
+| exact_npi_name_conflict | C | 27 | 25.49 |
+| exact_npi_name_verified | A | 427 | 59.28 |
+| exact_npi_name_verified | B | 68 | 26.51 |
+
+**File dates.** "Excluded but still enrolled" is often an artefact of a stale enrollment file, so the headline never relies on enrollment status: it counts paid service months in T-MSIS after the action. The enrollment-segment figures below are reported separately and carry the file's own dates.
+
+| file | latest date in the file |
+|---|---|
+| T-MSIS provider spending, latest service month | 2024-12 |
+| T-MSIS enrollment segments, latest segment start | 2024-12-31 |
+| T-MSIS enrollment segments, latest dated segment end | 2030-12-31 |
+| Medicare revocations, latest effective date | 2026-05-27 |
+| OIG LEIE, latest exclusion date | 2026-08-20 |
+| SAM.gov, latest active date | 2099-12-30 |
+| State exclusion lists, latest action date | 2026-09-02 |
+| NPPES, latest deactivation date | 2026-08-09 |
 
 **Still enrolled.** 2,763 NPIs revoked by Medicare (tier A) or excluded by OIG still hold an active Medicaid enrollment segment (T-MSIS status 02-06) more than 90 days after the action.
 
@@ -499,18 +542,18 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | MI | 167 |
 | GA | 130 |
 
-**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organisations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: 0 NPIs, $0.00M paid after; tier B (no NPPES corroboration): 19 NPIs, $4.01M.
+**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organisations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: 0 NPIs, $0.00M paid after; tier B (no NPPES corroboration): 20 NPIs, $4.04M.
 
-**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organisations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: 6,375 NPIs (16,357 state pairs), 162 of them also on a federal or state exclusion list, 2,991 with Medicaid dollars after the termination ($1,483.92M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
+**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organisations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: 6,369 NPIs (16,329 state pairs), 214 of them also on a federal or state exclusion list, 2,986 with Medicaid dollars after the termination ($1,486.92M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
 
 | code | reason | NPIs | $M after |
 |---|---|---|---|
-| 70 | TERM - LICENSE REVOKED | 4,713 | 944.23 |
-| 81 | TERM - STATE EXCLUSION/ DEBARMENT, ETC. | 945 | 427.86 |
-| 78 | TERM - ONSITE REVIEW/ PROVIDER IS NO LONGER OPERATIONAL | 436 | 102.16 |
+| 70 | TERM - LICENSE REVOKED | 4,710 | 946.49 |
+| 81 | TERM - STATE EXCLUSION/ DEBARMENT, ETC. | 945 | 428.63 |
+| 78 | TERM - ONSITE REVIEW/ PROVIDER IS NO LONGER OPERATIONAL | 434 | 102.13 |
 | 72 | TERM - MEDICARE/MEDICAID EXCLUSION | 217 | 4.94 |
 | 60 | TERM - ABUSE OF BILLING PRIVILEGES | 60 | 0.25 |
-| 65 | TERM - FALSE OR MISLEADING INFORMATION | 9 | 3.50 |
+| 65 | TERM - FALSE OR MISLEADING INFORMATION | 8 | 3.50 |
 | 66 | TERM - FEDERAL EXCLUSION/ DEBARMENT, ETC. | 4 | 0.97 |
 | 75 | TERM - MISUSE OF BILLING NUMBER | 2 | 0.00 |
 
@@ -522,13 +565,16 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1982736492 | WE CARE TRANSPORTATION | 2 | OIG_LEIE | 2010-01-20 |  | 31 | 2018-01 | 2020-07 | 4,441,513.00 | 1 |
 | 1962546176 | MATIAS CLINICAL LABORATORY INC | 2 | MEDICARE_REVOKED | 2018-08-31 | MO | 44 | 2018-09 | 2022-04 | 3,846,471.00 | 1 |
-| 1548629520 | EMPIRE MEDICAL LLC | 2 | MEDICARE_REVOKED | 2020-07-31 | DE | 9 | 2020-08 | 2021-04 | 2,389,353.00 | 1 |
+| 1548629520 | EMPIRE MEDICAL LLC | 2 | MEDICARE_REVOKED,STATE_EXCL_MD | 2020-07-31 | DE | 9 | 2020-08 | 2021-04 | 2,389,353.00 | 1 |
 | 1679896484 | BLAKES BLESSING HEALTH CARE INC. | 2 | STATE_EXCL_TX | 2022-01-19 | TX | 33 | 2022-02 | 2024-10 | 2,118,903.00 | 1 |
 | 1225242985 | KIUP KIM | 1 | STATE_EXCL_CA | 2018-12-10 | AZ | 52 | 2019-01 | 2023-08 | 2,046,769.00 | 1 |
+| 1619941614 | HISHAM SADEK | 1 | STATE_EXCL_IN,MEDICARE_REVOKED | 2015-07-15 | IL | 54 | 2020-05 | 2024-11 | 2,029,469.00 | 1 |
 | 1861407637 | HEALTHSMART PACIFIC INC | 2 | OIG_LEIE | 2021-04-20 | MD | 34 | 2021-05 | 2024-02 | 1,639,221.00 | 1 |
+| 1447440359 | DOYLE'S YELLOW CHECKER CAB, INC | 2 | STATE_EXCL_ND | 2024-01-24 | MN | 11 | 2024-02 | 2024-12 | 1,506,469.00 | 1 |
 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | MEDICARE_REVOKED | 2021-11-19 | MD | 23 | 2021-12 | 2023-10 | 1,327,755.00 | 1 |
 | 1457414286 | DM OPTICAL INC | 2 | STATE_EXCL_NY | 2016-09-22 |  | 26 | 2018-01 | 2020-02 | 1,183,544.00 | 1 |
-| 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | STATE_EXCL_NY,MEDICARE_REVOKED | 2022-10-31 | LA | 7 | 2022-11 | 2023-05 | 1,043,387.00 | 1 |
+| 1194744185 | QUALITY HEALTHCARE MANAGEMENT INC | 2 | STATE_EXCL_KY | 2023-10-07 | RI | 14 | 2023-11 | 2024-12 | 1,092,507.00 | 1 |
+| 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | STATE_EXCL_NY,STATE_EXCL_SC,MEDICARE_REVOKED | 2022-10-31 | LA | 7 | 2022-11 | 2023-05 | 1,043,387.00 | 1 |
 | 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | MEDICARE_REVOKED | 2020-03-02 | TX | 19 | 2021-04 | 2023-04 | 960,939.00 | 1 |
 | 1871571406 | MOHAMED ASWAD | 1 | OIG_LEIE,MEDICARE_REVOKED | 2016-01-20 | AZ | 55 | 2018-01 | 2022-07 | 901,321.00 | 1 |
 | 1407188543 | MERCRIS HOME HEALTH INC | 2 | MEDICARE_REVOKED | 2023-05-01 | TX | 17 | 2023-06 | 2024-10 | 899,287.00 | 1 |
@@ -537,9 +583,6 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | 1417068511 |  |  | OIG_LEIE,MEDICARE_REVOKED | 2022-06-06 | CA | 12 | 2022-07 | 2023-06 | 844,467.00 | 0 |
 | 1740478270 | FIRST IDEAL ENTERPRISES INC. | 2 | MEDICARE_REVOKED | 2018-10-01 | MI | 38 | 2018-11 | 2021-12 | 843,035.00 | 1 |
 | 1518931856 | LINDA WARREN-WATSON | 1 | STATE_EXCL_CA | 2020-10-31 | CA | 16 | 2020-11 | 2022-06 | 828,250.00 | 1 |
-| 1609064153 | QUEENS OPTOMETRIC CARE PLLC | 2 | MEDICARE_REVOKED | 2023-10-25 | NY | 11 | 2023-11 | 2024-09 | 777,235.00 | 1 |
-| 1336486448 | QOL COMMUNICATION SERVICES, LLC | 2 | MEDICARE_REVOKED | 2024-06-12 | MD | 6 | 2024-07 | 2024-12 | 728,911.00 | 1 |
-| 1851702971 | NEW WAVE DIAGNOSTIC RADIOLOGY PLLC | 2 | MEDICARE_REVOKED | 2022-08-19 |  | 27 | 2022-09 | 2024-12 | 580,310.00 | 1 |
 
 Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_npi`, `d3_top`; app rows in `flags` (detector D3). Code: `detectors/d3_revoked_but_paid.py`.
 
@@ -549,11 +592,11 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 
 | tier | meaning | NPIs | $M at risk | reached by 2+ detectors |
 |---|---|---|---|---|
-| 1 | documented action, then payment | 353 | 54.04 | 3 |
+| 1 | documented action, then payment | 402 | 62.79 | 3 |
 | 2 | impossible volume with concurrency | 555 | 2,465.42 | 0 |
 | 3 | network structure with a list link | 6,098 | 1,111.06 | 0 |
 | 4 | structure or single-organisation volume | 1,815 | 4,447.44 | 0 |
-| 5 | informational | 2,685 | 3,465.25 | 0 |
+| 5 | informational | 2,684 | 3,462.83 | 0 |
 
 3 NPIs were reached by two or more detectors independently; corroboration is the strongest signal the pipeline produces and it is weighted accordingly.
 
@@ -569,22 +612,22 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 | 6 | 1548629520 | EMPIRE MEDICAL LLC | 2 | DE | 1 | 96.40 | ['D3'] | 2,389,353.00 | on MEDICARE_REVOKED from 2020-07-31, Medicaid paid in 9 later months ($2389353) |
 | 7 | 1679896484 | BLAKES BLESSING HEALTH CARE INC. | 2 | TX | 1 | 96.30 | ['D3'] | 2,118,903.00 | on STATE_EXCL_TX from 2022-01-19, Medicaid paid in 33 later months ($2118903) |
 | 8 | 1225242985 | KIUP KIM | 1 | AZ | 1 | 96.30 | ['D3'] | 2,046,769.00 | on STATE_EXCL_CA from 2018-12-10, Medicaid paid in 52 later months ($2046769) |
-| 9 | 1861407637 | HEALTHSMART PACIFIC INC | 2 | CA | 1 | 96.20 | ['D3'] | 1,639,221.00 | on OIG_LEIE from 2021-04-20, Medicaid paid in 34 later months ($1639221) |
-| 10 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | VA | 1 | 96.10 | ['D3'] | 1,327,755.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 23 later months ($1327755) |
-| 11 | 1457414286 | DM OPTICAL INC | 2 | NY | 1 | 96.10 | ['D3'] | 1,183,544.00 | on STATE_EXCL_NY from 2016-09-22, Medicaid paid in 26 later months ($1183544) |
-| 12 | 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | NJ | 1 | 96.00 | ['D3'] | 1,043,387.00 | on STATE_EXCL_NY,MEDICARE_REVOKED from 2022-10-31, Medicaid paid in 7 later months ($1043387) |
-| 13 | 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | TX | 1 | 96.00 | ['D3'] | 960,939.00 | on MEDICARE_REVOKED from 2020-03-02, Medicaid paid in 19 later months ($960939) |
-| 14 | 1871571406 | MOHAMED ASWAD | 1 | NM | 1 | 96.00 | ['D3'] | 901,321.00 | on OIG_LEIE from 2016-01-20, Medicaid paid in 55 later months ($901321) |
-| 15 | 1407188543 | MERCRIS HOME HEALTH INC | 2 | TX | 1 | 96.00 | ['D3'] | 899,287.00 | on MEDICARE_REVOKED from 2023-05-01, Medicaid paid in 17 later months ($899287) |
-| 16 | 1831547868 | SHANONE CHATMAN-ASHLEY | 1 | LA | 1 | 95.90 | ['D3'] | 883,542.00 | on MEDICARE_REVOKED from 2020-10-23, Medicaid paid in 38 later months ($883542) |
-| 17 | 1558706549 | JLJ MEDICAL LLC | 2 | MD | 1 | 95.90 | ['D3'] | 882,532.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 33 later months ($882532) |
-| 18 | 1417068511 |  |  |  | 1 | 95.90 | ['D3'] | 844,467.00 | on MEDICARE_REVOKED from 2022-06-06, Medicaid paid in 12 later months ($844467) |
-| 19 | 1740478270 | FIRST IDEAL ENTERPRISES INC. | 2 | MI | 1 | 95.90 | ['D3'] | 843,035.00 | on MEDICARE_REVOKED from 2018-10-01, Medicaid paid in 38 later months ($843035) |
-| 20 | 1518931856 | LINDA WARREN-WATSON | 1 | CA | 1 | 95.90 | ['D3'] | 828,250.00 | on STATE_EXCL_CA from 2020-10-31, Medicaid paid in 16 later months ($828250) |
-| 21 | 1609064153 | QUEENS OPTOMETRIC CARE PLLC | 2 | NY | 1 | 95.90 | ['D3'] | 777,235.00 | on MEDICARE_REVOKED from 2023-10-25, Medicaid paid in 11 later months ($777235) |
-| 22 | 1336486448 | QOL COMMUNICATION SERVICES, LLC | 2 | MD | 1 | 95.90 | ['D3'] | 728,911.00 | on MEDICARE_REVOKED from 2024-06-12, Medicaid paid in 6 later months ($728911) |
-| 23 | 1851702971 | NEW WAVE DIAGNOSTIC RADIOLOGY PLLC | 2 | NY | 1 | 95.80 | ['D3'] | 580,310.00 | on MEDICARE_REVOKED from 2022-08-19, Medicaid paid in 27 later months ($580310) |
-| 24 | 1831107150 | RICHARD GOLEMBIOSKI | 1 | NJ | 1 | 95.80 | ['D3'] | 565,117.00 | on MEDICARE_REVOKED from 2020-11-04, Medicaid paid in 48 later months ($565117) |
-| 25 | 1447395736 | BHUPINDER BHANDARI MD INC | 2 | CA | 1 | 95.70 | ['D3'] | 526,010.00 | on STATE_EXCL_CA,MEDICARE_REVOKED from 2022-11-23, Medicaid paid in 9 later months ($526010) |
+| 9 | 1619941614 | HISHAM SADEK | 1 | IL | 1 | 96.30 | ['D3', 'D2'] | 2,029,469.00 | on STATE_EXCL_IN from 2015-07-15, Medicaid paid in 54 later months ($2029469) |
+| 10 | 1861407637 | HEALTHSMART PACIFIC INC | 2 | CA | 1 | 96.20 | ['D3'] | 1,639,221.00 | on OIG_LEIE from 2021-04-20, Medicaid paid in 34 later months ($1639221) |
+| 11 | 1447440359 | DOYLE'S YELLOW CHECKER CAB, INC | 2 | ND | 1 | 96.20 | ['D3'] | 1,506,469.00 | on STATE_EXCL_ND from 2024-01-24, Medicaid paid in 11 later months ($1506469) |
+| 12 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | VA | 1 | 96.10 | ['D3'] | 1,327,754.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 23 later months ($1327754) |
+| 13 | 1457414286 | DM OPTICAL INC | 2 | NY | 1 | 96.10 | ['D3'] | 1,183,544.00 | on STATE_EXCL_NY from 2016-09-22, Medicaid paid in 26 later months ($1183544) |
+| 14 | 1194744185 | QUALITY HEALTHCARE MANAGEMENT INC | 2 | NY | 1 | 96.00 | ['D3'] | 1,092,507.00 | on STATE_EXCL_KY from 2023-10-07, Medicaid paid in 14 later months ($1092507) |
+| 15 | 1780780031 | DAVID SMITH | 1 | NC | 1 | 96.00 | ['D3'] | 1,063,751.00 | on MEDICARE_REVOKED,STATE_EXCL_SC from 2021-08-30, Medicaid paid in 7 later months ($1063751) |
+| 16 | 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | NJ | 1 | 96.00 | ['D3'] | 1,043,387.00 | on STATE_EXCL_NY,MEDICARE_REVOKED from 2022-10-31, Medicaid paid in 7 later months ($1043387) |
+| 17 | 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | TX | 1 | 96.00 | ['D3'] | 960,939.00 | on MEDICARE_REVOKED from 2020-03-02, Medicaid paid in 19 later months ($960939) |
+| 18 | 1871571406 | MOHAMED ASWAD | 1 | NM | 1 | 96.00 | ['D3'] | 901,321.00 | on OIG_LEIE from 2016-01-20, Medicaid paid in 55 later months ($901321) |
+| 19 | 1407188543 | MERCRIS HOME HEALTH INC | 2 | TX | 1 | 96.00 | ['D3'] | 899,287.00 | on MEDICARE_REVOKED from 2023-05-01, Medicaid paid in 17 later months ($899287) |
+| 20 | 1831547868 | SHANONE CHATMAN-ASHLEY | 1 | LA | 1 | 95.90 | ['D3'] | 883,542.00 | on MEDICARE_REVOKED from 2020-10-23, Medicaid paid in 38 later months ($883542) |
+| 21 | 1558706549 | JLJ MEDICAL LLC | 2 | MD | 1 | 95.90 | ['D3'] | 882,532.00 | on MEDICARE_REVOKED from 2021-11-19, Medicaid paid in 33 later months ($882532) |
+| 22 | 1417068511 |  |  |  | 1 | 95.90 | ['D3'] | 844,467.00 | on MEDICARE_REVOKED from 2022-06-06, Medicaid paid in 12 later months ($844467) |
+| 23 | 1740478270 | FIRST IDEAL ENTERPRISES INC. | 2 | MI | 1 | 95.90 | ['D3'] | 843,035.00 | on MEDICARE_REVOKED from 2018-10-01, Medicaid paid in 38 later months ($843035) |
+| 24 | 1518931856 | LINDA WARREN-WATSON | 1 | CA | 1 | 95.90 | ['D3'] | 828,250.00 | on STATE_EXCL_CA from 2020-10-31, Medicaid paid in 16 later months ($828250) |
+| 25 | 1609064153 | QUEENS OPTOMETRIC CARE PLLC | 2 | NY | 1 | 95.90 | ['D3'] | 777,235.00 | on MEDICARE_REVOKED from 2023-10-25, Medicaid paid in 11 later months ($777235) |
 
 Table: `provider_risk`. Code: `detectors/risk_score.py`. Every row is a referral candidate for records review, not a finding.
