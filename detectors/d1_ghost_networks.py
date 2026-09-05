@@ -120,6 +120,11 @@ own["state_owner"] = own.state_owner.where(own.state_owner.fillna("") != "", own
 own["loc_is_proxy"] = _blank
 pp = [person_parts(f, l, m) if ip else None for f, l, m, ip in zip(own.first_name_owner, own.last_name_owner, own.middle_name_owner, own.is_person)]
 own["p_last"] = [x[0] if x else None for x in pp]; own["p_first"] = [x[1] if x else None for x in pp]; own["p_mi"] = [x[2] if x else None for x in pp]
+# placeholder names ("NAN", "NONE", blanks) must never agree with each other: they are missing values, not names
+_PH = {"NAN", "NONE", "NULL", "N/A", "NA", "UNKNOWN", ""}
+own["p_last"] = [None if (x is None or str(x).upper().strip() in _PH or not re.search(r"[A-Z]", str(x).upper())) else x for x in own.p_last]
+own["p_first"] = [None if (x is None or str(x).upper().strip() in _PH or not re.search(r"[A-Z]", str(x).upper())) else x for x in own.p_first]
+own["p_mi"] = [None if (x is None or str(x).upper().strip() in _PH) else x for x in own.p_mi]
 own["org_k"] = [org_key(n) if not ip else None for n, ip in zip(own.organization_name_owner, own.is_person)]
 own["pct"] = pd.to_numeric(own.percentage_ownership, errors="coerce").fillna(0)
 own["assoc_dt"] = pd.to_datetime(own.association_date_owner, errors="coerce")
@@ -129,7 +134,7 @@ prov_ids = set(prov.enrollment_id); own = own[own.enrollment_id.isin(prov_ids)].
 log(f"keys built; owner rows on selected providers {len(own):,} (persons {int(own.is_person.sum()):,})")
 
 # ------------------------------------------------------------------ B. entity resolution for owner persons (PECOS ID + exact key + Fellegi-Sunter/EM)
-per = own[own.is_person & own.p_last.notna()].copy()
+per = own[own.is_person & own.p_last.notna() & own.p_first.notna()].copy()
 per["exact_key"] = per.p_last + "|" + per.p_first.str[:3] + "|" + per.zip5
 dsu = DSU(); aid_col = "associate_id_owner"
 for i, aid in zip(per.index, per[aid_col]):
