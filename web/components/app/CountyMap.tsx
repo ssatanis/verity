@@ -37,7 +37,7 @@ export function CountyMap({ counties, height = 520 }: { counties: County[]; heig
     <div className="relative">
       <svg ref={ref} className="w-full" style={{ height }} />
       {tip && (
-        <div className="absolute pointer-events-none bg-white border border-[var(--line)] rounded-lg shadow-lg p-3 text-[12px]" style={{ left: tip.x + 12, top: tip.y + 12 }}>
+        <div className="absolute pointer-events-none bg-white border border-[var(--ink)] p-3 text-[12px]" style={{ left: tip.x + 12, top: tip.y + 12 }}>
           <div className="font-medium">{tip.c.county_name}, {tip.c.state}</div>
           <div className="text-[var(--ink-3)]">at risk ${(Number(tip.c.dollars_at_risk) / 1e6).toFixed(2)}M · {tip.c.n_clusters} communities · {tip.c.n_providers_flagged} flagged NPIs</div>
           <div className="text-[var(--ink-3)]">D1 ${(Number(tip.c.d1_dollars) / 1e6).toFixed(1)}M · D2 ${(Number(tip.c.d2_dollars) / 1e6).toFixed(1)}M · D3 ${(Number(tip.c.d3_dollars) / 1e6).toFixed(1)}M</div>

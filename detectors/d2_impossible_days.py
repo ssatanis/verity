@@ -201,6 +201,40 @@ SELECT s.servicing_npi, s.state, s.entity_type, s.name, s.city, s.taxonomy, s.te
 FROM d2_scored s LEFT JOIN growth g USING (servicing_npi)
 GROUP BY s.servicing_npi, s.state, s.entity_type, s.name, s.city, s.taxonomy, s.test_basis, g.paid_2022, g.paid_2024, g.patients_2022, g.patients_2024""")
 
+# ---------------- 4b. growth and concentration indicator (billing NPI level) ----------------
+# Medicaid-only HCBS billers (housing stabilization, EIDBI, personal care) never appear in CMS enrollment files, so the network detector cannot
+# see them, and services billed under the agency NPI are tested per patient, not per clinician. This indicator ranks billing NPIs by how
+# new, how concentrated in a single high-vector code, and how intense per patient they are, against the state and code distribution.
+run("d2_growth", """
+CREATE OR REPLACE TABLE d2_growth AS
+WITH by_code AS (
+  SELECT s.billing_npi, ps.state, substr(s.month,1,4) AS year, s.hcpcs, t.fraud_vector, SUM(s.paid) AS paid, SUM(s.patients) AS patient_months, MAX(s.patients) AS max_patients, COUNT(*) AS months
+  FROM spend s JOIN provider_state ps ON ps.npi = s.billing_npi JOIN timecodes t USING (hcpcs) WHERE s.paid > 0 GROUP BY 1,2,3,4,5),
+tot AS (SELECT billing_npi, state, year, SUM(paid) AS paid_year, SUM(patient_months) AS patient_months_year FROM by_code GROUP BY 1,2,3),
+dom AS (SELECT billing_npi, state, year, hcpcs AS dominant_code, fraud_vector AS dominant_vector, paid AS dominant_paid, patient_months AS dominant_patient_months
+        FROM by_code QUALIFY ROW_NUMBER() OVER (PARTITION BY billing_npi, year ORDER BY paid DESC) = 1),
+base AS (
+  SELECT t.billing_npi, t.state, t.year, t.paid_year, t.patient_months_year, d.dominant_code, d.dominant_vector, d.dominant_paid / t.paid_year AS concentration,
+         d.dominant_paid / NULLIF(d.dominant_patient_months, 0) AS dollars_per_patient_month, n.enum_date, n.entity_type, COALESCE(n.org_name, trim(COALESCE(n.first_name,'') || ' ' || COALESCE(n.last_name,''))) AS name,
+         LAG(t.paid_year) OVER (PARTITION BY t.billing_npi ORDER BY t.year) AS paid_prev_year
+  FROM tot t JOIN dom d USING (billing_npi, state, year) LEFT JOIN nppes n ON n.npi = t.billing_npi),
+ref AS (   -- state x dominant code x year distribution of dollars per patient-month (billers with at least 12 patient-months)
+  SELECT state, dominant_code, year, median(dollars_per_patient_month) AS med, median(abs(dollars_per_patient_month - (SELECT median(b2.dollars_per_patient_month) FROM base b2 WHERE b2.state = b.state AND b2.dominant_code = b.dominant_code AND b2.year = b.year AND b2.patient_months_year >= 12))) AS mad, COUNT(*) AS n
+  FROM base b WHERE patient_months_year >= 12 GROUP BY 1,2,3 HAVING COUNT(*) >= 20)
+SELECT b.*, r.med AS ref_median, r.mad AS ref_mad, r.n AS ref_n,
+       CASE WHEN r.mad > 0 THEN 0.6745 * (b.dollars_per_patient_month - r.med) / r.mad END AS intensity_z,
+       CASE WHEN b.paid_prev_year > 0 THEN b.paid_year / b.paid_prev_year END AS growth_yoy,
+       (b.enum_date >= CAST(b.year || '-01-01' AS DATE) - INTERVAL 3 YEAR) AS new_npi
+FROM base b LEFT JOIN ref r ON r.state = b.state AND r.dominant_code = b.dominant_code AND r.year = b.year""")
+run("d2_growth_flags", """
+CREATE OR REPLACE TABLE d2_growth_flags AS
+SELECT *, PERCENT_RANK() OVER (PARTITION BY state, dominant_code, year ORDER BY dollars_per_patient_month) AS intensity_pct,
+       -- informational label: new billing NPI, at least $500k in the year, 80%+ of dollars in one high-vector code, and either a first full year at that size or 3x growth, and intensity in the top decile of its state and code
+       CASE WHEN new_npi AND paid_year >= 500000 AND dominant_vector = 'HIGH' AND concentration >= 0.8 AND (paid_prev_year IS NULL OR growth_yoy >= 3)
+                 AND PERCENT_RANK() OVER (PARTITION BY state, dominant_code, year ORDER BY dollars_per_patient_month) >= 0.9 THEN 'GROWTH_ANOMALY' END AS label
+FROM d2_growth WHERE patient_months_year >= 12""")
+print("growth anomalies:", q("SELECT year, COUNT(*) FROM d2_growth_flags WHERE label IS NOT NULL GROUP BY 1 ORDER BY 1"))
+
 # ---------------- 5. flags for the app ----------------
 con.execute("""CREATE TABLE IF NOT EXISTS flags (id BIGINT, detector VARCHAR, npi VARCHAR, billing_npi VARCHAR, state VARCHAR, month DATE, hcpcs VARCHAR,
                metric VARCHAR, value DOUBLE, threshold DOUBLE, score DOUBLE, dollars DOUBLE, tier VARCHAR, evidence JSON, created_at TIMESTAMP)""")
@@ -223,6 +257,14 @@ SELECT CAST(hash('D2' || servicing_npi || month) >> 1 AS BIGINT), 'D2', servicin
                            mn_capped_hours_cons := mn_capped_hours_cons, mn_cap_allowance_hours := mn_cap_allowance_hours)),
        now()
 FROM d2_scored WHERE label IS NOT NULL""")
+con.execute("""INSERT INTO flags
+SELECT CAST(hash('D2G' || billing_npi || year) >> 1 AS BIGINT), 'D2', billing_npi, billing_npi, state, CAST(year || '-01-01' AS DATE), dominant_code,
+       'growth_and_concentration', dollars_per_patient_month, ref_median, 0.5 + LEAST(GREATEST(COALESCE(intensity_z, 0), 0), 20) / 20.0, paid_year, 'C',
+       to_json(struct_pack(label := label, name := name, entity_type := entity_type, year := year, paid_year := paid_year, paid_prev_year := paid_prev_year, growth_yoy := growth_yoy,
+                           dominant_code := dominant_code, concentration := concentration, patient_months := patient_months_year, dollars_per_patient_month := dollars_per_patient_month,
+                           ref_median := ref_median, intensity_z := intensity_z, intensity_pct := intensity_pct, enum_date := enum_date, new_npi := new_npi)),
+       now()
+FROM d2_growth_flags WHERE label IS NOT NULL""")
 print("D2 flags:", q("SELECT tier, COUNT(*), COUNT(DISTINCT npi) FROM flags WHERE detector='D2' GROUP BY 1"))
 
 # ---------------- 6. summaries and methods ----------------
@@ -269,6 +311,8 @@ Rate sources used nationally: {", ".join(f"{r[0]} {r[1]:,}" for r in S["rate_sou
 **Denominator sensitivity.** Labels divide monthly hours by calendar days, the strictest physical bound. Dividing by Monday-to-Friday working days instead moves the counts as follows (individual NPIs, conservative personal-service hours):
 
 {md_table(S["denominator"], ["denominator","NPIs over 24 h/day","NPIs over 16 h/day"])}
+
+**Growth and concentration indicator.** Medicaid-only home and community-based billers (housing stabilization, EIDBI, personal care) never appear in the CMS enrollment files, so the network detector cannot see them, and services billed under the agency NPI are tested per patient. For every billing NPI and year the indicator records the dominant code, the share of dollars in it, dollars per patient-month, the year-over-year growth and whether the NPI was enumerated within three years. `GROWTH_ANOMALY` (tier C, informational) marks new NPIs with at least $500k in the year, 80 percent or more of dollars in one high-vector code, a first year at that size or three-fold growth, and dollars per patient-month in the top decile of their state and code. It is a queue for records review; many new providers grow quickly for legitimate reasons.
 
 **Convention caveat.** In several states the T-MSIS rendering NPI is the supervising clinician or the group by convention, and telehealth and locum tenens arrangements can concentrate volume under one NPI legitimately. Every label here is a screening indicator to be checked against the state's supervisory-billing rules and the provider's records; none is a finding.
 

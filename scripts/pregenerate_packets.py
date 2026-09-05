@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Draft referral packets for the demo subjects (top communities and top flagged providers) and store them in Supabase, so the
-console shows packets even before a reviewer clicks Generate. Uses the deterministic builder unless OPENAI_API_KEY is set."""
+console shows packets even before a reviewer clicks Generate. Uses Claude (ANTHROPIC_API_KEY) when configured, else the deterministic builder."""
 import json, os, sys, uuid
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, os.path.join(ROOT, "api")); os.chdir(ROOT)
 from dotenv import load_dotenv; load_dotenv(".env")

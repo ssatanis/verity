@@ -33,7 +33,7 @@ if "flags" in have:
         """SELECT f.id, f.detector, f.npi, f.billing_npi, f.state, f.month, f.hcpcs, f.metric, f.value, f.threshold, f.score, f.dollars, f.evidence, f.tier,
                   COALESCE(n.org_name, trim(COALESCE(n.first_name,'') || ' ' || COALESCE(n.last_name,''))), n.entity_type
            FROM flags f LEFT JOIN nppes n ON n.npi = f.npi
-           WHERE NOT (f.detector = 'D2' AND f.tier = 'C')   -- tier C (elevated, informational) stays in DuckDB to keep Postgres inside its disk budget""")
+           WHERE NOT (f.detector = 'D2' AND f.tier = 'C')""")  # tier C (elevated, informational) stays in DuckDB to keep Postgres inside its disk budget
 # providers: every NPI referenced by a flag or a cluster member, slim NPPES + Medicaid home state + ZIP centroid
 counts["providers"] = copy("providers", "npi, entity_type, name, org_name, address1, city, state, zip5, phone, taxonomy, enum_date, deact_date, medicaid_state, ao_name, ao_phone, extra, lat, lon, county_fips",
     f"""WITH ids AS ({' UNION '.join(x for x in ['SELECT npi FROM flags'] + (['SELECT npi FROM cluster_members'] if 'cluster_members' in have else []))})
@@ -42,15 +42,21 @@ counts["providers"] = copy("providers", "npi, entity_type, name, org_name, addre
                to_json(struct_pack(credential := n.credential, mail_city := n.mail_city, mail_state := n.mail_state, sole_proprietor := n.sole_proprietor, parent_org := n.parent_org_lbn)),
                zc.lat, zc.lon, pc.county_fips
         FROM ids JOIN nppes n ON n.npi = ids.npi LEFT JOIN provider_state ps ON ps.npi = n.npi LEFT JOIN zcta_centroid zc ON zc.zcta = n.zip5 LEFT JOIN zcta_primary_county pc ON pc.zcta = n.zip5""")
+if "provider_risk" in have:
+    counts["provider_risk"] = copy("provider_risk", "npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, detectors, dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023",
+        """SELECT npi, rank, name, entity_type, city, state, taxonomy, county_fips, medicaid_state, tier, tier_label, score, n_detectors, to_json(detectors), dollars_at_risk, reasons, d3_a, d3_b, d3_paid_after, d3_sources, d3_first_event, d3_months, d2_tier, months_impossible, months_over_mn_cap, months_umbrella, peak_hours_per_day, max_billing_orgs, paid_flagged_months, growth_paid_24_22, d1_cluster_id, d1_rank, d1_eligible, d1_label_family, d1_score, d1_medicaid_2024, d1_medicare_2023 FROM provider_risk""")
+if "d1_hub_addresses" in have:
+    counts["hub_addresses"] = copy("hub_addresses", "address, level, n_providers, n_hospice, n_hha, n_snf, n_since_2019, n_labelled, revoked_entity_here, city, state, zip5, county_fips, npis, hub",
+        "SELECT address, level, n_providers, n_hospice, n_hha, n_snf, n_since_2019, n_labelled, revoked_entity_here, city, state, zip5, county_fips, npis, hub FROM d1_hub_addresses")
 # county rollups: D1 dollars by dominant county, D2/D3 dollars by the flagged provider's ZIP county
 counts["county_risk"] = copy("county_risk", "county_fips, state, county_name, lat, lon, n_clusters, n_providers_flagged, dollars_at_risk, d1_dollars, d2_dollars, d3_dollars, top_cluster_id, top_score",
-    f"""WITH d1 AS ({'SELECT county_fips, COUNT(*) n_clusters, SUM(dollars_medicaid_2024) d, MAX(risk_score) top_score, arg_max(cluster_id, risk_score) top_id FROM clusters WHERE eligible AND county_fips IS NOT NULL GROUP BY 1' if 'clusters' in have else "SELECT NULL::VARCHAR county_fips, 0 n_clusters, 0.0 d, 0.0 top_score, NULL::VARCHAR top_id WHERE FALSE"}),
-             fl AS (SELECT pc.county_fips, f.detector, f.npi, SUM(f.dollars) d FROM flags f JOIN nppes n ON n.npi = f.npi JOIN zcta_primary_county pc ON pc.zcta = n.zip5 WHERE f.tier IN ('A') GROUP BY 1,2,3),
-             fa AS (SELECT county_fips, COUNT(DISTINCT npi) n_prov, SUM(d) FILTER (WHERE detector='D2') d2, SUM(d) FILTER (WHERE detector='D3') d3 FROM fl GROUP BY 1),
-             u AS (SELECT county_fips FROM d1 UNION SELECT county_fips FROM fa)
-        SELECT u.county_fips, cc.state, cc.county_name, cc.lat, cc.lon, COALESCE(d1.n_clusters,0), COALESCE(fa.n_prov,0),
-               COALESCE(d1.d,0) + COALESCE(fa.d2,0) + COALESCE(fa.d3,0), COALESCE(d1.d,0), COALESCE(fa.d2,0), COALESCE(fa.d3,0), d1.top_id, d1.top_score
-        FROM u LEFT JOIN d1 USING (county_fips) LEFT JOIN fa USING (county_fips) LEFT JOIN county_centroid cc ON cc.county_fips = u.county_fips WHERE u.county_fips IS NOT NULL""")
+    """WITH pr AS (SELECT county_fips, COUNT(*) AS n_prov, SUM(dollars_at_risk) AS d,
+                       SUM(CASE WHEN tier IN (3,4) AND d1_eligible THEN dollars_at_risk ELSE 0 END) AS d1, SUM(CASE WHEN tier = 2 OR (tier = 4 AND d2_tier = 'B') THEN dollars_at_risk ELSE 0 END) AS d2, SUM(CASE WHEN tier = 1 THEN dollars_at_risk ELSE 0 END) AS d3
+                FROM provider_risk WHERE county_fips IS NOT NULL AND tier <= 4 GROUP BY 1),
+              cl AS (SELECT county_fips, COUNT(*) AS n_clusters, MAX(risk_score) AS top_score, arg_max(cluster_id, risk_score) AS top_id FROM clusters WHERE eligible AND county_fips IS NOT NULL GROUP BY 1),
+              u AS (SELECT county_fips FROM pr UNION SELECT county_fips FROM cl)
+        SELECT u.county_fips, cc.state, cc.county_name, cc.lat, cc.lon, COALESCE(cl.n_clusters, 0), COALESCE(pr.n_prov, 0), COALESCE(pr.d, 0), COALESCE(pr.d1, 0), COALESCE(pr.d2, 0), COALESCE(pr.d3, 0), cl.top_id, cl.top_score
+        FROM u LEFT JOIN pr USING (county_fips) LEFT JOIN cl USING (county_fips) LEFT JOIN county_centroid cc ON cc.county_fips = u.county_fips""") if "provider_risk" in have else 0
 # summary
 summ = {}
 for f in ("d1_summary", "d2_summary", "d3_summary"):
@@ -63,6 +69,10 @@ summ["totals"] = dict(
     d2_dollars_impossible=con.execute("SELECT SUM(paid_flagged_months) FROM d2_top WHERE months_impossible > 0").fetchone()[0] if "d2_top" in have else None,
     d1_clusters_eligible=con.execute("SELECT COUNT(*) FROM clusters WHERE eligible").fetchone()[0] if "clusters" in have else None,
     d1_dollars_top200=con.execute("SELECT SUM(dollars_medicaid_2024) FROM clusters WHERE eligible AND rank <= 200").fetchone()[0] if "clusters" in have else None,
+    risk_tier1=con.execute("SELECT COUNT(*) FROM provider_risk WHERE tier = 1").fetchone()[0] if "provider_risk" in have else None,
+    risk_tier2=con.execute("SELECT COUNT(*) FROM provider_risk WHERE tier = 2").fetchone()[0] if "provider_risk" in have else None,
+    risk_corroborated=con.execute("SELECT COUNT(*) FROM provider_risk WHERE n_detectors >= 2").fetchone()[0] if "provider_risk" in have else None,
+    risk_dollars=con.execute("SELECT SUM(dollars_at_risk) FROM provider_risk WHERE tier <= 4").fetchone()[0] if "provider_risk" in have else None,
     spend_rows=238015729, spend_time_rows=con.execute("SELECT COUNT(*) FROM spend").fetchone()[0], providers_with_state=con.execute("SELECT COUNT(*) FROM provider_state").fetchone()[0],
     nppes=con.execute("SELECT COUNT(*) FROM nppes").fetchone()[0], generated_at=time.strftime("%Y-%m-%dT%H:%M:%S"))
 if os.path.exists("docs/methods.md"): summ["methods_md"] = {"text": open("docs/methods.md").read(), "updated": time.strftime("%Y-%m-%d %H:%M")}

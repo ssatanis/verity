@@ -20,15 +20,17 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 from evidence import cluster_evidence, provider_evidence, evidence_lines
 from packet import build_packet
 import verify as vf
+import ask as askmod
 import bluebutton as bb
 
 app = FastAPI(title="Verity API", version="0.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 def pg(): return psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row)
-def agent_ready(): return bool(os.environ.get("OPENAI_API_KEY", "").startswith("sk-") and os.environ.get("OPENAI_API_KEY") != "sk-...")
+import llm
+def agent_ready(): return llm.ready()
 
 @app.get("/health")
-def health(): return {"ok": True, "agent": agent_ready(), "bluebutton": bool(bb.CLIENT_ID), "sam_api": bool(os.environ.get("SAM_API_KEY"))}
+def health(): return {"ok": True, "agent": agent_ready(), "model": llm.MODEL, "bluebutton": bool(bb.CLIENT_ID), "sam_api": bool(os.environ.get("SAM_API_KEY"))}
 
 # ---------------- evidence ----------------
 @app.get("/clusters")
@@ -149,3 +151,14 @@ class BundleReq(BaseModel):
 def bb_verify_bundle(req: BundleReq):
     """Run the tripwire over an EOB bundle a beneficiary exported from Medicare.gov (no OAuth needed)."""
     claims = bb.normalize_eobs(req.bundle); return dict(claims=len(claims), tripwire=vf.verify_claims(claims))
+
+
+class AskIn(BaseModel):
+    subject_type: str; subject_id: str; question: str; history: list[dict] = []
+
+@app.post("/ask")
+def ask_case(body: AskIn):
+    """'Ask this case': Claude answers from evidence tools only; every sentence cites a tool row."""
+    if body.subject_type not in ("cluster", "provider"): raise HTTPException(400, "subject_type must be cluster or provider")
+    try: return askmod.ask(body.subject_type, body.subject_id, body.question, body.history)
+    except RuntimeError as e: raise HTTPException(503, str(e))

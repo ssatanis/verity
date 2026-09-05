@@ -168,3 +168,25 @@ create table if not exists public.score_weights (
 );
 alter table public.score_weights enable row level security;
 drop policy if exists "public read" on public.score_weights; create policy "public read" on public.score_weights for select using (true);
+
+-- unified provider risk (detectors/risk_score.py) and provider plazas (detectors/d1_ghost_networks.py)
+create table if not exists public.provider_risk (
+  npi text primary key, rank int, name text, entity_type text, city text, state text, taxonomy text, county_fips text, medicaid_state text,
+  tier int, tier_label text, score numeric, n_detectors int, detectors jsonb, dollars_at_risk numeric, reasons text,
+  d3_a int, d3_b int, d3_paid_after numeric, d3_sources text, d3_first_event date, d3_months int,
+  d2_tier text, months_impossible int, months_over_mn_cap int, months_umbrella int, peak_hours_per_day numeric, max_billing_orgs int, paid_flagged_months numeric, growth_paid_24_22 numeric,
+  d1_cluster_id text, d1_rank int, d1_eligible boolean, d1_label_family int, d1_score numeric, d1_medicaid_2024 numeric, d1_medicare_2023 numeric
+);
+create index if not exists provider_risk_rank_idx on public.provider_risk (rank);
+create index if not exists provider_risk_state_idx on public.provider_risk (state, tier);
+create index if not exists provider_risk_name_idx on public.provider_risk (lower(name) text_pattern_ops);
+alter table public.provider_risk enable row level security;
+drop policy if exists "public read" on public.provider_risk; create policy "public read" on public.provider_risk for select using (true);
+create table if not exists public.hub_addresses (
+  address text primary key, level text, n_providers int, n_hospice int, n_hha int, n_snf int, n_since_2019 int, n_labelled int, revoked_entity_here int,
+  city text, state text, zip5 text, county_fips text, npis jsonb, hub boolean
+);
+alter table public.hub_addresses enable row level security;
+drop policy if exists "public read" on public.hub_addresses; create policy "public read" on public.hub_addresses for select using (true);
+create index if not exists providers_name_idx on public.providers (lower(name) text_pattern_ops);
+alter table public.reviews add column if not exists notes_family text;

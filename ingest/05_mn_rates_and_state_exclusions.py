@@ -49,9 +49,12 @@ ca_rows = []
 for r in ca.itertuples(index=False):
     npis = sorted(set(re.findall(r"\b[12]\d{9}\b", r.provider_numbers or "")))
     is_org = (r.first_name in ("", "N/A"))
+    # "Active Period" is either "Indefinitely effective" or a span such as "07/08/2016 to 07/07/2026"; a past end date closes the window
+    _dates = re.findall(r"\d{1,2}/\d{1,2}/\d{4}", r.active_period or "")
+    _end = pd.to_datetime(_dates[-1], errors="coerce") if len(_dates) >= 2 else pd.NaT
     base = dict(state="CA", source="CA Medi-Cal Suspended & Ineligible Provider List (July 2026)", name=(r.last_name if is_org else f"{r.first_name} {r.last_name}").strip(),
                 last_name="" if is_org else r.last_name, first_name="" if is_org else r.first_name, middle_name=r.middle_name, is_org=is_org, provider_type=r.provider_type,
-                license=r.license, excl_dt=pd.to_datetime(r.date_of_suspension, errors="coerce"), reinstated_dt=pd.NaT, active_period=r.active_period, address=r.addresses, ids=r.provider_numbers)
+                license=r.license, excl_dt=pd.to_datetime(r.date_of_suspension, errors="coerce"), reinstated_dt=_end, active_period=r.active_period, address=r.addresses, ids=r.provider_numbers)
     for n in (npis or [None]): ca_rows.append({**base, "npi": n})
 ny = pd.read_csv("data/state_exclusions/NY_omig_exclusions.txt", sep="\t", dtype=str, encoding="latin-1").fillna("")
 ny_rows = [dict(state="NY", source="NY OMIG Medicaid Exclusion List (tab-delimited, Sept 2026)", name=r.PROVIDER_NAME.strip(), last_name="", first_name="", middle_name="", is_org=None,
@@ -67,5 +70,12 @@ df["excl_dt"] = pd.to_datetime(df["excl_dt"]).dt.date; df["reinstated_dt"] = pd.
 if "eligible_dt" not in df: df["eligible_dt"] = pd.NaT
 df["eligible_dt"] = pd.to_datetime(df["eligible_dt"], errors="coerce").dt.date
 con.execute("CREATE OR REPLACE TABLE state_exclusions AS SELECT * FROM df")
+if con.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_name='state_exclusions_claude'").fetchone()[0]:
+    # rows extracted by Claude from the other states' published lists (ingest/07); same schema, source names the method
+    con.execute("""INSERT INTO state_exclusions
+        SELECT source_state AS state, 'State list extracted from ' || source_url || ' (' || method || ')' AS source, name, NULL AS last_name, NULL AS first_name, NULL AS middle_name, is_individual = FALSE AS is_org,
+               provider_type, license, effective_date AS excl_dt, end_date AS reinstated_dt, COALESCE(action, '') AS active_period, COALESCE(city, '') AS address, COALESCE(npi, '') AS ids, npi, NULL::DATE AS eligible_dt
+        FROM state_exclusions_claude WHERE effective_date IS NOT NULL AND (action IS NULL OR lower(action) NOT LIKE '%reinstat%')""")
+    print("state_exclusions after union:", con.execute("SELECT state, COUNT(*), COUNT(npi) FROM state_exclusions GROUP BY 1 ORDER BY 1").fetchall())
 print("state_exclusions:", con.execute("SELECT state, COUNT(*), COUNT(npi), COUNT(DISTINCT npi), MIN(excl_dt), MAX(excl_dt) FROM state_exclusions GROUP BY 1 ORDER BY 1").fetchall())
 con.execute("CHECKPOINT"); con.close()

@@ -27,18 +27,18 @@ export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edg
   return (
     <div className="relative">
       <svg ref={ref} className="w-full" style={{ height }} />
-      <div className="absolute top-2 left-2 flex gap-3 text-[10px] text-[var(--ink-3)] bg-white/80 rounded px-2 py-1">
-        {Object.entries({ provider: "provider", person: "owner (person)", org: "owner (org)", addr: "address", phone: "phone", ein: "EIN" }).map(([k, v]) => <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: COLOR[k] }} />{v}</span>)}
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block border-2 border-[var(--red)]" />on a list</span>
+      <div className="absolute top-2 left-2 flex gap-3 text-[10px] text-[var(--ink-3)] bg-white/90 px-2 py-1">
+        {Object.entries({ provider: "provider", person: "owner (person)", org: "owner (org)", addr: "address", phone: "phone", ein: "EIN" }).map(([k, v]) => <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 inline-block" style={{ background: COLOR[k] }} />{v}</span>)}
+        <span className="flex items-center gap-1"><span className="w-2 h-2 inline-block border-2 border-[var(--danger)]" />on a list</span>
         <span>dashed: hub held out</span>
       </div>
       {sel && (
-        <div className="absolute right-2 top-2 bg-white border border-[var(--line)] rounded-lg shadow p-3 text-[12px] max-w-xs">
+        <div className="absolute right-2 top-2 bg-white border border-[var(--ink)] p-3 text-[12px] max-w-xs">
           <div className="font-medium">{sel.label || sel.id}</div>
           <div className="text-[var(--ink-3)]">{sel.kind}{sel.ptype ? ` · ${sel.ptype}` : ""}{sel.city ? ` · ${sel.city}, ${sel.state}` : ""}{sel.inc_date ? ` · inc ${sel.inc_date}` : ""}{sel.prov_degree ? ` · ${sel.prov_degree} providers` : ""}</div>
-          {sel.labels?.length ? <div className="text-[var(--red)] mt-1">{sel.labels.join(", ")}</div> : null}
-          {sel.owner_labels?.length ? <div className="text-[var(--red)] mt-1">{sel.owner_labels.map((l: any) => l.join(" ")).join("; ")}</div> : null}
-          {sel.npi && <a className="link-underline mt-1 inline-block" href={`/app/providers/${sel.npi}`}>NPI {sel.npi}</a>}
+          {sel.labels?.length ? <div className="text-[var(--danger)] mt-1">{sel.labels.join(", ")}</div> : null}
+          {sel.owner_labels?.length ? <div className="text-[var(--danger)] mt-1">{sel.owner_labels.map((l: any) => l.join(" ")).join("; ")}</div> : null}
+          {sel.npi && <a className="link mt-1 inline-block" href={`/app/providers/${sel.npi}`}>NPI {sel.npi}</a>}
         </div>
       )}
     </div>

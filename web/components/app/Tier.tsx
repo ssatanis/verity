@@ -1,0 +1,1 @@
+export function Tier({ n }: { n: number | string | null | undefined }) { const t = Number(n ?? 5); return <span className={`tier tier-${t}`} title={["", "documented action, then payment", "impossible volume with concurrency", "network structure with a list link", "structure or single-organisation volume", "informational"][t]}>{t}</span>; }

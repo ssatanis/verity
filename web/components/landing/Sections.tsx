@@ -1,146 +1,116 @@
 import Link from "next/link";
-import { Database, Layers, Bot } from "lucide-react";
-import { Logo } from "./Logo";
+const money = (v: number) => v >= 1e9 ? `$${(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v).toLocaleString()}`;
+const num = (v: number) => Number(v ?? 0).toLocaleString();
 
-const SOURCES = [
-  ["T-MSIS Medicaid", "TM", "#2e90fa"], ["NPPES", "NP", "#12b76a"], ["PECOS enrollment", "PE", "#7a5af8"], ["OIG LEIE", "LE", "#f04438"],
-  ["SAM.gov", "SA", "#f79009"], ["Market Saturation", "MS", "#0ea5e9"], ["Care Compare", "CC", "#10b981"], ["Census TIGER", "CT", "#6366f1"],
-  ["Blue Button 2.0", "BB", "#2e90fa"], ["Open Payments", "OP", "#ec4899"], ["State fee schedules", "FS", "#111114"], ["State exclusion lists", "SX", "#f04438"],
-];
-function Chip({ name, abbr, color, ghost = false }: { name: string; abbr: string; color: string; ghost?: boolean }) {
+export function Hero({ stats }: { stats: Record<string, any> }) {
+  const t1 = stats.risk_tier1 ?? 0, t2 = stats.risk_tier2 ?? 0, corr = stats.risk_corroborated ?? 0;
   return (
-    <div className={`card flex items-center justify-between px-4 py-3 min-w-[230px] ${ghost ? "opacity-40" : ""}`}>
-      <span className="flex items-center gap-3 text-[14px]"><span className="w-6 h-6 rounded-md grid place-items-center text-white text-[9px] font-semibold" style={{ background: color }}>{abbr}</span>{name}</span>
-      <span className="text-[var(--ink-3)]">+</span>
-    </div>
-  );
-}
-export function ContinuouslyRunning() {
-  return (
-    <section className="px-10 pt-16 pb-14" id="solution">
-      <div className="grid md:grid-cols-2 gap-8 items-start mb-10">
-        <h2 className="serif text-[40px] leading-[1.05]">Continuously running</h2>
-        <p className="text-[14px] leading-6 text-[var(--ink-2)] md:pt-2 max-w-md">Verity continuously scores every enrolled provider against fourteen public federal and state datasets, so a Monday payment run sees what a Friday audit would have missed.</p>
+    <section className="max-w-[1160px] mx-auto px-6 md:px-10 pt-16 pb-20 grid md:grid-cols-[1.15fr_1fr] gap-14 items-end">
+      <div>
+        <div className="eyebrow">Pre-payment provider integrity</div>
+        <h1 className="display serif text-[64px] md:text-[92px] mt-4">Stop the check before it goes out.</h1>
+        <p className="text-[17px] text-[var(--ink-2)] mt-7 max-w-xl leading-7">Verity scores every enrolled provider against fourteen public federal and state datasets, ranks referral candidates by an explicit evidence hierarchy, and hands your SIU a packet where every sentence cites the public row it came from.</p>
+        <div className="flex gap-3 mt-8">
+          <a href="mailto:ss4497@cornell.edu?subject=Verity%20pilot" className="btn">Request a pilot</a>
+          <Link href="/app" className="btn btn-ghost">Open the console</Link>
+        </div>
       </div>
-      <div className="fade-x overflow-hidden -mx-10 px-10">
-        <div className="flex gap-3 mb-3 -ml-24">{SOURCES.slice(0, 6).map((s, i) => <Chip key={s[0]} name={s[0]} abbr={s[1]} color={s[2]} ghost={i === 0} />)}</div>
-        <div className="flex gap-3 -ml-8">{SOURCES.slice(6).map((s, i) => <Chip key={s[0]} name={s[0]} abbr={s[1]} color={s[2]} ghost={i === 5} />)}</div>
+      <div className="grid grid-cols-2 gap-px" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
+        {[["Referral candidates, tier 1", num(t1), "documented action, then payment"], ["Referral candidates, tier 2", num(t2), "impossible volume with concurrency"], ["Corroborated by two or more detectors", num(corr), "the strongest signal we produce"], ["Rows scanned", num(stats.spend_rows ?? 238015729), "T-MSIS 2018 to 2024, every state"]].map(([l, v, s]) => (
+          <div key={l} className="p-6" style={{ background: "var(--paper)" }}><div className="eyebrow">{l}</div><div className="serif text-[44px] leading-none mt-3">{v}</div><div className="text-[12px] text-[var(--ink-3)] mt-2">{s}</div></div>
+        ))}
       </div>
     </section>
   );
 }
-
-function MiniAlert({ id, tag, text, tone = "" }: { id: string; tag: string; text: string; tone?: string }) {
-  return (
-    <div className={`mini-alert ${tone}`}>
-      <div className="flex items-center gap-2 pl-3"><span className="serif text-[12px]">{id}</span><span className="tag">{tag}</span></div>
-      <div className="pl-3 text-[10px] text-[var(--ink-3)]">{text}</div>
-    </div>
-  );
-}
-export function InProduction({ stats }: { stats: Record<string, any> }) {
-  const d3n = stats.d3_npis_paid_after ?? 353, d3d = stats.d3_dollars_after ?? 50e6, d2n = stats.d2_npis_impossible ?? 0, d1n = stats.d1_clusters_eligible ?? 0;
-  return (
-    <section className="px-10 pt-14 pb-6 text-center">
-      <h2 className="serif text-[40px] leading-[1.05] max-w-xl mx-auto">Verity in production across critical systems</h2>
-      <p className="text-[14px] text-[var(--ink-2)] mt-3 max-w-md mx-auto leading-6">Integrate public signals, apply explainable logic, and hand a human investigator a packet they can act on.</p>
-      <div className="grid md:grid-cols-2 gap-5 mt-10 text-left">
-        <div className="card p-6 overflow-hidden relative min-h-[300px]">
-          <h3 className="serif text-[22px]">Ghost networks</h3>
-          <p className="text-[13px] text-[var(--ink-2)] mt-1">Shared owners, shared suites, incorporation bursts, one owner on the exclusion list</p>
-          <Link href="/app/clusters" className="link-underline text-[12px] mt-4 inline-block">Explore {d1n ? `${d1n.toLocaleString()} communities` : "communities"}</Link>
-          <div className="grid grid-cols-2 gap-2 mt-6 -mb-4 -mr-4">
-            <MiniAlert id="D1-00001" tag="High" text="7 hospices, 2 suites, 40 days" />
-            <MiniAlert id="D1-00002" tag="Medium" text="Owner on LEIE, 5 HHAs" tone="red" />
-            <MiniAlert id="D1-00003" tag="High" text="Saturation z +3.1, Houston" tone="blue" />
-            <MiniAlert id="D1-00004" tag="Low" text="Phone shared by 4" tone="violet" />
-          </div>
-        </div>
-        <div className="card grad-blue p-6 overflow-hidden relative min-h-[300px] border-0">
-          <h3 className="serif text-[22px]">Impossible days</h3>
-          <p className="text-[13px] text-[var(--ink-2)] mt-1">Time-based Medicaid codes converted to clinician hours per day, with Minnesota's own daily caps</p>
-          <Link href="/app/flags?detector=D2" className="link-underline text-[12px] mt-4 inline-block">Explore {d2n ? `${d2n.toLocaleString()} rendering NPIs` : "rendering NPIs"}</Link>
-          <div className="grid grid-cols-2 gap-2 mt-6 -mb-4 -mr-4">
-            <MiniAlert id="97153" tag="EIDBI" text="Over the 8 h per child cap" />
-            <MiniAlert id="T1019" tag="PCA" text="31 h per calendar day" tone="red" />
-            <MiniAlert id="H2015" tag="HSS" text="4 billing agencies, one NPI" tone="blue" />
-            <MiniAlert id="90837" tag="Psych" text="Top 0.1 percent robust z" tone="violet" />
-          </div>
-        </div>
-        <div className="card grad-violet p-6 overflow-hidden relative min-h-[300px] border-0">
-          <h3 className="serif text-[22px]">Revoked but paid</h3>
-          <p className="text-[13px] text-[var(--ink-2)] mt-1">Dead in Medicare, alive in Medicaid: {d3n.toLocaleString()} NPIs, {`$${(d3d / 1e6).toFixed(1)}M`} after the action</p>
-          <Link href="/app/flags?detector=D3" className="link-underline text-[12px] mt-4 inline-block">Explore the list</Link>
-          <div className="mini-alert mt-6 -mb-4 -mr-4" style={{ paddingLeft: 14 }}>
-            <div className="pl-3 serif text-[12px]">Case D3 · Medicare revocation 424.535(a)(3), Medicaid paid 44 months after</div>
-            <div className="pl-3 text-[10px] text-[var(--ink-3)] mt-1"><span className="font-medium text-[var(--ink)]">AI summary</span> · Laboratory revoked August 2018 for a felony ground; T-MSIS shows paid service months through April 2022.</div>
-            <div className="pl-3 mt-2 flex gap-2"><span className="text-[9px] text-white bg-[var(--blue)] rounded px-2 py-[2px]">File referral</span><span className="text-[9px] rounded border border-[var(--line)] px-2 py-[2px] bg-white">Dismiss</span></div>
-          </div>
-        </div>
-        <div className="card p-6 overflow-hidden relative min-h-[300px]">
-          <h3 className="serif text-[22px]">State screening</h3>
-          <p className="text-[13px] text-[var(--ink-2)] mt-1">One call at enrollment and revalidation: revocation, LEIE, SAM, state lists, NPI deactivation, cross-state termination</p>
-          <Link href="/app/methods" className="link-underline text-[12px] mt-4 inline-block">Read the methods</Link>
-          <div className="grid grid-cols-2 gap-2 mt-6 -mb-4 -mr-4">
-            <MiniAlert id="OBBBA" tag="Dec 31 2026" text="Cross-state duplicate check" />
-            <MiniAlert id="455.416" tag="CFR" text="Terminate for cause elsewhere" tone="red" />
-            <MiniAlert id="NPPES" tag="Weekly" text="Deactivated NPI still billing" tone="blue" />
-            <MiniAlert id="SAM" tag="Daily" text="Non-HHS debarments with NPI" tone="violet" />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-export function Automation() {
+export function Buyers() {
   const items = [
-    { icon: Database, t: "Link your claims warehouse", d: "Point Verity at your T-MSIS extracts or pre-payment queue to score every provider before the check goes out." },
-    { icon: Layers, t: "Enrich with public context", d: "Ownership, addresses, exclusions, saturation and fee schedules, joined on NPI, CCN and PECOS IDs." },
-    { icon: Bot, t: "Verity works for you", d: "The investigator agent drafts the referral packet; a human accepts or rejects, and the score learns." },
+    ["Special investigations", "A ranked queue with the evidence trail already assembled. Records requests go out on day one, not week three."],
+    ["Payment integrity", "Pre-payment holds on tier 1 and tier 2 candidates before adjudication, with the regulatory ground for each hold."],
+    ["Network and credentialing", "Ownership graphs, incorporation bursts and shared suites at the point of contracting, plus monthly LEIE, SAM and NPPES checks under 42 CFR 455.436."],
+    ["Compliance and legal", "Packets describe records and dates, never intent. Every claim traces to a public dataset, so the file survives a challenge."],
   ];
   return (
-    <section className="px-10 pt-16 pb-10">
-      <div className="grid md:grid-cols-[1fr_auto] gap-8 items-start mb-8">
-        <h2 className="serif text-[34px] leading-[1.08] max-w-sm">Automation for mission critical operation</h2>
-        <p className="text-[12px] text-[var(--ink-2)] max-w-[260px] leading-5">Streamline complex workflows, reduce risk, and execute with precision when every second matters.</p>
-      </div>
-      <div className="grid md:grid-cols-3 gap-4">
-        {items.map(({ icon: I, t, d }) => (
-          <div key={t} className="card p-5 min-h-[180px]">
-            <I size={16} className="text-[var(--ink-2)]" />
-            <h3 className="serif text-[17px] mt-6">{t}</h3>
-            <p className="text-[11.5px] text-[var(--ink-3)] mt-2 leading-5">{d}</p>
-          </div>
-        ))}
+    <section id="buyers" className="rule">
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-20 grid md:grid-cols-[1fr_1.6fr] gap-14">
+        <div><div className="eyebrow">Built for health plans</div><h2 className="display serif text-[48px] mt-4">Four teams, one queue.</h2><p className="text-[15px] text-[var(--ink-2)] mt-5 leading-7">Medicaid managed care plans, Medicare Advantage plans and commercial payers eat the loss when a ghost network bills them. Verity gives the people who investigate, hold, contract and defend the same ranked list and the same evidence.</p></div>
+        <div className="grid md:grid-cols-2 gap-px" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
+          {items.map(([h, d]) => <div key={h} className="p-7" style={{ background: "var(--paper)" }}><h3 className="serif text-[26px]">{h}</h3><p className="text-[13.5px] text-[var(--ink-2)] mt-3 leading-6">{d}</p></div>)}
+        </div>
       </div>
     </section>
   );
 }
-export function Explore() {
-  const tiles = [["TM", "16%", "8%"], ["NP", "10%", "22%"], ["LE", "84%", "10%"], ["SA", "88%", "30%"], ["MS", "74%", "70%"], ["CC", "12%", "72%"]];
+export function Detectors({ stats }: { stats: Record<string, any> }) {
+  const d = [
+    ["01", "Ghost networks", "Hospice, home health and skilled nursing enrollments linked through owners, suites, phones, officials and the addresses of revoked entities. Fellegi-Sunter identity resolution, Leiden communities, robust z-scores, chains held out.", `${num(stats.d1_clusters_eligible ?? 0)} ranked communities`, "/app/clusters"],
+    ["02", "Impossible days", "Time-based Medicaid codes converted to clinician hours with a rate-free lower bound, published state rates, and Minnesota's own daily caps. Umbrella billing is separated from impossibility.", `${num(stats.d2_npis_impossible ?? 0)} rendering NPIs with an impossible month`, "/app/flags?detector=D2"],
+    ["03", "Paid after a screening trigger", "Medicare revocations, OIG exclusions, SAM debarments and state exclusion lists joined to Medicaid service months after the action, with check-digit and name agreement on every match.", `${num(stats.d3_npis_paid_after ?? 0)} NPIs, ${money(stats.d3_dollars_after ?? 0)} after the action`, "/app/flags?detector=D3"],
+  ];
   return (
-    <section className="px-10 py-16 relative text-center">
-      {tiles.map(([t, l, top]) => <span key={t} className="float-tile hidden md:grid" style={{ left: l, top }}>{t}</span>)}
-      <h2 className="serif text-[36px]">Explore Verity</h2>
-      <p className="text-[12px] text-[var(--ink-2)] mt-2 max-w-sm mx-auto leading-5">Automate program integrity from insight to action, with every number traceable to a public row.</p>
-      <Link href="/app" className="btn-dark mt-6">Open console</Link>
+    <section id="detectors" className="rule">
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-20">
+        <div className="eyebrow">Three detectors, one hierarchy</div>
+        <h2 className="display serif text-[48px] mt-4 max-w-2xl">Indicators ranked by what the public record can prove.</h2>
+        <div className="grid md:grid-cols-3 gap-px mt-12" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
+          {d.map(([n, h, txt, stat, href]) => (
+            <Link key={n} href={href} className="p-8 block hover:bg-[var(--paper-2)]" style={{ background: "var(--paper)" }}>
+              <div className="serif text-[54px] leading-none" style={{ color: "var(--accent)" }}>{n}</div>
+              <h3 className="serif text-[30px] mt-5">{h}</h3>
+              <p className="text-[13.5px] text-[var(--ink-2)] mt-3 leading-6">{txt}</p>
+              <div className="mt-6 text-[13px] link">{stat}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
-export function Footer() {
-  const cols = [["Product", [["Console", "/app"], ["Clusters", "/app/clusters"], ["Flags", "/app/flags"]]], ["Support", [["Methods", "/app/methods"], ["Show the math", "/app/states/MN"], ["Data sources", "/app/methods#data"]]], ["Legal", [["Terms of use", "#"], ["Data use", "#"], ["Security", "#"]]]] as const;
+export function Hierarchy() {
+  const tiers = [["1", "Documented action, then payment", "On a tier-A federal or state list, and Medicaid service months after it."], ["2", "Impossible volume with concurrency", "Personal-service hours no clinician can deliver, billed by three or more organisations in the same month, or over a state's own cap."], ["3", "Network structure with a list link", "A ranked provider community with a member or owner on an exclusion, revocation or termination list."], ["4", "Structure, or single-organisation volume", "Bursts, shared suites and owners without a list link, or volume that may be supervisory billing."], ["5", "Informational", "Deactivated identifiers still billing, growth and concentration outliers, plaza addresses."]];
   return (
-    <footer className="mx-6 mb-6 rounded-[18px] bg-[var(--surface-2)] border border-[var(--line)] px-8 py-8">
-      <div className="flex flex-col md:flex-row justify-between gap-6">
-        <Logo withText />
-        <p className="text-[11px] text-[var(--ink-3)] max-w-xs leading-5">Pre-payment fraud tripwire for Medicare and Medicaid, built entirely on public federal data. No beneficiary data, no PHI, a human signs every action.</p>
+    <section id="how" className="rule" style={{ background: "var(--paper-2)" }}>
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-20 grid md:grid-cols-[1fr_1.4fr] gap-14">
+        <div><div className="eyebrow">Evidence hierarchy</div><h2 className="display serif text-[48px] mt-4">Every candidate carries its tier and its reasons.</h2><p className="text-[15px] text-[var(--ink-2)] mt-5 leading-7">Score = tier base, plus a bonus for every detector that reached the provider independently, plus a bounded dollar term. Dollars at risk count each provider once, never summed across detectors. Corroboration is the strongest signal in the system, and it is weighted that way.</p></div>
+        <div>{tiers.map(([n, h, d]) => <div key={n} className="flex gap-6 py-5 rule"><span className={`tier tier-${n}`}>{n}</span><div><div className="serif text-[22px]">{h}</div><div className="text-[13px] text-[var(--ink-2)] mt-1">{d}</div></div></div>)}</div>
       </div>
-      <div className="grid grid-cols-3 gap-8 mt-10 max-w-md">
-        {cols.map(([h, links]) => (
-          <div key={h}><div className="text-[11px] font-medium mb-3">{h}</div>{links.map(([n, href]) => <Link key={n} href={href} className="block text-[11px] text-[var(--ink-3)] mb-2 hover:text-[var(--ink)]">{n}</Link>)}</div>
-        ))}
+    </section>
+  );
+}
+export function Pipeline() {
+  const steps = [["Ingest", "T-MSIS spending, enrollment segments, PECOS enrollments and owners, NPPES, LEIE, SAM, revocations, Market Saturation, Care Compare, Census, state lists and fee schedules."], ["Resolve", "Check-digit validation, UTF-8 repair, address normalisation, identity resolution with an EM-fitted match model, model-adjudicated borderline pairs."], ["Detect", "Three detectors, robust baselines, conservative unit prices, explicit tiers, held-out evaluation with the significance stated."], ["Explain", "The investigator agent drafts a packet from evidence rows only; every finding cites its rows; grounds come from 42 CFR 455 and 1001."], ["Learn", "Reviewers accept or reject; the reason in the note is classified to the evidence family that was wrong, and the weights update."]];
+  return (
+    <section className="rule">
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-20">
+        <div className="eyebrow">How it works</div>
+        <h2 className="display serif text-[48px] mt-4">Public data in, a defensible packet out.</h2>
+        <div className="grid md:grid-cols-5 gap-px mt-12" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
+          {steps.map(([h, d], i) => <div key={h} className="p-6" style={{ background: "var(--paper)" }}><div className="serif text-[30px]" style={{ color: "var(--accent)" }}>{String(i + 1).padStart(2, "0")}</div><h3 className="serif text-[24px] mt-3">{h}</h3><p className="text-[12.5px] text-[var(--ink-2)] mt-2 leading-5">{d}</p></div>)}
+        </div>
       </div>
-      <div className="flex justify-between items-center mt-10 text-[10px] text-[var(--ink-3)]"><span>All rights reserved 2026 · Verity · DNHacks</span><span>Built on DuckDB, Supabase and Next.js</span></div>
-    </footer>
+    </section>
+  );
+}
+export function Sources() {
+  const s = ["T-MSIS Medicaid provider spending", "T-MSIS enrollment segments", "PECOS hospice, HHA, SNF enrollments", "PECOS All Owners and CHOW", "NPPES monthly file", "OIG LEIE", "SAM.gov exclusions", "Medicare revocations", "Market Saturation and Utilization", "Care Compare", "PAC PUF", "Census ZCTA and county", "State exclusion lists", "State fee schedules"];
+  return (
+    <section className="rule" style={{ background: "var(--ink)", color: "#fff" }}>
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-16">
+        <div className="eyebrow" style={{ color: "#a9a9ad" }}>Fourteen public datasets, no PHI</div>
+        <div className="flex flex-wrap gap-x-8 gap-y-3 mt-6 serif text-[24px]">{s.map(x => <span key={x}>{x}</span>)}</div>
+        <p className="text-[13px] mt-8 max-w-2xl" style={{ color: "#c9c9cd" }}>Verity never touches a beneficiary or a claim line. It scores providers and networks from public records, and a human signs every action. Bring your own claims warehouse for pre-payment holds.</p>
+      </div>
+    </section>
+  );
+}
+export function CTA() {
+  return (
+    <section id="contact" className="rule">
+      <div className="max-w-[1160px] mx-auto px-6 md:px-10 py-24 text-center">
+        <h2 className="display serif text-[56px] md:text-[72px]">See your network through Verity.</h2>
+        <p className="text-[15px] text-[var(--ink-2)] mt-5 max-w-lg mx-auto leading-7">A pilot takes one week: we run your state's providers through the pipeline and hand your SIU a ranked queue with packets.</p>
+        <div className="flex justify-center gap-3 mt-8"><a href="mailto:ss4497@cornell.edu?subject=Verity%20pilot" className="btn">Request a pilot</a><Link href="/app/methods" className="btn btn-ghost">Read the methods</Link></div>
+      </div>
+    </section>
   );
 }

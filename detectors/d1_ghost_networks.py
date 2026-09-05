@@ -192,6 +192,15 @@ if len(pairs):
     loc_ok = (G[:, 3] == 3) | (G[:, 5] == 2) | ((G[:, 3] == 2) & (G[:, 4] == 2))
     matched = (post >= 0.95) & loc_ok & (G[:, 0] >= 1) & (G[:, 1] >= 2)
     for (i, j) in pairs[matched]: dsu.union(("rep", i), ("rep", j))
+    # keep every candidate pair with its comparison vector and posterior; the borderline band (0.2 to 0.98) is adjudicated by the model
+    cand = pd.DataFrame({"i": pairs[:, 0], "j": pairs[:, 1], "posterior": post, "weight": weight, "matched": matched,
+                         "g_last": G[:, 0], "g_first": G[:, 1], "g_mi": G[:, 2], "g_zip": G[:, 3], "g_city": G[:, 4], "g_street": G[:, 5]})
+    for side in ("i", "j"):
+        for col in ("p_last", "p_first", "p_mi", "zip5", "city", "state", "street"):
+            cand[f"{col}_{side}"] = rep[col].to_numpy()[cand[side].to_numpy()]
+    cand["det_id_i"] = rep.det_id.to_numpy()[cand.i.to_numpy()]; cand["det_id_j"] = rep.det_id.to_numpy()[cand.j.to_numpy()]
+    con.execute("CREATE OR REPLACE TABLE d1_er_candidates AS SELECT * FROM cand")
+    log(f"saved {len(cand):,} candidate pairs; borderline band 0.2 to 0.98: {int(((post >= 0.2) & (post < 0.98)).sum()):,}")
     fs_stats = dict(pairs=int(len(pairs)), matched=int(matched.sum()), lam=round(lam, 4), m=[np.round(x, 3).tolist() for x in m], u=[np.round(x, 3).tolist() for x in u],
                     pct_persons_with_zip=round(100 * float((per.zip5.fillna("") != "").mean()), 1), pct_persons_with_state=round(100 * float((per.state_owner.fillna("") != "").mean()), 1))
     log(f"owner persons with ZIP {fs_stats['pct_persons_with_zip']}%, with state {fs_stats['pct_persons_with_state']}%; m={fs_stats['m']}; u={fs_stats['u']}")
@@ -349,6 +358,21 @@ for n in G.nodes:
         f = 1.0 / math.log2(1 + d["prov_degree"])
         for v in G.neighbors(n): G[n][v]["weight"] = G[n][v]["weight"] * f
 
+# ------------------------------------------------------------------ D2. provider plazas (addresses hosting many enrollments)
+plaza_rows = []
+for n, d in G.nodes(data=True):
+    if d["kind"] not in ("addr", "unit") or d.get("prov_degree", 0) < 8: continue
+    members = [v for v in G.neighbors(n) if G.nodes[v]["kind"] == "provider"]
+    md = [G.nodes[v] for v in members]
+    plaza_rows.append(dict(address=n[1], level=d["kind"], n_providers=len(members), n_hospice=sum(1 for x in md if x["ptype"] == "HOSPICE"), n_hha=sum(1 for x in md if x["ptype"] == "HHA"),
+                           n_snf=sum(1 for x in md if x["ptype"] == "SNF"), n_since_2019=sum(1 for x in md if pd.notna(x["date_new"]) and x["date_new"] >= pd.Timestamp("2019-01-01")),
+                           n_labelled=sum(1 for x in md if x["labels"]), revoked_entity_here=int(n[1] in excl_addr or n[1] in excl_unit), city=md[0]["city"], state=md[0]["state"], zip5=md[0]["zip5"],
+                           county_fips=md[0]["county_fips"], npis=[x["npi"] for x in md], hub=n in hubs))
+plazas = pd.DataFrame(plaza_rows).sort_values("n_providers", ascending=False) if plaza_rows else pd.DataFrame()
+if len(plazas):
+    plazas["npis"] = [json.dumps(x) for x in plazas.npis]; con.execute("CREATE OR REPLACE TABLE d1_hub_addresses AS SELECT * FROM plazas")
+    log(f"provider plazas (8+ enrollments at one address): {len(plazas):,}; largest {plazas.iloc[0].address} with {plazas.iloc[0].n_providers}")
+
 # ------------------------------------------------------------------ E. components and communities
 H = G.subgraph([n for n in G.nodes if n not in hubs]).copy()
 comps = []
@@ -439,8 +463,10 @@ for ci, c in enumerate(comps):
     governance_multi = sum(1 for n, k in gdeg.items() if k >= 3 and odeg.get(n, 0) < 3)
     n_persons = sum(1 for n in owners if n[0] == "person"); n_orgs = len(owners) - n_persons
     # in-community members sharing an address that also touches a hub chain? (chain flag from edges)
-    chain_or_pe = any(G[u][v].get("chain") or G[u][v].get("pe") for u in P for v in G.neighbors(u) if G.nodes[v]["kind"] in ("person", "org"))
-    hub_owner = any(v in hubs and G.nodes[v]["kind"] in ("org", "person") for u in P for v in G.neighbors(u))
+    chain_members = sum(1 for u in P if any((G[u][v].get("chain") or G[u][v].get("pe") or (v in hubs and G.nodes[v]["kind"] in ("org", "person"))) for v in G.neighbors(u) if G.nodes[v]["kind"] in ("person", "org")))
+    chain_share = chain_members / n_prov
+    chain_or_pe = chain_share >= 0.5          # a community is a chain when most of its members are chain-owned; one chain-owned member among many is not
+    hub_owner = False
     # labels
     prov_labels = defaultdict(list)
     for n in P:
@@ -468,7 +494,7 @@ for ci, c in enumerate(comps):
                           governance_multi=governance_multi, n_distinct_orgs=n_distinct_orgs, for_profit_ratio=for_profit_ratio, excl_addr_hits=[[a, b[0], b[1], b[2], how] for a, b, how, w in excl_addr_hits],
                           owners_per_provider=(len(owners) / n_prov), excluded_link=excluded_link, state_excl=state_excl, revoked_nbr=revoked_nbr, medicaid_term_nbr=medicaid_term_nbr,
                           deact_nbr=deact_nbr, sat_per_10k=sat_v, sat_z=sat_z, moratorium=moratorium, dollars_medicaid_2024=dollars_medicaid_2024, dollars_medicaid_all=dollars_medicaid_all,
-                          dollars_medicare_2023=dollars_medicare_2023, chain_or_pe=int(bool(chain_or_pe or hub_owner)), owner_hits=owner_hits, prov_labels={k: v for k, v in prov_labels.items()}))
+                          dollars_medicare_2023=dollars_medicare_2023, chain_or_pe=int(bool(chain_or_pe)), chain_members=chain_members, chain_share=chain_share, owner_hits=owner_hits, prov_labels={k: v for k, v in prov_labels.items()}))
     for n in P:
         d = G.nodes[n]
         member_rows.append(dict(cluster_ix=ci, enrollment_id=n[1], npi=d["npi"], ccn=d["ccn"], ptype=d["ptype"], org_name=d["label"], dba=d["dba"], city=d["city"], state=d["state"], zip5=d["zip5"],
@@ -552,7 +578,8 @@ def explain(r):
     if oh: labs.append(f"owner name match to {oh[0][1]} ({oh[0][2]} confidence): {oh[0][0]}")
     if labs: parts.append("; ".join(labs))
     if r.sat_per_10k is not None and not (isinstance(r.sat_per_10k, float) and np.isnan(r.sat_per_10k)) and r.sat_z is not None and not (isinstance(r.sat_z, float) and np.isnan(r.sat_z)): parts.append(f"county has {r.sat_per_10k:.1f} providers per 10k FFS beneficiaries (robust z {r.sat_z:+.1f})")
-    if r.chain_or_pe: parts.append("linked to a chain home office or private-equity owner (excluded from ranking)")
+    if r.chain_or_pe: parts.append(f"{int(r.chain_members)} of {int(r.n_prov)} members are chain or private-equity owned (excluded from ranking)")
+    elif r.chain_members: parts.append(f"{int(r.chain_members)} member(s) have a chain-affiliated owner")
     return ". ".join(parts) + "."
 F["summary"] = [explain(r) for r in F.itertuples(index=False)]
 

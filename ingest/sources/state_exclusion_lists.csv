@@ -1,0 +1,45 @@
+state,agency,url,format,notes
+AL,Alabama Medicaid,https://medicaid.alabama.gov/content/8.0_Fraud/8.7_Suspended_Providers.aspx,html,
+AK,Alaska DHSS Program Integrity,http://dhss.alaska.gov/Commissioner/Pages/ProgramIntegrity/default.aspx,html,
+AZ,AHCCCS OIG,https://www.azahcccs.gov/Fraud/Providers/StateExclusionList.html,html,
+AR,Arkansas DHS,https://dhs.arkansas.gov/dhs/portal/Exclusions/PublicSearch/,html,search portal
+CA,DHCS Medi-Cal S&I,https://data.chhs.ca.gov/dataset/provider-suspended-and-ineligible-list-s-i-list,csv,loaded by 05_mn_rates_and_state_exclusions.py
+CO,Colorado HCPF,https://www.colorado.gov/hcpf/Provider-Termination,html,
+CT,Connecticut DSS,https://portal.ct.gov/DSS/Quality-Assurance/Quality-Assurance-Administrative-Actions-List,html,
+DE,Delaware DMMA,https://medicaid.dhss.delaware.gov/provider/Home/ProgramIntegrityLanding/tabid/2102/Default.aspx,html,
+DC,DC OCP excluded parties,https://ocp.dc.gov/page/excluded-parties-list,html,
+FL,Florida AHCA,https://ahca.myflorida.com/medicaid/medicaid-program-integrity/medicaid-program-integrity-sanctioned-providers,html,search portal
+GA,Georgia DCH OIG,https://dch.georgia.gov/georgia-oig-exclusions-list,html,
+HI,Hawaii Med-QUEST,https://medquest.hawaii.gov/en/plans-providers/provider-exclusion-reinstatement-list.html,html,
+ID,Idaho DHW,https://healthandwelfare.idaho.gov/Providers/MedicaidProviders/tabid/214/Default.aspx,html,
+IL,Illinois HFS OIG,https://www.illinois.gov/hfs/oig/Pages/SanctionsList.aspx,html,
+IN,Indiana FSSA,https://www.in.gov/fssa/ompp/provider-information/termination-of-provider-participation-in-medicaid-and-chip,html,
+IA,Iowa HHS,https://hhs.iowa.gov/programs/welcome-iowa-medicaid/provider-services/excluded-individuals-and-entities,html,
+KS,Kansas KDHE,https://www.kdhe.ks.gov/172/Medicaid,html,
+KY,Kentucky DMS,https://chfs.ky.gov/agencies/dms/dpi/pe/Pages/terminated.aspx,html,
+LA,Louisiana LDH adverse actions,https://adverseactions.ldh.la.gov/SelSearch,html,search portal
+ME,MaineCare,https://mainecare.maine.gov/mhpviewer.aspx?FID=MEEX,html,
+MD,Maryland MDH,https://health.maryland.gov/mmcp/provider/Pages/sanctioned_list.aspx,html,
+MA,MassHealth,https://www.mass.gov/service-details/learn-about-suspended-or-excluded-masshealth-providers,html,
+MI,Michigan MDHHS,https://www.michigan.gov/mdhhs/0%2C5885%2C7-339-71551_2945_42542_42543_42546_42551-16459--%2C00.html,html,
+MN,Minnesota DHS MHCP,https://www.dhs.state.mn.us/main/idcplg?IdcService=GET_DYNAMIC_CONVERSION&RevisionSelectionMethod=LatestReleased&dDocName=DHS-295094,html,captcha; download by hand into data/state_exclusions/MN_*.xlsx
+MS,Mississippi DOM,https://medicaid.ms.gov/providers/provider-terminations/,html,
+MO,Missouri MMAC,https://mmac.mo.gov/providers/provider-sanctions/,html,
+MT,Montana DPHHS,https://dphhs.mt.gov/MontanaHealthcarePrograms/TerminatedExcludedProviders,html,
+NE,Nebraska DHHS,http://dhhs.ne.gov/Pages/Program-Integrity-Sanctioned-Providers.aspx,html,
+NV,Nevada DHCFP,http://dhcfp.nv.gov/Providers/PI/PSExclusions/,html,
+NH,New Hampshire DHHS,https://www.dhhs.nh.gov/programs-services/medicaid/medicaid-provider-relations,html,
+NJ,NJ Office of the State Comptroller,https://nj.gov/comptroller/doc/nj_debarment_list.pdf,pdf,
+NY,NY OMIG,https://apps.omig.ny.gov/exclusions/tabdelimited.aspx,tsv,loaded by 05_mn_rates_and_state_exclusions.py
+NC,NC DHHS OCPI,https://medicaid.ncdhhs.gov/meetings-and-notices/ocpifraud-waste-and-abuse,html,
+ND,ND HHS,https://www.hhs.nd.gov/healthcare/medicaid/provider/compliance/fraud-and-abuse,html,
+OH,Ohio Medicaid,https://medicaid.ohio.gov/resources-for-providers/enrollment-and-support/provider-enrollment/provider-exclusion-and-suspension-list,html,
+OR,Oregon OHA,https://www.oregon.gov/oha/HSD/OHP/Pages/Provider-Enroll.aspx,html,
+PA,PA DHS Medicheck,https://www.pa.gov/agencies/dhs/report-fraud/medicheck-list,html,
+SC,SC DHHS,https://www.scdhhs.gov/site-page/medicaid-fraud-costs-taxpayers-millions,html,
+TN,TennCare,https://www.tn.gov/tenncare/fraud-and-abuse/program-integrity.html,html,
+TX,Texas HHSC OIG,https://oig.hhsc.state.tx.us/oigportal2/Exclusions/ctl/DOW/mid/384,xls,loaded by 05_mn_rates_and_state_exclusions.py (ASP.NET postback)
+VT,Vermont Medicaid,http://www.vtmedicaid.com/#/provEnrollExcluded,html,
+WA,Washington HCA,https://www.hca.wa.gov/billers-providers-partners/apple-health-medicaid-providers/provider-termination-and-exclusion-list,html,
+WV,WV BMS,https://www.wvmmis.com/WV%20Medicaid%20Provider%20SanctionedExclusion/Forms/AllItems.aspx,html,
+WY,Wyoming DOH,https://health.wyo.gov/healthcarefin/medicaid/,html,
