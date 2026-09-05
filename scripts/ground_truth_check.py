@@ -37,6 +37,10 @@ def profile(npis):
     out["d2"] = con.execute(f"SELECT servicing_npi, months_impossible, months_umbrella, ROUND(peak_hours_per_day,1), max_patients FROM d2_top WHERE servicing_npi IN ({lit})").fetchall() if "d2_top" in have else []
     out["growth"] = con.execute(f"SELECT billing_npi, year, ROUND(paid_year), ROUND(concentration,2), ROUND(intensity_pct,2), label FROM d2_growth_flags WHERE billing_npi IN ({lit}) ORDER BY 1,2").fetchall() if "d2_growth_flags" in have else []
     out["lists"] = con.execute(f"SELECT npi, 'revoked' FROM revoked WHERE npi IN ({lit}) UNION SELECT npi, 'leie' FROM leie WHERE npi IN ({lit}) UNION SELECT npi, 'state:' || state FROM state_exclusions WHERE npi IN ({lit})").fetchall()
+    # the enforcement feed: a DOJ, HHS-OIG or state attorney general release naming the provider, resolved by name at high confidence. This is the
+    # record of the case itself, so it documents the provider rather than predicting it; it is reported in its own column and never counted as a detector hit
+    out["enforcement"] = con.execute(f"""SELECT npi, tier, replace(action_type, '_', ' '), event_dt, source FROM enforcement_npi_matches
+        WHERE npi IN ({lit}) AND same_entity AND confidence = 'high' AND COALESCE(is_subject, TRUE) ORDER BY event_dt""").fetchall() if "enforcement_npi_matches" in have else []
     out["medicaid"] = con.execute(f"SELECT npi, ROUND(SUM(paid)) FROM spend_any_month WHERE npi IN ({lit}) GROUP BY 1").fetchall()
     out["enrolled"] = con.execute(f"""SELECT "NPI", 'HOSPICE' FROM hospice WHERE "NPI" IN ({lit}) UNION SELECT "NPI", 'HHA' FROM hha WHERE "NPI" IN ({lit})""").fetchall()
     return out
@@ -52,11 +56,13 @@ def summarize(npis, p):
     if not p["enrolled"] and not p["medicaid"]: bits.append("no Medicaid spending and not in CMS enrollment files (Medicare-only or already gone)")
     elif not p["enrolled"]: bits.append("Medicaid biller only (not a CMS hospice/HHA/SNF enrollment)")
     return " | ".join(bits) or "in data, no detector output"
-rows = []; hits = 0
+rows = []; hits = 0; enf_hits = 0
 for label, pat, st, src in CASES:
     found = npis_for(pat, st); npis = [f[0] for f in found]; p = profile(npis)
     hit = bool(p.get("cluster") or p.get("d3") or (p.get("d2") and any(d[1] > 0 for d in p["d2"])) or any(g[5] for g in p.get("growth", [])) or p.get("lists"))
-    hits += hit; rows.append((label, src, ", ".join(npis) or "", "yes" if hit else "no", summarize(npis, p)))
+    enf = p.get("enforcement") or []; enf_hits += bool(enf)
+    enf_txt = "; ".join(f"{e[1]} ({e[2]}) {e[3]} via {e[4]}" for e in enf) if enf else "not matched"
+    hits += hit; rows.append((label, src, ", ".join(npis) or "", "yes" if hit else "no", enf_txt, summarize(npis, p)))
 crows = []
 for label, pat, st in CONTROLS:
     found = npis_for(pat, st); npis = [f[0] for f in found][:3]; p = profile(npis)
@@ -66,9 +72,9 @@ md = f"""# Validation against named cases and controls
 
 Generated {time.strftime('%Y-%m-%d %H:%M')} by scripts/ground_truth_check.py. Cases are providers named in DOJ, HHS-OIG and Minnesota Attorney General releases in 2025 and 2026; controls are large, well-known systems that should not be tier 1 or tier 2. Data snapshots: T-MSIS spending through 2024-12, CMS enrollment July 2026, LEIE and SAM September 2026, so an entity charged in 2026 may already have left the enrollment file, and Medicare-only hospices have no Medicaid spending to test.
 
-**Named cases reached by at least one detector: {hits} of {len(CASES)}.**
+**Named cases reached by at least one detector: {hits} of {len(CASES)}.** Separately, the enforcement feed matched {enf_hits} of {len(CASES)} by name to the public release of the case itself; that column documents the provider once the action is public and is never counted as a detector reaching it, because the detectors are meant to run before the record exists.
 
-{md_table(rows, ["case", "source", "NPI(s)", "reached", "what Verity shows"])}
+{md_table(rows, ["case", "source", "NPI(s)", "reached by a detector", "enforcement feed (documentation)", "what Verity shows"])}
 
 **Controls.**
 

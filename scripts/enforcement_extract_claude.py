@@ -19,7 +19,19 @@ from pydantic import BaseModel, Field
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROOT); sys.path.insert(0, "api")
 import llm
 ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int, default=0); ap.add_argument("--sync", action="store_true", help="parallel synchronous calls instead of the Batch API")
-ap.add_argument("--workers", type=int, default=6); a = ap.parse_args()
+ap.add_argument("--workers", type=int, default=6)
+ap.add_argument("--refresh-stubs", action="store_true", help="re-extract events first read from a short OIG summary now that the full DOJ release is stored")
+ap.add_argument("--from-batch", default=None, help="load the results of an already completed batch id instead of submitting (recovers a run whose insert failed)")
+a = ap.parse_args()
+
+def reconnect(wait_minutes=20):
+    """Open the writer; if a detector holds the single-writer lock, wait for it rather than fail (or lose a finished batch)."""
+    for _ in range(wait_minutes * 6):
+        try: return duckdb.connect(os.environ.get("VERITY_DUCKDB", "data/verity.duckdb"))
+        except duckdb.IOException as e:
+            if "lock" not in str(e).lower(): raise
+            time.sleep(10)
+    raise RuntimeError("warehouse lock not released in time")
 
 class Party(BaseModel):
     name: str = Field(description="Name exactly as written in the release, without titles like Dr. or Mr.")
@@ -39,6 +51,7 @@ class Extraction(BaseModel):
     dollars_alleged: Optional[float] = Field(description="Dollar amount of claims or loss alleged, as a number, or null")
     dollars_ordered: Optional[float] = Field(description="Restitution, forfeiture, settlement or judgment amount as a number, or null")
     action_date: Optional[str] = Field(description="Date of the action in YYYY-MM-DD if the text states it; otherwise null")
+    state: Optional[str] = Field(description="Two-letter USPS code of the state where the conduct or the court is located, if the text makes it clear; otherwise null")
     parties: List[Party]
     confidence: Literal["high", "medium", "low"]
 
@@ -64,9 +77,10 @@ def deterministic(title, body):
     text = f"{title}\n{body or ''}"
     act = next((k for k, pat in TITLE_RULES if re.search(pat, title, re.I)), None) or next((k for k, pat in TITLE_RULES if re.search(pat, text[:1500], re.I)), "other")
     orgs = []
-    for m in ORG.finditer(text[:6000]):
+    junk = re.compile(r"\b(Sentenced|Charged|Indicted|Pleads?|Agrees?|Claims?|Scheme|Fraud(?:ulent)?|Guilty|Convicted|Arrested|Million|Billion|Owner|Announces?)\b", re.I)
+    for m in ORG.finditer((body or "")[:6000]):   # the body only: title phrases like "Pharmacy Agrees to Pay" are not names
         nm = re.sub(r"\s+", " ", m.group(1)).strip(" ,.")
-        if 6 <= len(nm) <= 80 and nm not in orgs: orgs.append(nm)
+        if 6 <= len(nm) <= 80 and nm not in orgs and not junk.search(nm): orgs.append(nm)
     dollars = [float(x.replace(",", "")) * (1e6 if u.lower().startswith("m") else 1e9 if u.lower().startswith("b") else 1) for x, u in re.findall(r"\$([\d,]+(?:\.\d+)?)\s*(million|billion|m\b|b\b)?", text[:4000], re.I)]
     return dict(relevant=bool(HEALTH.search(text[:3000])), action_type=act, programs=[p for p in ("Medicare", "Medicaid", "CHIP", "TRICARE") if re.search(p, text, re.I)],
                 scheme=title, dollars_alleged=(max(dollars) if dollars else None), dollars_ordered=None, action_date=None,
@@ -74,7 +88,7 @@ def deterministic(title, body):
                 confidence="low")
 
 # ------------------------------------------------------------------ work list
-con = duckdb.connect(os.environ.get("VERITY_DUCKDB", "data/verity.duckdb"))
+con = reconnect()
 con.execute("""CREATE TABLE IF NOT EXISTS enforcement_actions (
   event_key VARCHAR, source_id VARCHAR, source VARCHAR, url VARCHAR, source_url VARCHAR, title VARCHAR, published DATE, category VARCHAR, district VARCHAR, state VARCHAR,
   relevant BOOLEAN, action_type VARCHAR, tier VARCHAR, programs VARCHAR, scheme VARCHAR, dollars_alleged DOUBLE, dollars_ordered DOUBLE, action_date DATE,
@@ -82,20 +96,51 @@ con.execute("""CREATE TABLE IF NOT EXISTS enforcement_actions (
 con.execute("""CREATE TABLE IF NOT EXISTS enforcement_parties (
   event_key VARCHAR, source_id VARCHAR, party_ix INTEGER, name VARCHAR, kind VARCHAR, role VARCHAR, provider_type VARCHAR, city VARCHAR, state VARCHAR, is_provider BOOLEAN, npi VARCHAR)""")
 con.execute("CREATE TABLE IF NOT EXISTS enforcement_batches (batch_id VARCHAR, submitted_at TIMESTAMP, n INTEGER, status VARCHAR)")
+con.execute("ALTER TABLE enforcement_actions ADD COLUMN IF NOT EXISTS event_state VARCHAR")   # the state the release describes, from the model; the district state (DOJ only) stays in `state`
+recovered = None
+if a.from_batch:
+    # results of a batch that already ended: map its custom ids back to source ids (llm._safe_id is deterministic) and take exactly those records
+    rev = {llm._safe_id(s): s for (s,) in con.execute("SELECT source_id FROM enforcement_raw").fetchall()}
+    recovered = {}
+    for res in llm.client().messages.batches.results(a.from_batch):
+        sid = rev.get(res.custom_id, res.custom_id)
+        if res.result.type == "succeeded":
+            txt = "".join(blk.text for blk in res.result.message.content if blk.type == "text")
+            try: recovered[sid] = llm.clean_text(json.loads(txt))
+            except Exception as e: recovered[sid] = {"error": f"unparseable: {e}"}
+        else: recovered[sid] = {"error": res.result.type}
+    ids = pd.DataFrame({"source_id": list(recovered)})
+    print(f"from-batch {a.from_batch}: {len(recovered):,} results ({sum(1 for v in recovered.values() if 'error' in v)} errors)")
 # one event per originating release: DOJ record preferred as the text source when OIG mirrors it
+if a.refresh_stubs:
+    # events whose stored extraction came from an OIG summary (short body) while a DOJ record with the full text now exists: drop and redo
+    stale = con.execute("""
+    SELECT DISTINCT x.event_key FROM enforcement_actions x
+    JOIN enforcement_raw o ON o.source_id = x.source_id AND o.source = 'OIG' AND length(COALESCE(o.body, '')) < 1500
+    JOIN enforcement_raw d ON lower(rtrim(COALESCE(d.source_url, d.url), '/')) = x.event_key AND d.source = 'DOJ' AND length(COALESCE(d.body, '')) >= 1500""").df()
+    if len(stale):
+        keys = tuple(stale.event_key.tolist())
+        for t in ("enforcement_npi_matches", "enforcement_parties", "enforcement_actions"): con.execute(f"DELETE FROM {t} WHERE event_key IN (SELECT event_key FROM stale)")
+        print(f"refresh-stubs: dropped {len(stale):,} events first read from an OIG summary; they will be re-extracted from the DOJ text")
 work = con.execute(f"""
 WITH r AS (SELECT *, lower(rtrim(COALESCE(source_url, url), '/')) AS event_key FROM enforcement_raw),
      pick AS (SELECT * FROM r QUALIFY row_number() OVER (PARTITION BY event_key ORDER BY CASE source WHEN 'DOJ' THEN 0 ELSE 1 END, length(COALESCE(body,'')) DESC) = 1)
 SELECT p.* FROM pick p WHERE p.event_key NOT IN (SELECT event_key FROM enforcement_actions) AND length(COALESCE(p.body, '')) >= 80
-ORDER BY p.published DESC {f'LIMIT {a.limit}' if a.limit else ''}""").df()
+ORDER BY p.published DESC {f'LIMIT {a.limit}' if a.limit else ''}""").df() if not a.from_batch else con.execute("""
+WITH r AS (SELECT *, lower(rtrim(COALESCE(source_url, url), '/')) AS event_key FROM enforcement_raw)
+SELECT r.* FROM r WHERE r.source_id IN (SELECT source_id FROM ids) AND r.event_key NOT IN (SELECT event_key FROM enforcement_actions)
+QUALIFY row_number() OVER (PARTITION BY event_key ORDER BY CASE source WHEN 'DOJ' THEN 0 ELSE 1 END) = 1""").df()
 print(f"records to extract: {len(work):,} (of {con.execute('SELECT COUNT(*) FROM enforcement_raw').fetchone()[0]:,} raw)")
 if work.empty: con.close(); sys.exit(0)
+con.close()   # release the single-writer lock for the whole model wait; the detectors and the feed loader must not be blocked by a batch
 
 def user_text(r):
     return json.dumps(dict(source=r.source, published=str(r.published), district=r.district, category=r.category, title=r.title, text=(r.body or "")[:12000]), ensure_ascii=False)
 
 results, batch_id, model_used = {}, None, llm.MODEL
-if llm.ready():
+if recovered is not None:
+    results, batch_id = recovered, a.from_batch
+elif llm.ready():
     items = [(r.source_id, user_text(r)) for r in work.itertuples(index=False)]
     if a.sync:
         def one(it):
@@ -108,10 +153,8 @@ if llm.ready():
                 if i % 50 == 0: print(f"  {i:,}/{len(items):,}", flush=True)
     else:
         reqs = llm.batch_requests(items, Extraction, SYS, effort="medium", max_tokens=3000)
-        con.execute("INSERT INTO enforcement_batches VALUES (?, now(), ?, 'submitted')", ["pending", len(reqs)])
         print(f"submitting batch of {len(reqs):,} requests", flush=True)
         results, batch_id = llm.batch_run(reqs, poll_seconds=30)
-        con.execute("UPDATE enforcement_batches SET batch_id = ?, status = 'ended' WHERE batch_id = 'pending'", [batch_id])
 else:
     print("no ANTHROPIC_API_KEY: deterministic title rules only", flush=True); model_used = "deterministic"
 
@@ -128,14 +171,17 @@ for r in work.itertuples(index=False):
                      district=r.district, state=r.state, relevant=bool(v.get("relevant")), action_type=act, tier=tier_of(act), programs=",".join(v.get("programs") or []),
                      scheme=(v.get("scheme") or "")[:600], dollars_alleged=v.get("dollars_alleged"), dollars_ordered=v.get("dollars_ordered"),
                      action_date=(pd.to_datetime(v.get("action_date"), errors="coerce").date() if v.get("action_date") else None),
-                     n_parties=len(ps), confidence=v.get("confidence") or "low", model=model, batch_id=batch_id, extracted_at=now))
+                     n_parties=len(ps), confidence=v.get("confidence") or "low", model=model, batch_id=batch_id, extracted_at=now,
+                     event_state=((v.get("state") or "").strip().upper()[:2] or None)))
     for i, p in enumerate(ps):
         npi = re.sub(r"\D", "", str(p.get("npi") or "")); npi = npi if len(npi) == 10 else None
         st = (p.get("state") or "").strip().upper()[:2] or None
         parties.append(dict(event_key=r.event_key, source_id=r.source_id, party_ix=i, name=(p.get("name") or "").strip()[:200], kind=p.get("kind") or "organization", role=(p.get("role") or "")[:80],
                             provider_type=(p.get("provider_type") or None), city=(p.get("city") or None), state=st, is_provider=bool(p.get("is_provider")), npi=npi))
 A = pd.DataFrame(rows); P = pd.DataFrame(parties) if parties else pd.DataFrame(columns=["event_key","source_id","party_ix","name","kind","role","provider_type","city","state","is_provider","npi"])
+con = reconnect()   # reopen only for the short write
 con.execute("INSERT INTO enforcement_actions SELECT * FROM A"); con.execute("INSERT INTO enforcement_parties SELECT * FROM P")
+if batch_id: con.execute("INSERT INTO enforcement_batches VALUES (?, now(), ?, 'ended')", [batch_id, len(A)])
 n_rel = int(A.relevant.sum()); n_adj = int((A.tier == "adjudicated").sum()); n_all = int((A.tier == "alleged").sum())
 print(f"extracted {len(A):,} events ({n_fallback} by deterministic fallback): {n_rel:,} relevant, {n_adj:,} adjudicated, {n_all:,} alleged, {len(P):,} parties, {int(P.npi.notna().sum()) if len(P) else 0} with a printed NPI")
 print(A[A.relevant].groupby(["tier", "action_type"]).size().to_string() if n_rel else "no relevant events")

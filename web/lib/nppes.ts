@@ -37,6 +37,13 @@ async function call(params: Record<string, string>): Promise<NppesRecord[]> {
   const j = await r.json(); if (!Array.isArray(j.results)) return [];
   return j.results.map(pick);
 }
+// Raw registry results for a query, untouched, for callers that normalize themselves (the Chrome extension route).
+export async function nppesRaw(params: Record<string, string>): Promise<any[]> {
+  const u = new URL(BASE); for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v);
+  const r = await fetch(u.toString(), { next: { revalidate: 600 }, signal: AbortSignal.timeout(9000), headers: { Accept: "application/json" } });
+  if (!r.ok) return [];
+  const j = await r.json(); return Array.isArray(j.results) ? j.results : [];
+}
 export async function nppesLookup(npi: string): Promise<NppesRecord | null> {
   if (!/^\d{10}$/.test(npi)) return null;
   try { const rs = await call({ number: npi, limit: "1" }); return rs[0] ?? null; } catch { return null; }

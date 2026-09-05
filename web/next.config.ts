@@ -10,6 +10,8 @@ const security = [
 ];
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The static fallback JSON is read with fs at request time, so it must ride along in every serverless function bundle.
+  outputFileTracingIncludes: { "/**": ["./public/fallback/**"] },
   async headers() { return [{ source: "/(.*)", headers: security }]; },
 };
 export default nextConfig;

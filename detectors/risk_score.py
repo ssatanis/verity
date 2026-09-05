@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """Unified provider risk: one row per NPI with a tier, a score and the detectors behind it. The hierarchy is explicit.
 
-  Tier 1  documented action, then payment: on a tier-A federal or state list and Medicaid service months after it (D3 tier A)
+  Tier 1  documented action: on a tier-A federal or state list with Medicaid service months after it (D3 tier A), or adjudicated in a public
+          enforcement record (DOJ press release, HHS-OIG enforcement record, state attorney general release: sentenced, convicted, pleaded
+          guilty or civil judgment, resolved to the NPI by name at high confidence; ENF)
   Tier 2  physically impossible volume with concurrency: impossible personal-service hours billed by three or more organizations in a
           month, more than 24 hours per patient per day, or over Minnesota's own daily cap (D2 tier A)
-  Tier 3  network structure plus a label link: member of an eligible community whose label family is present (D1)
+  Tier 3  network structure plus a label link: member of an eligible community whose label family is present (D1), or charged in a public
+          enforcement record and not yet adjudicated (indicted, charged, arrested, complaint; ENF)
   Tier 4  structure only, or single-organization impossibility, or growth anomaly (D1 eligible without label link, D2 tier B)
   Tier 5  informational (D3 tier B, D2 umbrella volume, community membership below the ranked list)
 
-  score = tier base (90, 75, 60, 45, 25) + 8 for each additional detector that independently reached the NPI (cap 16)
-          + min(9, log10(dollars at risk)) ; capped at 100. Dollars at risk = the highest single-detector figure for the NPI, never a sum.
+  score = tier base (90, 75, 60, 45, 25) + 8 for each additional strong finding that independently reached the NPI (cap 16)
+          + min(9, log10(dollars at risk)) + procedure points; capped at 100. Dollars at risk = the figure of the detector that set the
+          tier, never a sum. For an enforcement record too recent to have Medicaid months after it (the spending file ends 2024-12) the
+          figure is forward exposure: Medicaid paid in the last 12 observed months, the exposure_12m definition risk_score_v2 uses.
+  An enforcement record adds to the corroboration count only when no list action already documents the provider: an OIG exclusion follows
+  the conviction it cites, so the two are one chain of evidence, not two independent findings.
 """
 import json, math, os, sys, time, duckdb
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROOT); sys.path.insert(0, "detectors")
@@ -26,7 +33,17 @@ con.execute("""CREATE OR REPLACE MACRO pretty_source(s) AS
          WHEN x LIKE 'STATE_EXCL_%' THEN 'the ' || substr(x, 12) || ' Medicaid exclusion list'
          WHEN x LIKE 'SAM_%' THEN 'the SAM.gov exclusion list (' || replace(substr(x, 5), '_', ' ') || ')'
          WHEN x LIKE 'TMSIS_TERM_%' THEN 'a state Medicaid termination'
+         WHEN x LIKE 'DOJ%' THEN 'a Department of Justice release'
+         WHEN x LIKE 'STATE_AG%' THEN 'a state attorney general release'
+         WHEN x LIKE 'OIG%' THEN 'an HHS-OIG enforcement record'
          ELSE lower(replace(x, '_', ' ')) END), 'string_agg', ' and ')""")
+# enforcement feed tables may not exist on a fresh warehouse; empty stand-ins keep the query valid (same columns as the feed scripts create)
+con.execute("""CREATE TABLE IF NOT EXISTS enforcement_npi_matches (source_id VARCHAR, event_key VARCHAR, party_ix INTEGER, npi VARCHAR, same_entity BOOLEAN, confidence VARCHAR, reason VARCHAR,
+               batch_id VARCHAR, name VARCHAR, kind VARCHAR, role VARCHAR, tier VARCHAR, action_type VARCHAR, event_dt DATE, state VARCHAR, source VARCHAR, url VARCHAR, title VARCHAR, is_subject BOOLEAN)""")
+con.execute("ALTER TABLE enforcement_npi_matches ADD COLUMN IF NOT EXISTS is_subject BOOLEAN")
+con.execute("""CREATE TABLE IF NOT EXISTS enforcement_actions (event_key VARCHAR, source_id VARCHAR, source VARCHAR, url VARCHAR, source_url VARCHAR, title VARCHAR, published DATE, category VARCHAR,
+               district VARCHAR, state VARCHAR, relevant BOOLEAN, action_type VARCHAR, tier VARCHAR, programs VARCHAR, scheme VARCHAR, dollars_alleged DOUBLE, dollars_ordered DOUBLE, action_date DATE,
+               n_parties INTEGER, confidence VARCHAR, model VARCHAR, batch_id VARCHAR, extracted_at TIMESTAMP)""")
 con.execute("CREATE TABLE IF NOT EXISTS provider_procedure_signal (npi VARCHAR, points INTEGER, reason VARCHAR)")
 con.execute("CREATE TABLE IF NOT EXISTS d2_umbrella (npi VARCHAR, avg_org_render DOUBLE, max_org_render DOUBLE)")
 con.execute("""
@@ -48,38 +65,66 @@ d1 AS (
   SELECT m.npi, c.cluster_id, c.rank, c.eligible, c.label_family, c.risk_score, m.medicaid_2024, m.medicare_2023, c.summary
   FROM cluster_members m JOIN clusters c ON c.cluster_id = m.cluster_id
   QUALIFY ROW_NUMBER() OVER (PARTITION BY m.npi ORDER BY c.eligible DESC, c.rank) = 1),
-u AS (SELECT npi FROM d3 UNION SELECT npi FROM d2 UNION SELECT npi FROM d1 WHERE eligible)
+-- enforcement releases resolved to NPIs by name at high confidence; adjudicated = sentenced, convicted, pleaded guilty, civil judgment; alleged = indicted, charged, arrested, complaint
+enf AS (
+  SELECT m.npi, MAX(CASE WHEN m.tier = 'adjudicated' THEN 1 ELSE 0 END) AS enf_adjudicated, MAX(CASE WHEN m.tier = 'alleged' THEN 1 ELSE 0 END) AS enf_alleged,
+         MIN(m.event_dt) AS enf_first_event, string_agg(DISTINCT replace(m.action_type, '_', ' '), ', ') AS enf_actions,
+         string_agg(DISTINCT CASE WHEN COALESCE(a.category, '') ILIKE '%State Enforcement%' THEN 'STATE_AG' WHEN m.source = 'DOJ' THEN 'DOJ' ELSE 'OIG' END, ',') AS enf_sources,
+         arg_max(m.url, m.event_dt) AS enf_url, arg_max(m.title, m.event_dt) AS enf_title
+  FROM enforcement_npi_matches m JOIN enforcement_actions a ON a.source_id = m.source_id
+  WHERE m.same_entity AND m.confidence = 'high' AND COALESCE(m.is_subject, TRUE) AND m.event_dt IS NOT NULL AND m.tier IN ('adjudicated', 'alleged')
+    AND (m.npi IN (SELECT npi FROM spend_any_month) OR m.npi IN (SELECT npi FROM enroll))   -- a Medicaid footprint: this table is a Medicaid referral queue
+  GROUP BY 1),
+-- forward exposure: Medicaid paid in the last 12 observed months (risk_score_v2's exposure_12m), the dollars figure when an action is too recent to have months after it
+exposure AS (
+  SELECT npi, SUM(paid) AS exposure_12m FROM spend_any_month
+  WHERE month_start >= (SELECT date_trunc('month', MAX(month_start)) - INTERVAL 11 MONTH FROM spend_any_month) GROUP BY 1),
+u AS (SELECT npi FROM d3 UNION SELECT npi FROM d2 UNION SELECT npi FROM d1 WHERE eligible UNION SELECT npi FROM enf)
 SELECT u.npi, COALESCE(n.org_name, trim(COALESCE(n.first_name,'') || ' ' || COALESCE(n.last_name,''))) AS name, n.entity_type, n.city, n.state, n.taxonomy, pc.county_fips, ps.state AS medicaid_state,
        d3.d3_a, d3.d3_b, d3.d3_paid_after, d3.d3_sources, d3.d3_first_event, d3.d3_months,
        d2.d2_tier, d2.months_impossible, d2.months_over_mn_cap, d2.months_umbrella, d2.peak_hours_per_day, d2.max_billing_orgs, d2.paid_flagged_months, d2.growth_paid_24_22, d2.max_patients, d2.umbrella AS d2_umbrella,
        COALESCE(pp.points, 0) AS procedure_points, pp.reason AS procedure_reason,
        d1.cluster_id AS d1_cluster_id, d1.rank AS d1_rank, d1.eligible AS d1_eligible, d1.label_family AS d1_label_family, d1.risk_score AS d1_score, d1.medicaid_2024 AS d1_medicaid_2024, d1.medicare_2023 AS d1_medicare_2023,
-       CASE WHEN d3.d3_a = 1 THEN 1
+       enf.enf_adjudicated, enf.enf_alleged, enf.enf_first_event, enf.enf_actions, enf.enf_sources, enf.enf_url, enf.enf_title, COALESCE(ex.exposure_12m, 0) AS exposure_12m,
+       -- an adjudicated enforcement record is a documented action (tier 1); a charge is documented but not adjudicated and sits with the list-linked network tier (3)
+       CASE WHEN d3.d3_a = 1 OR enf.enf_adjudicated = 1 THEN 1
             WHEN d2.d2_tier = 'A' THEN 2
-            WHEN d1.eligible AND d1.label_family = 1 THEN 3
+            WHEN (d1.eligible AND d1.label_family = 1) OR enf.enf_alleged = 1 THEN 3
             WHEN d1.eligible OR d2.d2_tier = 'B' THEN 4
             ELSE 5 END AS tier,
-       (CASE WHEN d3.d3_a = 1 THEN 1 ELSE 0 END) + (CASE WHEN d2.d2_tier IN ('A','B') THEN 1 ELSE 0 END) + (CASE WHEN d1.eligible THEN 1 ELSE 0 END) AS n_detectors,
-       -- corroboration counts only strong findings: a tier-A list action, tier-A (concurrent) impossible volume, or membership of a ranked community
-       (CASE WHEN d3.d3_a = 1 THEN 1 ELSE 0 END) + (CASE WHEN d2.d2_tier = 'A' THEN 1 ELSE 0 END) + (CASE WHEN d1.eligible THEN 1 ELSE 0 END) AS n_strong,
-       -- dollars at risk is the figure of the detector that set the tier, never a sum and never borrowed from a weaker indicator
+       (CASE WHEN d3.d3_a = 1 THEN 1 ELSE 0 END) + (CASE WHEN d2.d2_tier IN ('A','B') THEN 1 ELSE 0 END) + (CASE WHEN d1.eligible THEN 1 ELSE 0 END)
+         + (CASE WHEN enf.npi IS NOT NULL AND d3.npi IS NULL THEN 1 ELSE 0 END) AS n_detectors,
+       -- corroboration counts only strong findings: a tier-A list action, tier-A (concurrent) impossible volume, or membership of a ranked community;
+       -- an adjudicated enforcement record counts only when no list action already documents the provider (an exclusion follows the conviction it cites: one chain, not two)
+       (CASE WHEN d3.d3_a = 1 THEN 1 ELSE 0 END) + (CASE WHEN d2.d2_tier = 'A' THEN 1 ELSE 0 END) + (CASE WHEN d1.eligible THEN 1 ELSE 0 END)
+         + (CASE WHEN enf.enf_adjudicated = 1 AND COALESCE(d3.d3_a, 0) = 0 THEN 1 ELSE 0 END) AS n_strong,
+       -- dollars at risk is the figure of the detector that set the tier, never a sum and never borrowed from a weaker indicator;
+       -- an enforcement record with no observable months after it uses forward exposure (Medicaid paid in the last 12 observed months)
        CASE WHEN d3.d3_a = 1 THEN COALESCE(d3.d3_paid_after, 0)
+            WHEN enf.enf_adjudicated = 1 THEN COALESCE(ex.exposure_12m, 0)
             WHEN d2.d2_tier = 'A' THEN COALESCE(d2.paid_flagged_months, 0)
             WHEN d1.eligible AND d1.label_family = 1 THEN COALESCE(d1.medicaid_2024, 0)
+            WHEN enf.enf_alleged = 1 THEN COALESCE(ex.exposure_12m, 0)
             WHEN d1.eligible OR d2.d2_tier = 'B' THEN GREATEST(CASE WHEN d1.eligible THEN COALESCE(d1.medicaid_2024, 0) ELSE 0 END, CASE WHEN d2.d2_tier = 'B' THEN COALESCE(d2.paid_flagged_months, 0) ELSE 0 END)
             ELSE GREATEST(COALESCE(d3.d3_paid_after, 0), COALESCE(d2.paid_flagged_months, 0), COALESCE(d2.growth_paid_24_22, 0)) END AS dollars_at_risk,
-       list_filter(['D3', 'D2', 'D1'], x -> (x = 'D3' AND d3.npi IS NOT NULL) OR (x = 'D2' AND d2.npi IS NOT NULL) OR (x = 'D1' AND d1.npi IS NOT NULL)) AS detectors
-FROM u LEFT JOIN d3 USING (npi) LEFT JOIN d2 USING (npi) LEFT JOIN d1 USING (npi)
+       list_filter(['D3', 'D2', 'D1', 'ENF'], x -> (x = 'D3' AND d3.npi IS NOT NULL) OR (x = 'D2' AND d2.npi IS NOT NULL) OR (x = 'D1' AND d1.npi IS NOT NULL) OR (x = 'ENF' AND enf.npi IS NOT NULL)) AS detectors
+FROM u LEFT JOIN d3 USING (npi) LEFT JOIN d2 USING (npi) LEFT JOIN d1 USING (npi) LEFT JOIN enf USING (npi) LEFT JOIN exposure ex USING (npi)
 LEFT JOIN provider_procedure_signal pp ON pp.npi = u.npi
 LEFT JOIN nppes n ON n.npi = u.npi LEFT JOIN provider_state ps ON ps.npi = u.npi LEFT JOIN zcta_primary_county pc ON pc.zcta = n.zip5
 QUALIFY row_number() OVER (PARTITION BY u.npi ORDER BY d1.rank NULLS LAST, d3.d3_paid_after DESC NULLS LAST) = 1""")
 con.execute("""
 CREATE OR REPLACE TABLE provider_risk AS
 SELECT *, LEAST(100.0, (CASE tier WHEN 1 THEN 90 WHEN 2 THEN 75 WHEN 3 THEN 60 WHEN 4 THEN 45 ELSE 25 END) + LEAST(16, 8 * GREATEST(n_strong - 1, 0)) + LEAST(9.0, LOG10(GREATEST(dollars_at_risk, 1))) + procedure_points) AS score,
-       CASE tier WHEN 1 THEN 'documented action, then payment' WHEN 2 THEN 'impossible volume with concurrency' WHEN 3 THEN 'network structure with a list link'
+       CASE tier WHEN 1 THEN CASE WHEN d3_a = 1 THEN 'documented action, then payment' ELSE 'adjudicated in a public enforcement record' END
+                 WHEN 2 THEN 'impossible volume with concurrency'
+                 WHEN 3 THEN CASE WHEN d1_eligible AND d1_label_family = 1 THEN 'network structure with a list link' ELSE 'charged in a public enforcement record' END
                  WHEN 4 THEN 'structure or single-organization volume' ELSE 'informational' END AS tier_label,
        concat_ws('; ',
          CASE WHEN d3_a = 1 THEN 'Listed on ' || pretty_source(d3_sources) || ' since ' || strftime(d3_first_event, '%B %-d, %Y') || '; Medicaid still paid claims in ' || d3_months || ' later months, $' || format('{:,}', CAST(ROUND(d3_paid_after) AS BIGINT)) || ' in total' END,
+         CASE WHEN enf_adjudicated = 1 THEN 'Adjudicated (' || enf_actions || ') per ' || pretty_source(enf_sources) || ' dated ' || strftime(enf_first_event, '%B %-d, %Y')
+                   || CASE WHEN d3_a = 1 THEN '' WHEN exposure_12m > 0 THEN '; Medicaid paid $' || format('{:,}', CAST(ROUND(exposure_12m) AS BIGINT)) || ' in the last 12 observed months' ELSE '; no Medicaid payments in the last 12 observed months' END
+              WHEN enf_alleged = 1 THEN 'Charged (' || enf_actions || ') per ' || pretty_source(enf_sources) || ' dated ' || strftime(enf_first_event, '%B %-d, %Y') || ', not adjudicated'
+                   || CASE WHEN exposure_12m > 0 THEN '; Medicaid paid $' || format('{:,}', CAST(ROUND(exposure_12m) AS BIGINT)) || ' in the last 12 observed months' ELSE '' END END,
          CASE WHEN d2_tier = 'A' THEN 'Billed more hands-on hours than a day holds in ' || months_impossible || ' month(s), peaking at ' || ROUND(peak_hours_per_day, 1) || ' hours per day across ' || max_billing_orgs || ' billing organizations' END,
          CASE WHEN d2_tier = 'B' AND d2_umbrella THEN 'Hours beyond a day in ' || months_impossible || ' month(s), but with up to ' || CAST(max_patients AS BIGINT) || ' patients a month' || CASE WHEN max_billing_orgs >= 3 THEN ' across ' || max_billing_orgs || ' billing organizations' ELSE '' END || ', which points to a supervising clinician on the claims rather than one person''s hours; records needed'
               WHEN d2_tier = 'B' THEN 'Hours beyond a day in ' || months_impossible || ' month(s) under one organization, which can be supervisory billing; records needed' END,
@@ -93,13 +138,17 @@ S = {}
 S["tiers"] = q("SELECT tier, tier_label, COUNT(*), ROUND(SUM(dollars_at_risk)/1e6,2), COUNT(*) FILTER (WHERE n_strong >= 2) FROM provider_risk GROUP BY 1,2 ORDER BY 1")
 S["top"] = q("SELECT rank, npi, name, entity_type, state, tier, ROUND(score,1), detectors, ROUND(dollars_at_risk), reasons FROM provider_risk ORDER BY rank LIMIT 25")
 S["corroborated"] = q("SELECT COUNT(*) FROM provider_risk WHERE n_strong >= 2")
+S["enforcement"] = q("""SELECT COUNT(*) FILTER (WHERE enf_adjudicated = 1), COUNT(*) FILTER (WHERE enf_alleged = 1 AND COALESCE(enf_adjudicated, 0) = 0),
+                               COUNT(*) FILTER (WHERE enf_adjudicated = 1 AND COALESCE(d3_a, 0) = 0), MIN(enf_first_event), MAX(enf_first_event) FROM provider_risk WHERE enf_adjudicated = 1 OR enf_alleged = 1""")
 for k, v in S.items(): print(f"== {k}"); [print("  ", r) for r in v]
 body = f"""
-**Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action. Tier 2: physically impossible personal-service volume billed by three or more small organizations in a month with at most 500 patients, more than 24 hours per patient per day, or over a state's own daily cap. Volume with hundreds of patients a month, or billed through organizations that each carry dozens of rendering clinicians, is a supervisory umbrella and stays in tier 4. Tier 3: member of an eligible provider community with a label link. Tier 4: structure only, or single-organization impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + up to 8 procedure points (dollars per patient on a code in the top 5% of every provider billing it, most dollars on codes with a history of abuse, or Medicare charges far above the code's usual charge-to-allowed ratio) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers), never a sum and never borrowed from a weaker indicator, so a single-organization volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
+**Hierarchy.** Every NPI any detector reached gets one row in `provider_risk` with a tier, a score and the reasons. Tier 1: on a tier-A federal or state list and Medicaid service months after the action, or adjudicated in a public enforcement record (a Department of Justice release, an HHS-OIG enforcement record or a state attorney general release naming the provider as sentenced, convicted, pleaded guilty or under a civil judgment, resolved to the NPI by name at high confidence and reported as a name match). Tier 2: physically impossible personal-service volume billed by three or more small organizations in a month with at most 500 patients, more than 24 hours per patient per day, or over a state's own daily cap. Volume with hundreds of patients a month, or billed through organizations that each carry dozens of rendering clinicians, is a supervisory umbrella and stays in tier 4. Tier 3: member of an eligible provider community with a label link, or charged in a public enforcement record (indicted, charged, arrested or named in a complaint) and not yet adjudicated. Tier 4: structure only, or single-organization impossibility. Tier 5: informational. Score = tier base (90, 75, 60, 45, 25) + up to 8 procedure points (dollars per patient on a code in the top 5% of every provider billing it, most dollars on codes with a history of abuse, or Medicare charges far above the code's usual charge-to-allowed ratio) + 8 per additional strong finding that independently reached the NPI (a tier-A list action, tier-A concurrent impossible volume, or a ranked community; cap 16) + min(9, log10 dollars at risk), capped at 100. Dollars at risk is the figure of the detector that set the tier (service months after the action for tier 1, paid in flagged months for tier 2, Medicaid 2024 for the community tiers, and for an enforcement record too recent to have service months after it, Medicaid paid in the last 12 observed months, the forward exposure the v2 score uses), never a sum and never borrowed from a weaker indicator, so a single-organization volume flag cannot lift a small documented-action case above a large one. The county map sums each NPI once.
 
 {md_table(S["tiers"], ["tier","meaning","NPIs","$M at risk","reached by 2+ detectors"])}
 
 {S["corroborated"][0][0]:,} NPIs were reached by two or more detectors independently; corroboration is the strongest signal the pipeline produces and it is weighted accordingly.
+
+**Enforcement feed.** Public enforcement releases (Department of Justice press releases through the DOJ API, the HHS-OIG enforcement actions listing, and the state attorney general actions it carries) are fetched daily and backfilled to January 2024, read into a schema by the model, and the parties resolved to NPIs by name at high confidence only. The spending file ends in December 2024, so an action after that has no observable months after it; the provider is still documented, and its dollars figure is forward exposure. {S["enforcement"][0][0]:,} providers in this table are adjudicated in an enforcement record and {S["enforcement"][0][1]:,} more are charged and not yet adjudicated (actions dated {S["enforcement"][0][3]} to {S["enforcement"][0][4]}); {S["enforcement"][0][2]:,} of the adjudicated providers appear on no exclusion or revocation list yet, which is the lead time the feed exists to provide. An enforcement record counts toward corroboration only when no list action already documents the provider, because an OIG exclusion follows the conviction it cites: that is one chain of evidence, not two.
 
 **Top 25 referral candidates.**
 

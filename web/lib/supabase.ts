@@ -1,8 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
 // Public read client (row-level security allows select on every table). Safe on the server and in the browser.
+// If the keys are missing (a preview deploy without environment variables) the client points at a placeholder host; every
+// query then fails and withFallback serves the static JSON in web/public/fallback, so the site still renders.
 export function publicClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "missing";
+  return createClient(url, key, { auth: { persistSession: false } });
 }
 // Server-only writer (packets, reviews). Never import from a client component.
 export function serviceClient() {

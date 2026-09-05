@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Daily enforcement refresh for Verity at 06:30 local time.
+  Install (from the project root):
+    sed "s#__ROOT__#$(pwd)#g" ops/launchd/org.verity.enforcement-daily.plist > ~/Library/LaunchAgents/org.verity.enforcement-daily.plist
+    launchctl load ~/Library/LaunchAgents/org.verity.enforcement-daily.plist
+  Run once now:   launchctl start org.verity.enforcement-daily
+  Remove:         launchctl unload ~/Library/LaunchAgents/org.verity.enforcement-daily.plist
+  In a deployment the same script runs from cron or a scheduler on the plan's server; the warehouse is a single DuckDB file.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>org.verity.enforcement-daily</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/sh</string><string>__ROOT__/scripts/enforcement_daily.sh</string></array>
+  <key>WorkingDirectory</key><string>__ROOT__</string>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+  <key>StandardOutPath</key><string>__ROOT__/logs/launchd_enforcement.out</string>
+  <key>StandardErrorPath</key><string>__ROOT__/logs/launchd_enforcement.err</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>

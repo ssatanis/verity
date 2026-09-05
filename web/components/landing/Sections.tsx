@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Reveal, Rise } from "./Reveal";
 import { HeroNetwork } from "./HeroNetwork";
+import { TierFigure, PaidAfterFigure, DetectorGlyph, PipelineFigure } from "./Figures";
 const money = (v: number) => v >= 1e9 ? `$${(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v).toLocaleString()}`;
 const num = (v: number) => Number(v ?? 0).toLocaleString();
 const W = "max-w-[1860px] mx-auto px-8 md:px-[72px]";
@@ -33,10 +34,10 @@ export function WhatWeDo() {
     </section>
   );
 }
-export function Stats({ stats }: { stats: Record<string, any> }) {
+export function Stats({ stats, byYear }: { stats: Record<string, any>; byYear: [string, number, number][] }) {
   const items = [
-    [num(stats.risk_tier1 ?? 0), "Providers on a public exclusion or revocation list that Medicaid kept paying afterwards", "Each one is matched by exact NPI with the name verified, and the payments are dated after the action and before any reinstatement."],
-    [money(stats.d3_dollars_after ?? 0), "Paid to those providers after the action that should have triggered a screening check", "Federal rules require states to check these lists every month. This is not a loss estimate; appeals and reinstatements are respected."],
+    [num(stats.d3_npis_paid_after ?? stats.risk_tier1 ?? 0), "Providers on a public exclusion or revocation list that Medicaid kept paying afterwards", "Each one is matched by exact NPI with the name verified, and the payments are dated after the action and before any reinstatement."],
+    [money(stats.d3_dollars_after ?? 0), "Paid to those providers after the action that should have triggered a screening check", "Federal rules require states to check the federal exclusion lists every month. This is not a loss estimate; payments after a reinstatement are not counted."],
     [num(stats.d1_clusters_eligible ?? 0), "Provider networks ranked for a closer look", "Hospices, home health agencies and nursing facilities connected through owners, suites, phone numbers, officials and the addresses of revoked companies."],
   ];
   return (
@@ -44,14 +45,15 @@ export function Stats({ stats }: { stats: Record<string, any> }) {
       <div className="grid md:grid-cols-3 gap-10">
         {items.map(([v, l, f], i) => <Reveal key={l} delay={i * 0.12} className="lrule pl-10 py-2"><div className="serif" style={{ color: "var(--blue)", fontSize: "clamp(56px, 6.2vw, 108px)", lineHeight: 1, wordBreak: "break-word" }}>{v}</div><div className="text-[17px] mt-14 leading-7 max-w-xs" style={{ color: "var(--ink-2)" }}>{l}</div><div className="text-[13px] mt-8 leading-6 max-w-xs" style={{ color: "var(--ink-3)" }}>{f}</div></Reveal>)}
       </div>
+      {byYear.length > 0 && <PaidAfterFigure rows={byYear} />}
     </section>
   );
 }
 export function Detectors() {
   const d = [
     ["01", "Ghost Networks", "Groups of newly formed hospices, home health agencies and nursing facilities that share owners, suites, phone numbers or officials, often at the address of a company that was already revoked. Verity resolves who owns what and ranks each network by how unusual its structure is.", "/app/clusters"],
-    ["02", "Impossible Days", "Medicaid billing turned into hours of hands-on care. When one clinician is billed for more hours than a day holds, across several unrelated organizations in the same month, the volume cannot be one person's work.", "/app/flags?detector=D2"],
-    ["03", "Paid After a Screening Trigger", "Providers revoked by Medicare, excluded by the OIG, debarred in SAM.gov or excluded by a state, whom Medicaid kept paying after the action. Matched by exact NPI with the name verified.", "/app/flags?detector=D3"],
+    ["02", "Impossible Days", "Medicaid billing turned into hours of hands-on care. When one clinician is billed for more hours than a day holds by three or more organizations in the same month, with a patient count one person could plausibly carry, the volume cannot be one person's work. Supervisory billing with hundreds of patients stays out of the top tier.", "/app/flags?detector=D2"],
+    ["03", "Paid After a Screening Trigger", "Providers revoked by Medicare on integrity grounds, excluded by the OIG or excluded by a state, whom Medicaid kept paying after the action. Matched by exact NPI with the name verified; SAM.gov debarments and NPI deactivations are kept as informational.", "/app/flags?detector=D3"],
   ];
   return (
     <section id="detectors" className={`${W} py-24`}>
@@ -60,18 +62,18 @@ export function Detectors() {
         <p className="text-[18px] leading-8 max-w-2xl" style={{ color: "var(--ink-2)" }}>Each detector asks a different question of a different public record. A provider flagged by two of them independently is the strongest signal the system produces, and the ranking is built so that corroboration, not volume, rises to the top.</p>
       </div>
       <div className="grid md:grid-cols-3 gap-10 mt-24">
-        {d.map(([n, h, t, href], i) => <Reveal key={n} delay={i * 0.12}><Link href={href} className="lrule pl-10 py-2 block group"><div className="serif" style={{ color: "var(--blue)", fontSize: "clamp(56px, 5.5vw, 96px)", lineHeight: 1 }}>{n}</div><h3 className="serif text-[34px] mt-10 group-hover:underline" style={{ color: "var(--ink)" }}>{h}</h3><p className="text-[15px] leading-7 mt-4 max-w-sm" style={{ color: "var(--ink-2)" }}>{t}</p></Link></Reveal>)}
+        {d.map(([n, h, t, href], i) => <Reveal key={n} delay={i * 0.12}><Link href={href} className="lrule pl-10 py-2 block group"><div className="flex items-end justify-between max-w-sm"><div className="serif" style={{ color: "var(--blue)", fontSize: "clamp(56px, 5.5vw, 96px)", lineHeight: 1 }}>{n}</div><DetectorGlyph kind={i === 0 ? "network" : i === 1 ? "clock" : "list"} /></div><h3 className="serif text-[34px] mt-10 group-hover:underline" style={{ color: "var(--ink)" }}>{h}</h3><p className="text-[15px] leading-7 mt-4 max-w-sm" style={{ color: "var(--ink-2)" }}>{t}</p></Link></Reveal>)}
       </div>
     </section>
   );
 }
-export function Hierarchy() {
-  const tiers = [["1", "On a public list, and still paid afterwards"], ["2", "More hours than a day holds, across several organizations"], ["3", "Part of a suspicious network that touches a public list"], ["4", "Network structure alone, or hours beyond a day under one organization"], ["5", "Worth knowing, not yet a referral"]];
+export function Hierarchy({ tierCounts }: { tierCounts: number[] }) {
+  const tiers = [["1", "On a public list and still paid afterwards, or adjudicated in a public enforcement record"], ["2", "More hours than a day holds, billed by three or more organizations"], ["3", "Part of a suspicious network that touches a public list, or charged but not yet adjudicated"], ["4", "Network structure alone, or hours beyond a day under one organization"], ["5", "Worth knowing, not yet a referral: supervisory volume and informational lists"]];
   return (
     <section style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24 grid md:grid-cols-[1fr_1.4fr] gap-12`}>
-        <div><h2 className="display serif text-[54px] md:text-[64px]" style={{ color: "var(--blue)" }}>Every Candidate<br />Carries Its Tier</h2><p className="text-[16px] leading-7 mt-8 max-w-md" style={{ color: "var(--ink-2)" }}>The score is a tier base, a bonus for every strong finding that reached the provider independently, and a bounded dollar term. Dollars at risk come from the detector that set the tier, count each provider once, and are never summed. Every row is a candidate for records review, not a finding.</p></div>
-        <div className="lrule pl-10">{tiers.map(([n, h], i) => <Reveal key={n} delay={i * 0.08} className="flex items-center gap-8 py-6 rule first:border-t-0"><span className="serif" style={{ color: "var(--blue)", fontSize: 44, lineHeight: 1, width: 48 }}>{n}</span><span className="serif text-[26px]" style={{ color: "var(--ink)" }}>{h}</span></Reveal>)}</div>
+        <div><h2 className="display serif text-[54px] md:text-[64px]" style={{ color: "var(--blue)" }}>Every Candidate<br />Carries Its Tier</h2><p className="text-[16px] leading-7 mt-8 max-w-md" style={{ color: "var(--ink-2)" }}>The score is a tier base, a bonus for every strong finding that reached the provider independently, and a bounded dollar term. Dollars at risk come from the detector that set the tier, count each provider once, and are never summed. Every row is a candidate for records review, not a finding.</p>{tierCounts.length === 5 && <TierFigure counts={tierCounts} />}</div>
+        <div className="lrule pl-10">{tiers.map(([n, h], i) => <Reveal key={n} delay={i * 0.08} className="flex items-center gap-8 py-6 rule first:border-t-0"><span className="serif" style={{ color: "var(--blue)", fontSize: 44, lineHeight: 1, width: 48 }}>{n}</span><span className="serif text-[24px] leading-tight" style={{ color: "var(--ink)" }}>{h}</span></Reveal>)}</div>
       </div>
     </section>
   );
@@ -91,7 +93,7 @@ export function WhoWeServe() {
   );
 }
 export function HowItWorks() {
-  const steps = [["Gather", "Fourteen public datasets: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardize addresses, and work out which owner records are the same person, with borderline cases adjudicated by a model."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject. The reason given is filed under the kind of evidence that was wrong, and the ranking adjusts."]];
+  const steps = [["Gather", "Fourteen public datasets: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardize addresses, and work out which owner records are the same person with a probabilistic model fitted on the records, its merge rule checked against a sample a model adjudicated."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject each packet. The decisions re-weight the evidence families behind the network score, so the ranking adjusts to what investigators confirm."]];
   return (
     <section id="how" style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24`}>
@@ -102,6 +104,7 @@ export function HowItWorks() {
         <div className="grid md:grid-cols-5 gap-8 mt-20">
           {steps.map(([h, t], i) => <Reveal key={h} delay={i * 0.1} className="lrule pl-8 py-2"><div className="serif" style={{ color: "var(--blue)", fontSize: "clamp(40px, 3.2vw, 56px)", lineHeight: 1 }}>{String(i + 1).padStart(2, "0")}</div><h3 className="serif text-[26px] mt-6" style={{ color: "var(--ink)" }}>{h}</h3><p className="text-[13.5px] leading-6 mt-3" style={{ color: "var(--ink-2)" }}>{t}</p></Reveal>)}
         </div>
+        <PipelineFigure />
       </div>
     </section>
   );

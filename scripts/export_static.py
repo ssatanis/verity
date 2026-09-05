@@ -12,7 +12,7 @@ def write(name, data):
     (OUT / f"{name}.json").write_text(json.dumps(data, default=str)); print(f"{name:16s} {len(data):>7,} rows {os.path.getsize(OUT / f'{name}.json') / 1e6:5.1f} MB")
 def dump(name, sql):
     rows = con.execute(sql).fetchall(); cols = [d[0] for d in con.description]; write(name, [dict(zip(cols, r)) for r in rows])
-dump("provider_risk", "SELECT npi, name, entity_type, city, state, tier, tier_label, detectors, score, dollars_at_risk, reasons, rank FROM provider_risk ORDER BY rank LIMIT 2000")
+dump("provider_risk", "SELECT npi, name, entity_type, city, state, tier, tier_label, detectors, score, dollars_at_risk, reasons, rank, enf_url, enf_title FROM provider_risk ORDER BY rank LIMIT 2000")
 dump("clusters", "SELECT cluster_id AS id, rank, risk_score AS score, state, city, county_fips AS county, n_prov AS n_providers, n_hospice, n_hha, n_snf, dollars_medicaid_2024 AS dollars_at_risk, dollars_medicare_2023 AS dollars_medicare, summary, eligible, chain_or_pe = 1 AS chain_or_pe FROM clusters WHERE eligible ORDER BY rank LIMIT 300")
 dump("hub_addresses", "SELECT * EXCLUDE (npis) FROM d1_hub_addresses ORDER BY n_providers DESC LIMIT 200")
 with psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row) as pg:

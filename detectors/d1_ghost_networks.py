@@ -249,6 +249,22 @@ for npi, in con.execute("""WITH latest AS (SELECT npi, state, status_cd FROM enr
                            SELECT DISTINCT l.npi FROM latest l JOIN bulk b ON b.state = l.state AND b.status_cd = l.status_cd AND b.share <= 0.20
                            WHERE l.status_cd IN ('60','65','66','67','70','72','75','78','81')""").fetchall(): lab_npi[npi].add("MEDICAID_TERM")
 for npi, in con.execute("SELECT npi FROM nppes WHERE deact_date IS NOT NULL AND react_date IS NULL").fetchall(): lab_npi[npi].add("NPI_DEACTIVATED")
+# enforcement releases (DOJ, HHS-OIG, state attorneys general): NPIs resolved by name at high confidence become member labels; individuals named
+# as owners or operators are indexed by name and state so a conviction propagates to every enrollment that person owns, months before LEIE carries it
+enf_md = {}
+if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'enforcement_npi_matches'").fetchone()[0]:
+    con.execute("ALTER TABLE enforcement_npi_matches ADD COLUMN IF NOT EXISTS is_subject BOOLEAN")
+    for npi, tier in con.execute("SELECT DISTINCT npi, tier FROM enforcement_npi_matches WHERE same_entity AND confidence = 'high' AND COALESCE(is_subject, TRUE) AND tier IN ('adjudicated','alleged')").fetchall():
+        lab_npi[npi].add("ENF_ADJUDICATED" if tier == "adjudicated" else "ENF_ALLEGED")
+    for nm, st, tier, d in con.execute("""SELECT p.name, COALESCE(p.state, a.state), a.tier, COALESCE(a.action_date, a.published)
+                                          FROM enforcement_parties p JOIN enforcement_actions a USING (source_id)
+                                          WHERE a.relevant AND p.kind = 'individual' AND a.tier IN ('adjudicated','alleged')
+                                            AND NOT regexp_matches(lower(COALESCE(p.role, '')), '\\b(employer|relator|whistleblower|insurer|victim|payer|payor|witness|patient|informant)\\b')""").fetchall():
+        parts = str(nm or "").split()
+        if len(parts) >= 2 and st:
+            pp_ = person_parts(parts[0], parts[-1], None)
+            if pp_: enf_md.setdefault(f"{pp_[0]}|{pp_[1]}|{st}", ("ENF_ADJUDICATED" if tier == "adjudicated" else "ENF_ALLEGED", d))
+    log(f"enforcement labels: {sum(1 for v in lab_npi.values() if v & {'ENF_ADJUDICATED','ENF_ALLEGED'}):,} NPIs, {len(enf_md):,} named individuals indexed")
 rev_dates = dict(con.execute("SELECT npi, MIN(revoked_dt) FROM revoked WHERE npi IS NOT NULL GROUP BY 1").fetchall())
 leie_dates = dict(con.execute("SELECT npi, MIN(excl_dt) FROM leie WHERE npi IS NOT NULL GROUP BY 1").fetchall())
 # excluded persons and businesses without NPI: keyed by name and location (tiers: zip5 = high, state = medium)
@@ -281,6 +297,7 @@ def person_labels(g):
         elif r.p_first and len(r.p_first) >= 3 and k_md in leie_md and ("OIG_LEIE", "medium") not in seen: out.append(("OIG_LEIE", "medium", leie_md[k_md])); seen.add(("OIG_LEIE", "medium"))
         if r.zip5 and k_hi in sam_hi and ("SAM", "high") not in seen: out.append(("SAM", "high", sam_hi[k_hi])); seen.add(("SAM", "high"))
         if r.p_first and len(r.p_first) >= 3 and k_md in rev_md and ("MEDICARE_REVOKED", "medium") not in seen: out.append(("MEDICARE_REVOKED", "medium", rev_md[k_md])); seen.add(("MEDICARE_REVOKED", "medium"))
+        if r.p_first and len(r.p_first) >= 3 and k_md in enf_md and (enf_md[k_md][0], "medium") not in seen: out.append((enf_md[k_md][0], "medium", enf_md[k_md])); seen.add((enf_md[k_md][0], "medium"))
     return out
 prov_state_by_enr = dict(zip(prov.enrollment_id, prov.state))
 per["prov_state"] = per.enrollment_id.map(prov_state_by_enr)
@@ -488,6 +505,9 @@ for ci, c in enumerate(comps):
     state_excl = sum(len(v) for k, v in prov_labels.items() if k.startswith("STATE_EXCL"))
     revoked_nbr = len(prov_labels.get("MEDICARE_REVOKED", [])) + sum(0.5 for h in owner_hits if h[1] == "MEDICARE_REVOKED")
     medicaid_term_nbr = len(prov_labels.get("MEDICAID_TERM", [])); deact_nbr = len(prov_labels.get("NPI_DEACTIVATED", []))
+    # enforcement releases: an adjudicated member or owner counts 1.0 (a name match, so below an NPI-exact LEIE row); a charged one 0.5
+    enf_adj = float(len(prov_labels.get("ENF_ADJUDICATED", [])) + sum(1.0 for h in owner_hits if h[1] == "ENF_ADJUDICATED"))
+    enf_alg = float(len(prov_labels.get("ENF_ALLEGED", [])) + sum(0.5 for h in owner_hits if h[1] == "ENF_ALLEGED"))
     # market context (dominant type, dominant county)
     dom_type = max(types, key=types.get); svc = SVC[dom_type]
     sat_v, mor = sat_lookup.get((svc, county), (None, None)) if county else (None, None)
@@ -503,7 +523,7 @@ for ci, c in enumerate(comps):
                           ao_share=ao_share, mail_share=mail_share, ein_share=ein_share, n_persons=n_persons, n_orgs=n_orgs, owner_multi=owner_multi, max_owner_degree=max_owner_degree,
                           governance_multi=governance_multi, n_distinct_orgs=n_distinct_orgs, for_profit_ratio=for_profit_ratio, excl_addr_hits=[[a, b[0], b[1], b[2], how] for a, b, how, w in excl_addr_hits],
                           owners_per_provider=(len(owners) / n_prov), excluded_link=excluded_link, state_excl=state_excl, revoked_nbr=revoked_nbr, medicaid_term_nbr=medicaid_term_nbr,
-                          deact_nbr=deact_nbr, sat_per_10k=sat_v, sat_z=sat_z, moratorium=moratorium, dollars_medicaid_2024=dollars_medicaid_2024, dollars_medicaid_all=dollars_medicaid_all,
+                          deact_nbr=deact_nbr, enf_adj=enf_adj, enf_alg=enf_alg, sat_per_10k=sat_v, sat_z=sat_z, moratorium=moratorium, dollars_medicaid_2024=dollars_medicaid_2024, dollars_medicaid_all=dollars_medicaid_all,
                           dollars_medicare_2023=dollars_medicare_2023, chain_or_pe=int(bool(chain_or_pe)), chain_members=chain_members, chain_share=chain_share, owner_hits=owner_hits, prov_labels={k: v for k, v in prov_labels.items()}))
     for n in P:
         d = G.nodes[n]
@@ -543,10 +563,11 @@ F["sat_z"] = pd.to_numeric(F.sat_z, errors="coerce"); F["sat_per_10k"] = pd.to_n
 F["z_sat"] = F.sat_z.fillna(0).clip(-5, 5); F["z_size"] = rz(np.log1p(F.n_prov))
 F["structure_score"] = 1.5 * F.z_burst + 1.5 * F.z_addr + 1.0 * F.z_owner + 1.5 * F.z_new + 0.5 * F.z_phone + 0.5 * F.z_size   # for-profit share is recorded but not scored: nearly every hospice and HHA in the markets that matter is for-profit
 F["context_score"] = 0.8 * F.z_sat + 0.5 * F.moratorium
-F["label_score"] = 2.0 * F.excluded_link.clip(upper=3) + 1.0 * F.z_term + 1.0 * F.revoked_nbr.clip(upper=3) + 0.5 * F.state_excl.clip(upper=3) + 0.3 * F.deact_nbr.clip(upper=3)
+F["label_score"] = 2.0 * F.excluded_link.clip(upper=3) + 1.0 * F.z_term + 1.0 * F.revoked_nbr.clip(upper=3) + 0.5 * F.state_excl.clip(upper=3) + 0.3 * F.deact_nbr.clip(upper=3) \
+                 + 1.5 * F.enf_adj.clip(upper=3) + 0.5 * F.enf_alg.clip(upper=3)   # enforcement releases: between an LEIE row (2.0, NPI-exact) and a state list (0.5)
 F["risk_score"] = F.structure_score + F.context_score + F.label_score
 F["structure_family"] = ((F.burst_90 >= 3) | (F[["addr_share", "unit_share"]].max(axis=1) >= 3) | (F.owner_multi >= 1) | (F.phone_share >= 3) | (F.new_ratio >= 0.5)).astype(int)
-F["label_family"] = ((F.excluded_link > 0) | (F.revoked_nbr >= 1) | (F.medicaid_term_nbr >= 1) | (F.state_excl >= 1)).astype(int)
+F["label_family"] = ((F.excluded_link > 0) | (F.revoked_nbr >= 1) | (F.medicaid_term_nbr >= 1) | (F.state_excl >= 1) | (F.enf_adj >= 1) | (F.enf_alg >= 1)).astype(int)
 F["context_family"] = ((F.sat_z.fillna(0) >= 2) | (F.moratorium == 1)).astype(int)
 F["families"] = F.structure_family + F.label_family + F.context_family
 F["eligible"] = (F.chain_or_pe == 0) & (F.n_distinct_orgs >= 3) & (F.families >= 2) & (F.n_new >= 1)
@@ -647,7 +668,7 @@ body = f"""
 
 **Features per community.** n_prov by type and distinct organizations; incorporation bursts over distinct organizations formed 2019 or later (most organizations incorporated inside any 90, 180 or 365 day window; NPPES enumeration date when the incorporation date is missing); for-profit share; share of members formed since 2021; largest number of members at one building and at one suite; phone, fax, authorised-official, mailing-address and EIN sharing; owners tied to three or more members; label links (member NPIs on LEIE, SAM, Medicare revocations, state exclusion lists, Medicaid for-cause terminations, NPI deactivations; owner-name links to LEIE and SAM at high (name + ZIP5) or medium (name + state) confidence); CMS Market Saturation providers per 10k FFS beneficiaries for the dominant county and service, as a robust z on the log scale across all counties; county moratorium flag; Medicaid 2024 and all-years dollars (billing NPI) and Medicare 2023 hospice/HHA payments (PAC PUF).
 
-**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organizations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3). Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner ({n_chain:,} communities are scored but held out: consolidation is not a ghost network), at least three distinct organizations, at least one organization formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. {n_elig:,} communities are eligible.
+**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organizations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3) + 1.5 enforcement adjudications (a member NPI, or an owner named as sentenced, convicted or pleaded guilty in a Department of Justice, HHS-OIG or state attorney general release, resolved by name at high confidence; cap 3) + 0.5 enforcement charges (indicted, charged or arrested, not yet adjudicated; cap 3). Enforcement releases reach the graph months before the exclusion list that will later cite them, and they reach every enrollment the named person owns. Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner ({n_chain:,} communities are scored but held out: consolidation is not a ghost network), at least three distinct organizations, at least one organization formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. {n_elig:,} communities are eligible.
 
 **Evaluation.** The CMS enrollment files only contain providers that are still enrolled, so Medicare revocations cannot be held out as labels (only {base_holdout:.4f} of communities contain a member revoked or excluded in 2023 or 2024: the revoked ones have already left the file). The structure-only score, which uses no label information, is instead evaluated against any label link (member NPI on LEIE, SAM, the revoked list, a state exclusion list or a for-cause Medicaid termination; owner name on LEIE or SAM; address shared with an excluded or revoked entity). Base rate {base:.3f}; precision at K of the structure-only score among communities of three or more distinct organizations, chains excluded: {', '.join(f'P@{k} = {v:.2f} (one-sided binomial p = {pvals[k]:.3f})' for k, v in prec.items())}. Read this honestly: the top-10 figure is ten items and is not statistically meaningful on its own; the label set is incomplete (it cannot contain providers that have already left the enrollment file) and it overlaps the inputs of the full risk score, so only the structure-only score is evaluated against it. {len(excl_addr):,} addresses of LEIE-excluded entities and revoked organizations were indexed for the address test.
 

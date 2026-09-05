@@ -7,12 +7,12 @@ export const revalidate = 120;
 export default async function Candidates({ searchParams }: { searchParams: Promise<{ state?: string; tier?: string; detector?: string; page?: string }> }) {
   const { state, tier, detector, page = "1" } = await searchParams; const sb = publicClient(); const p = Math.max(1, Number(page)); const per = 100;
   let q = sb.from("provider_risk").select("*").order("rank").range((p - 1) * per, p * per - 1);
-  if (state) q = q.eq("state", state); if (tier) q = q.eq("tier", Number(tier)); if (detector) q = q.contains("detectors", [detector]);
+  if (state) q = q.eq("state", state); if (tier) q = q.eq("tier", Number(tier)); if (detector) q = q.contains("detectors", JSON.stringify([detector]));
   const data = await withFallback<any[]>("provider_risk", () => q, rows => rows.filter(r => (!state || r.state === state) && (!tier || String(r.tier) === tier) && (!detector || (r.detectors ?? []).includes(detector))).slice((p - 1) * per, p * per));
   const tc: Record<number, number> = {};
-  try { const cs = await Promise.all([1, 2, 3, 4, 5].map(t => { let c = sb.from("provider_risk").select("npi", { count: "exact", head: true }).eq("tier", t); if (state) c = c.eq("state", state); if (detector) c = c.contains("detectors", [detector]); return c; })); cs.forEach((r, i) => { tc[i + 1] = r.count ?? 0; }); } catch {}
+  try { const cs = await Promise.all([1, 2, 3, 4, 5].map(t => { let c = sb.from("provider_risk").select("npi", { count: "exact", head: true }).eq("tier", t); if (state) c = c.eq("state", state); if (detector) c = c.contains("detectors", JSON.stringify([detector])); return c; })); cs.forEach((r, i) => { tc[i + 1] = r.count ?? 0; }); } catch {}
   const qs = (o: Record<string, string | undefined>) => "?" + Object.entries({ state, tier, detector, ...o }).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("&");
-  const det: Record<string, string> = { D3: "Paid after a list action", D2: "Impossible hours", D1: "Provider networks" };
+  const det: Record<string, string> = { D3: "Paid after a list action", D2: "Impossible hours", D1: "Provider networks", ENF: "Enforcement records" };
   return (
     <div>
       <div className="eyebrow">Providers</div>
@@ -22,7 +22,7 @@ export default async function Candidates({ searchParams }: { searchParams: Promi
         <Link href="/app/candidates" className={`tag ${!tier ? "tag-ink" : ""}`}>All tiers</Link>
         {[1, 2, 3, 4, 5].map(t => <Link key={t} href={qs({ tier: String(t), page: undefined })} className={`tag ${tier === String(t) ? "tag-ink" : ""}`} title={TIER_LABEL[t]}>Tier {t} <span className="opacity-60">{(tc[t] ?? 0).toLocaleString()}</span></Link>)}
         <span className="mx-1 text-[var(--ink-3)]">,</span>
-        {["D3", "D2", "D1"].map(d => <Link key={d} href={qs({ detector: d, page: undefined })} className={`tag ${detector === d ? "tag-accent" : ""}`}>{det[d]}</Link>)}
+        {["D3", "D2", "D1", "ENF"].map(d => <Link key={d} href={qs({ detector: d, page: undefined })} className={`tag ${detector === d ? "tag-accent" : ""}`}>{det[d]}</Link>)}
         {state && <Link href={qs({ state: undefined, page: undefined })} className="tag tag-accent">{state}, clear</Link>}
         <span className="mx-1 text-[var(--ink-3)]">,</span>
         <Link href="/app/flags?detector=D3" className="tag">Detail: paid after a list action</Link><Link href="/app/flags?detector=D2" className="tag">Detail: hours per day</Link>

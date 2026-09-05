@@ -177,6 +177,10 @@ create table if not exists public.provider_risk (
   d2_tier text, months_impossible int, months_over_mn_cap int, months_umbrella int, peak_hours_per_day numeric, max_billing_orgs int, paid_flagged_months numeric, growth_paid_24_22 numeric,
   d1_cluster_id text, d1_rank int, d1_eligible boolean, d1_label_family int, d1_score numeric, d1_medicaid_2024 numeric, d1_medicare_2023 numeric
 );
+-- enforcement feed (DOJ, HHS-OIG, state attorneys general) and forward exposure, added 2026-09-05; idempotent for existing projects
+alter table public.provider_risk add column if not exists enf_adjudicated int, add column if not exists enf_alleged int, add column if not exists enf_first_event date,
+  add column if not exists enf_actions text, add column if not exists enf_sources text, add column if not exists enf_url text, add column if not exists enf_title text,
+  add column if not exists exposure_12m numeric;
 create index if not exists provider_risk_rank_idx on public.provider_risk (rank);
 create index if not exists provider_risk_state_idx on public.provider_risk (state, tier);
 create index if not exists provider_risk_name_idx on public.provider_risk (lower(name) text_pattern_ops);

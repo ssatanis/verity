@@ -147,7 +147,28 @@ cd web && npm install && npm run dev        # http://localhost:3000, console at 
 .venv/bin/uvicorn api.main:app --port 8000  # evidence, packets, /verify, Blue Button
 ```
 
-Deploy `web/` to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) and, optionally, `ANTHROPIC_API_KEY` for Claude-drafted packets; without a key the packet builder is deterministic and still cites every row. [`scripts/export_static.py`](scripts/export_static.py) writes `web/public/fallback/*.json` so the console renders with no database at all.
+Deploy to Vercel from the repo root (the root `vercel.json` builds only `web/`, and `.vercelignore` keeps the pipeline and data off the upload) with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (server only) and, optionally, `ANTHROPIC_API_KEY` for Claude-drafted packets; without a key the packet builder is deterministic and still cites every row. [`scripts/export_static.py`](scripts/export_static.py) writes `web/public/fallback/*.json` so the console renders with no database at all.
+
+## Enforcement feed (DOJ, HHS-OIG, state attorneys general)
+
+The spending file ends in December 2024. Enforcement records fill the gap forward and refresh daily, from primary sources only (never
+news): Department of Justice press releases through the official JSON API, and the HHS-OIG enforcement actions listing, which also
+carries state attorney general and Medicaid fraud control unit actions and links out to the originating release for the full text.
+
+```
+.venv/bin/python ingest/10_enforcement_feed.py                 # backfill from 2024-01-01 (resumable: appends per page, resumes from the newest stored record)
+.venv/bin/python scripts/enforcement_extract_claude.py         # model reads each release into a schema; tier is a fixed mapping from action type, never the model's call
+.venv/bin/python scripts/enforcement_match_claude.py           # parties to NPIs: deterministic blocking, at most five candidates, Claude judges, high confidence only
+sh scripts/enforcement_daily.sh                                # the whole chain: feed (last 7 days), extract, match, D3, D1, risk score, publish
+```
+
+Adjudicated outcomes (sentenced, convicted, pleaded guilty, civil judgment) are tier A in Detector 3 and tier 1 in the risk score, because a
+conviction is the record an OIG exclusion later cites. Charges (indicted, charged, arrested, complaint) are tier B and risk tier 3: documented,
+not adjudicated. Individuals named as owners or operators are indexed by name and state so a conviction propagates through Detector 1 to every
+enrollment that person owns, months before LEIE carries it. An action too recent to have Medicaid months after it uses forward exposure
+(Medicaid paid in the last 12 observed months) as its dollars figure. An enforcement record adds to corroboration only when no list action already
+documents the provider, since an exclusion follows the conviction it cites. Schedule with `ops/launchd/org.verity.enforcement-daily.plist`
+(instructions inside) or any cron; the chain is `set -e`, so a broken feed leaves every score unchanged.
 
 ## Beneficiary-side tripwire (Blue Button 2.0)
 

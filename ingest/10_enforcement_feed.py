@@ -33,13 +33,22 @@ HEALTH_TOPICS = {"healthcare fraud", "health care fraud"}
 
 def log(*a): print(time.strftime("%H:%M:%S"), *a, flush=True)
 
-def get(url, retries=5, timeout=40):
-    """GET with retries and backoff. Returns text or raises after the last attempt."""
+def get(url, retries=7, timeout=40, wait_on_limit=True):
+    """GET with retries and backoff. A 403 or 429 is a rate limiter, not a missing page: wait 90 seconds and try again, unless the
+    caller can live without the page (wait_on_limit=False: an outbound detail fetch), in which case give up at once.
+    Returns text or raises after the last attempt."""
     last = None
     for i in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json,text/html;q=0.9,*/*;q=0.8"})
             with urllib.request.urlopen(req, timeout=timeout, context=SSL_CTX) as r: return r.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code in (403, 429):
+                if not wait_on_limit: raise
+                log(f"rate limited ({e.code}) on {url[:80]}; waiting 90s"); time.sleep(90)
+            elif e.code == 404: raise
+            else: time.sleep(min(30, 1.5 * (2 ** i)))
         except Exception as e:
             last = e; time.sleep(min(30, 1.5 * (2 ** i)))
     raise RuntimeError(f"GET failed after {retries} attempts: {url}: {last}")
@@ -88,30 +97,40 @@ def doj_is_health(rec):
     if topics & HEALTH_TOPICS: return True
     return bool(HEALTH_TITLE.search(rec.get("title") or ""))
 
-def fetch_doj(since, existing):
-    """Page the DOJ API newest-first until the page's oldest release is before `since`. Returns new health records."""
-    out, page, seen_pages = [], 0, 0
-    while True:
-        url = f"{DOJ_API}?pagesize=50&page={page}&sort=date&direction=DESC"
-        data = json.loads(get(url)); rows = data.get("results") or []
-        if not rows: break
-        oldest = None
-        for r in rows:
-            d = dt.datetime.fromtimestamp(int(r["date"]), dt.UTC).date()
-            oldest = d if oldest is None or d < oldest else oldest
-            if d < since: continue
-            sid = f"doj:{r['uuid']}"
-            if sid in existing or not doj_is_health(r): continue
-            comps = [c.get("name", "") for c in (r.get("component") or []) if isinstance(c, dict)]
-            out.append(dict(source="DOJ", source_id=sid, url=r.get("url"), source_url=r.get("url"), title=strip_html(r.get("title")), published=d.isoformat(),
-                            category=", ".join(t.get("name", "") for t in (r.get("topic") or []) if isinstance(t, dict)) or None,
-                            district=", ".join(comps) or None, state=district_state(comps), body=strip_html(r.get("body"))[:14000],
-                            fetched_at=dt.datetime.now(dt.UTC).isoformat(timespec="seconds")))
-            existing.add(sid)
-        seen_pages += 1
-        if seen_pages % 20 == 0: log(f"DOJ page {page}: oldest {oldest}, kept {len(out):,} so far")
-        if oldest is not None and oldest < since: break
-        page += 1
+def _doj_page(page):
+    data = json.loads(get(f"{DOJ_API}?pagesize=50&page={page}&sort=date&direction=DESC")); return page, (data.get("results") or [])
+
+def fetch_doj(since, existing, block=3, start_page=0, pause=1.5):
+    """Page the DOJ API newest-first until a page's oldest release is before `since`. Pages are fetched `block` at a time with a pause
+    between blocks (six in parallel drew a 403 from the API's rate limiter; three with a pause has not) and processed in order; every
+    processed block is appended to raw.jsonl at once, so a long backfill that dies keeps what it fetched. `start_page` resumes a backfill
+    that stopped part way (the stored ids make re-fetched pages a no-op, but skipping them saves the requests). Returns the new records."""
+    out, page = [], start_page
+    with cf.ThreadPoolExecutor(max_workers=block) as ex:
+        while True:
+            if page > start_page: time.sleep(pause)
+            pages = sorted(ex.map(_doj_page, range(page, page + block)), key=lambda x: x[0])
+            pending, stop, oldest = [], False, None
+            for pg, rows in pages:
+                if not rows: stop = True; break
+                for r in rows:
+                    if not str(r.get("date") or "").strip().isdigit(): continue   # a handful of releases carry no date; they cannot be placed in the window
+                    d = dt.datetime.fromtimestamp(int(r["date"]), dt.UTC).date()
+                    oldest = d if oldest is None or d < oldest else oldest
+                    if d < since: continue
+                    sid = f"doj:{r['uuid']}"
+                    if sid in existing or not doj_is_health(r): continue
+                    comps = [c.get("name", "") for c in (r.get("component") or []) if isinstance(c, dict)]
+                    pending.append(dict(source="DOJ", source_id=sid, url=r.get("url"), source_url=r.get("url"), title=strip_html(r.get("title")), published=d.isoformat(),
+                                        category=", ".join(t.get("name", "") for t in (r.get("topic") or []) if isinstance(t, dict)) or None,
+                                        district=", ".join(comps) or None, state=district_state(comps), body=strip_html(r.get("body"))[:14000],
+                                        fetched_at=dt.datetime.now(dt.UTC).isoformat(timespec="seconds")))
+                    existing.add(sid)
+                if oldest is not None and oldest < since: stop = True; break
+            if pending: append(pending); out.extend(pending)
+            page += block
+            if (page - start_page) % (block * 10) == 0 or stop: log(f"DOJ through page {page - 1}: oldest {oldest}, kept {len(out):,} so far")
+            if stop: break
     return out
 
 # ------------------------------------------------------------------ OIG
@@ -143,7 +162,7 @@ def fetch_oig_detail(rec):
         if rm:
             src = html.unescape(rm.group(1)); rec["source_url"] = src
             try:
-                h2 = get(src, retries=2, timeout=30)
+                h2 = get(src, retries=2, timeout=30, wait_on_limit=False)
                 m2 = ARTICLE.search(h2) or MAIN.search(h2)
                 full = strip_html(m2.group(1) if m2 else h2)
                 if len(full) > len(stub): rec["body"] = (stub + "\n\n" + full)[:14000]
@@ -205,6 +224,7 @@ if __name__ == "__main__":
     ap.add_argument("--since", default=None, help="YYYY-MM-DD; default = newest stored record minus 3 days, or 2024-01-01")
     ap.add_argument("--daily", action="store_true", help="fetch only the last 7 days")
     ap.add_argument("--load-only", action="store_true"); ap.add_argument("--skip-doj", action="store_true"); ap.add_argument("--skip-oig", action="store_true")
+    ap.add_argument("--start-page", type=int, default=0, help="resume the DOJ walk from this page (a backfill that stopped part way)")
     a = ap.parse_args()
     if not a.load_only:
         existing, newest = load_existing()
@@ -214,7 +234,7 @@ if __name__ == "__main__":
         else: since = dt.date(2024, 1, 1)
         log(f"since {since}; {len(existing):,} records already stored")
         if not a.skip_doj:
-            t = time.time(); rows = fetch_doj(since, existing); append(rows); log(f"DOJ: {len(rows):,} new health-related releases in {time.time()-t:.0f}s")
+            t = time.time(); rows = fetch_doj(since, existing, start_page=a.start_page); log(f"DOJ: {len(rows):,} new health-related releases in {time.time()-t:.0f}s")   # fetch_doj appends as it goes
         if not a.skip_oig:
             t = time.time(); rows = fetch_oig(since, existing); append(rows); log(f"OIG: {len(rows):,} new enforcement actions in {time.time()-t:.0f}s")
     load_duckdb()

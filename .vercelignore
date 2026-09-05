@@ -1,0 +1,8 @@
+# Only the Next.js app in web/ deploys to Vercel. The Python pipeline, warehouse, docs and data never upload.
+*
+!web
+!web/**
+!vercel.json
+web/node_modules
+web/.next
+web/.env*

@@ -9,6 +9,9 @@ Sources of "should not be paid" events, each with an event date and (where the s
   NPPES_DEACTIVATED  NPI deactivated in NPPES and not reactivated (tier B)
   TMSIS_DECEASED     Medicaid enrollment terminated with status 80 "provider deceased" (tier A)
   TMSIS_TERM_xx      Medicaid termination for cause in one state (used only for the cross-state test)
+  DOJ_ / OIG_ / STATE_AG_ADJUDICATED   party named in a public enforcement release (DOJ press release, HHS-OIG enforcement record, state
+                     attorney general) and resolved to an NPI by name at high confidence: sentenced, convicted, pleaded guilty or civil
+                     judgment (tier A); _CHARGED = indicted, charged, arrested or complaint (tier B); _ADMIN = settlement, suspension (tier B)
 "Paid after" = T-MSIS Medicaid provider spending in service months strictly after the event month and before the window end,
 counted once per NPI-month whether the NPI was the billing or the servicing provider.
 """
@@ -68,6 +71,19 @@ if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name 
   SELECT CAST(m.npi AS VARCHAR), CAST(m.source AS VARCHAR) || '_NAME', CAST(m.event_dt AS DATE), NULL::DATE, 'name-matched by model at high confidence: ' || COALESCE(CAST(m.exclusion_type AS VARCHAR), ''), CAST(m.state AS VARCHAR), 'B',
          COALESCE(NULLIF(CAST(m.busname AS VARCHAR), ''), trim(COALESCE(CAST(m.firstname AS VARCHAR), '') || ' ' || COALESCE(CAST(m.lastname AS VARCHAR), ''))), 'name_match'
   FROM sam_npi_matches m WHERE m.same_entity AND m.confidence = 'high' AND m.event_dt IS NOT NULL AND npi_luhn_ok(m.npi)"""
+# parties named in DOJ, HHS-OIG and state attorney general enforcement releases, resolved to NPIs by scripts/enforcement_match_claude.py (name match, high confidence only).
+# Adjudicated outcomes are tier A: a conviction or guilty plea is the record an OIG exclusion later cites. Charges and settlements are tier B: documented, not adjudicated.
+ENF_UNION = ""
+if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'enforcement_npi_matches'").fetchone()[0]:
+    ENF_UNION = """UNION ALL
+  SELECT CAST(m.npi AS VARCHAR),
+         CASE WHEN COALESCE(a.category, '') ILIKE '%State Enforcement%' THEN 'STATE_AG' WHEN m.source = 'DOJ' THEN 'DOJ' ELSE 'OIG' END
+           || CASE m.tier WHEN 'adjudicated' THEN '_ADJUDICATED' WHEN 'alleged' THEN '_CHARGED' ELSE '_ADMIN' END,
+         CAST(m.event_dt AS DATE), NULL::DATE, 'enforcement record (' || replace(m.action_type, '_', ' ') || '): ' || COALESCE(m.title, ''), CAST(m.state AS VARCHAR),
+         CASE m.tier WHEN 'adjudicated' THEN 'A' ELSE 'B' END, CAST(m.name AS VARCHAR), 'name_match'
+  FROM enforcement_npi_matches m JOIN enforcement_actions a ON a.source_id = m.source_id
+  WHERE m.same_entity AND m.confidence = 'high' AND COALESCE(m.is_subject, TRUE) AND m.event_dt IS NOT NULL AND npi_luhn_ok(m.npi)
+  QUALIFY row_number() OVER (PARTITION BY m.npi, m.tier, CAST(m.event_dt AS DATE) ORDER BY CASE m.source WHEN 'DOJ' THEN 0 ELSE 1 END) = 1"""
 run("d3_events", f"""
 CREATE OR REPLACE TABLE d3_events AS
 WITH latest AS (   -- latest enrollment status per NPI and state (a later active segment means the termination was resolved)
@@ -106,6 +122,7 @@ ev AS (
   FROM enroll e JOIN latest l ON l.npi = e.npi AND l.state = e.state AND l.status_cd = e.status_cd
   WHERE e.status_cd IN {TIER_A_TMSIS} GROUP BY e.npi, e.state, e.status_cd, e.status_desc, e.prvdr_type_desc
   {NAME_MATCH_UNION}
+  {ENF_UNION}
 )
 SELECT DISTINCT ev.npi, ev.source, ev.event_dt, ev.window_end, ev.reason, ev.source_state,
        -- a state-list NPI whose NPPES name shares no token with the list entry is downgraded: the NPI field on those lists can carry an employer's NPI
