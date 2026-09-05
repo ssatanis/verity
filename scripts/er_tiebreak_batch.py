@@ -41,7 +41,7 @@ body = f"""
 
 Agreement with the applied merge decision: {agree:.1%} over all adjudicated pairs, {agree_hi:.1%} over the {len(hi):,} pairs the model rated high confidence.
 
-{md_table([(str(r['posterior']), int(r['n']), f"{r['model_same_rate']:.2f}", f"{r['em_same_rate']:.2f}") for r in band.to_dict('records')], ["posterior band","pairs","model says same","EM says same"])}
+{md_table([("merged by the rule" if r['rule merged'] else "rejected by the rule", int(r['n']), f"{r['model_same_rate']:.2f}", f"{r['em_same_rate']:.2f}") for r in band.to_dict('records')], ["pairs","pairs","model says same","EM says same"])}
 
 Adjudications are stored in `d1_er_adjudications` for human review and do not change the graph automatically; pairs where the model says same with high confidence and the EM said different are the review queue for the next matcher iteration.
 """
