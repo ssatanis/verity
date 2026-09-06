@@ -122,7 +122,7 @@ $$\text{hours}(p,d)=\frac{1}{60}\sum_{c}u_{p,d,c}\cdot m_c$$
 
 where $u_{p,d,c}$ is units billed and $m_c$ the minutes one unit of code $c$ implies (318 codes hand-mapped in [`ingest/02_timecodes.csv`](ingest/02_timecodes.csv); untimed codes get deliberately low durations so the detector under-counts). Outliers are flagged with a robust z-score within state and taxonomy:
 
-$$z=\frac{x-\operatorname{median}(x)}{1.4826\cdot\operatorname{MAD}(x)}$$
+$$z=\frac{x-\mathrm{median}(x)}{1.4826\cdot\mathrm{MAD}(x)}$$
 
 **Detector 3, paid after a screening trigger.** Rule-based, not statistical: an NPI appears on a federal or state "must not be paid" list with an effective date, and Medicaid shows paid claims in service months strictly after that month and before any reinstatement. Every NPI passes the check-digit test; names must agree with the national registry; weaker administrative grounds are tiered down and excluded from headlines.
 
