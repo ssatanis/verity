@@ -21,7 +21,7 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
     sb.from("flags").select("*").eq("npi", npi).order("month"),
     sb.from("revoked").select("*").eq("npi", npi), sb.from("leie").select("*").eq("npi", npi),
     sb.from("cluster_members").select("cluster_id, clusters(id,rank,score,summary)").eq("npi", npi),
-    sb.from("packets").select("id,status,packet,created_at,model").eq("subject_id", npi).order("created_at", { ascending: false }).limit(1),
+    sb.from("packets").select("id,status,packet,created_at").eq("subject_id", npi).order("created_at", { ascending: false }).limit(1),
   ]);
   const [{ data: codes }, { data: mcodes }] = await Promise.all([sb.from("provider_codes").select("*").eq("npi", npi).order("rk"), sb.from("provider_codes_medicare").select("*").eq("npi", npi).order("rk")]);
   // any NPI in the country: the CMS NPPES Registry API gives the registry record; the local warehouse adds Medicaid figures when it is reachable

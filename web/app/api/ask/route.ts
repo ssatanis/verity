@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const body = await readJson(req); if (!body) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const { subject_type, subject_id } = body; const question = str(body.question, 2000).trim(); const history = chatHistory(body.history);
   if (!subjectOk(subject_type, subject_id) || !question) return NextResponse.json({ error: "bad request" }, { status: 400 });
-  if (!claudeReady()) return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured on the server" }, { status: 503 });
+  if (!claudeReady()) return NextResponse.json({ error: "The case assistant is not configured on this server." }, { status: 503 });
   const sb = serviceClient(); const J = (x: any) => (typeof x === "string" ? JSON.parse(x) : x) ?? {};
   const used: string[] = []; const LIMIT = 14000;
   const safe = async (name: string, fn: () => Promise<string>): Promise<string> => { used.push(name); try { const out = await fn(); return out.length > LIMIT ? out.slice(0, LIMIT) + `\n[truncated: ${out.length - LIMIT} more characters; ask a narrower question for the rest]` : out; } catch (e: any) { return JSON.stringify({ error: `tool ${name} failed: ${String(e?.message ?? e).slice(0, 120)}` }); } };
@@ -54,7 +54,7 @@ Keep paragraphs to three or four sentences. The bracketed citation goes at the e
     const auth = /401|authentication|invalid x-api-key|api key/i.test(raw);
     const rate = /429|rate.?limit|overloaded|529/i.test(raw);
     const error = timeout ? "The assistant took too long. Ask a narrower question, about one provider or one date."
-      : auth ? "The investigator agent is not configured on this server. The Anthropic API key is missing or was rejected."
+      : auth ? "The case assistant is not configured on this server."
       : rate ? "The assistant is busy right now. Try again in a moment."
       : "The assistant could not answer. The evidence tables on this page are unaffected.";
     if (!auth && !timeout && !rate) console.error("ask failed:", raw);

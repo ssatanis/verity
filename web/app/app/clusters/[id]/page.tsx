@@ -10,7 +10,7 @@ export default async function Cluster({ params }: { params: Promise<{ id: string
   const [{ data: c }, { data: members }, { data: packets }] = await Promise.all([
     sb.from("clusters").select("*").eq("id", id).maybeSingle(),
     sb.from("cluster_members").select("*").eq("cluster_id", id).order("medicaid_2024", { ascending: false }),
-    sb.from("packets").select("id,status,packet,created_at,model").eq("subject_id", id).order("created_at", { ascending: false }).limit(1),
+    sb.from("packets").select("id,status,packet,created_at").eq("subject_id", id).order("created_at", { ascending: false }).limit(1),
   ]);
   if (!c) return <div className="card-2 p-6">Network not found.</div>;
   const f = (typeof c.features === "string" ? JSON.parse(c.features) : c.features) ?? {};

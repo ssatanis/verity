@@ -51,11 +51,12 @@ export async function POST(req: Request) {
       // The deterministic packet still stands on its own, so a model outage degrades the draft rather than failing it.
       const raw = String(e?.message ?? e);
       console.error("packet draft fell back to the deterministic builder:", raw.slice(0, 200));
-      packet = { ...packet, model: `deterministic (${/401|authentication|api key/i.test(raw) ? "no valid Anthropic API key" : "the model was unavailable"})` };
+      packet = { ...packet, model: `deterministic (${/401|authentication|api key/i.test(raw) ? "drafting service not configured" : "drafting service unavailable"})` };
     }
   }
   const { data, error } = await sb.from("packets").insert({ subject_type, subject_id, status: "draft", packet, created_by, title: packet.title, cluster_id: subject_type === "cluster" ? subject_id : null, npi: subject_type === "provider" ? subject_id : null, model: packet.model }).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   try { await sb.storage.from("verity-packets").upload(`${subject_type}/${subject_id}/${data.id}.json`, JSON.stringify(packet), { contentType: "application/json", upsert: true }); } catch {}
-  return NextResponse.json({ id: data.id, status: "draft", packet });
+  const { model: _provenance, ...shown } = packet as any;
+  return NextResponse.json({ id: data.id, status: "draft", packet: shown });
 }
