@@ -37,6 +37,7 @@ Click the cover to page through the full deck as a PDF, or expand below.
 | **$50.36M** | paid to providers *after* their strongest-evidence exclusion or revocation | 353 providers, ID-matched, name-verified, dated |
 | **2,763** | revoked or excluded providers still holding an active Medicaid enrollment | 90+ days after the action |
 | **$1.48B** | paid after a for-cause termination in another state | offered as a screening queue, not a finding |
+| **289** | providers adjudicated in a public enforcement record (DOJ, HHS-OIG, state attorneys general) and on no exclusion or revocation list yet | the feed refreshes daily; 3,342 records since January 2024, name-matched at high confidence only |
 
 The \$50.36M figure independently matches the order of magnitude of HHS-OIG's audited finding of \$50.3M (OEI-03-19-00070). A from-scratch rebuild of this pipeline on refreshed exclusion lists reproduces it within 5%.
 

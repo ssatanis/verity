@@ -15,7 +15,7 @@ export function PacketPanel({ subjectType, subjectId, existing }: { subjectType:
     setResult(await r.json()); setPacket({ ...packet, status: decision === "accept" ? "accepted" : decision === "reject" ? "rejected" : "needs_info" }); setBusy(false);
   }
   const p = packet?.packet ?? packet;
-  const drafted = p?.model ? (String(p.model).startsWith("claude") ? "Drafted by Claude from the evidence rows" : String(p.model).startsWith("deterministic") ? "Assembled from the evidence rows without a model" : String(p.model)) : "";
+  const drafted = p?.model ? (String(p.model).startsWith("claude") ? "Drafted by the investigator agent from the evidence rows" : String(p.model).startsWith("deterministic") ? "Assembled from the evidence rows without a model" : String(p.model)) : "";
   const status: Record<string, string> = { draft: "Awaiting review", accepted: "Accepted by reviewer", rejected: "Rejected by reviewer", needs_info: "Records requested" };
   return (
     <div className="card p-5">

@@ -13,7 +13,9 @@ os.makedirs("demo/cache", exist_ok=True)
 def copy(table, cols, sql, truncate=True):
     t = time.time(); tmp = f"demo/cache/out_{table}.csv"
     con.execute(f"COPY ({sql}) TO '{tmp}' (FORMAT CSV, HEADER false, NULL '', QUOTE '\"', ESCAPE '\"')")
-    n = con.execute(f"SELECT COUNT(*) FROM read_csv_auto('{tmp}', header=false, all_varchar=true)").fetchone()[0] if os.path.getsize(tmp) else 0
+    # row count from the query itself: re-sniffing the exported CSV can fail on long JSON and prose columns, and a count must never stop the load
+    try: n = con.execute(f"SELECT COUNT(*) FROM ({sql})").fetchone()[0] if os.path.getsize(tmp) else 0
+    except Exception: n = -1
     with pg.cursor() as cur:
         if truncate: cur.execute(f"TRUNCATE public.{table} CASCADE"); pg.commit()
         with open(tmp, "rb") as f, cur.copy(f"COPY public.{table} ({cols}) FROM STDIN WITH (FORMAT csv, NULL '')") as cp:

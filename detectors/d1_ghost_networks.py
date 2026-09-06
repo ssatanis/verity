@@ -614,6 +614,11 @@ def explain(r):
     if r.state_excl: facts.append(f"{_plural(r.state_excl, 'provider')} in the group appear{'s' if int(r.state_excl) == 1 else ''} on a state exclusion list.")
     oh = [h for h in r.owner_hits if h[1] in ("OIG_LEIE", "SAM")]
     if oh: facts.append(f"An owner's name, {str(oh[0][0]).title()}, matches {_src_name(oh[0][1])} at {oh[0][2]} confidence.")
+    eh = sorted([h for h in r.owner_hits if h[1] in ("ENF_ADJUDICATED", "ENF_ALLEGED")], key=lambda h: h[1] != "ENF_ADJUDICATED")
+    if eh: facts.append(f"An owner, {str(eh[0][0]).title()}, is named in a public enforcement release dated {eh[0][3]} as {'sentenced, convicted or having pleaded guilty' if eh[0][1] == 'ENF_ADJUDICATED' else 'charged and not yet adjudicated'}; the name was matched by name and state, so verify the identity first.")
+    n_ea = len(r.prov_labels.get("ENF_ADJUDICATED", [])); n_ec = len(r.prov_labels.get("ENF_ALLEGED", []))
+    if n_ea: facts.append(f"{_plural(n_ea, 'provider')} in the group {'is' if n_ea == 1 else 'are'} named as adjudicated in a public enforcement release (Department of Justice, HHS-OIG or a state attorney general).")
+    elif n_ec: facts.append(f"{_plural(n_ec, 'provider')} in the group {'is' if n_ec == 1 else 'are'} charged in a public enforcement release and not yet adjudicated.")
     if r.sat_per_10k is not None and not (isinstance(r.sat_per_10k, float) and np.isnan(r.sat_per_10k)) and r.sat_z is not None and not (isinstance(r.sat_z, float) and np.isnan(r.sat_z)):
         facts.append(f"The county has {r.sat_per_10k:.1f} providers of this kind per 10,000 Medicare fee-for-service beneficiaries, {'well above' if r.sat_z >= 2 else 'above' if r.sat_z > 0 else 'below'} the national norm.")
     if r.chain_or_pe: facts.append(f"{int(r.chain_members)} of the {int(r.n_prov)} providers belong to a known chain or private-equity platform, so the group is not ranked.")

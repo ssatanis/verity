@@ -121,96 +121,6 @@ Tables in `data/verity.duckdb`: chow, drops, enroll, hha, hospice, hospital, lei
 | T2021 | Day habilitation waiver per 15 min | 7.57 |
 | H2019 | Therapeutic behavioral services per 15 min | 7.37 |
 
-## Detector 3: dead in Medicare, alive in Medicaid
-
-**In plain language.** This detector matches provider IDs that appear on federal or state "do not pay" lists against Medicaid payment records for service months from January 2018 through December 2024, and flags payments dated strictly after the listing took effect and, where a reinstatement or bar expiry date exists, before that end date. Only the strongest grounds count toward the headline, meaning for-cause Medicare revocations, federal exclusions without a state waiver, and three state exclusion lists; administrative revocations and weaker signals are kept in the tables but held back as lower tiers. Of 15,708 provider IDs on a top-tier list with an effective date in the window, 353 had Medicaid paid claims after the action for $50.36M, and 174 were paid in six or more later months for $45.38M, which is in line with a prior federal audit that found $50.3M across 584 providers. Separate checks show 2,763 revoked or excluded IDs still holding an active Medicaid enrollment segment more than 90 days later, and 6,361 IDs terminated for cause in one state while active in another. The section states its own limits: every ID must pass the check digit test, rows whose names do not match the national registry are set aside, deceased-status and deactivation results lack corroboration and are reported as lower tier, and the cross-state list is described as a screening queue rather than a finding because state termination codes are uneven.
-
-
-
-
-
-
-**Rule.** An NPI appears on a federal or state "must not be paid" list with an effective date, and Medicaid (T-MSIS provider spending, service months 2018-01 to 2024-12) shows paid claims in service months strictly after that month and, where the source gives one, before the window end (Medicare re-enrollment bar expiry, state reinstatement date). Dollars count each NPI-month once whether the NPI billed or rendered. Tier A grounds only: Medicare revocations under 42 CFR 424.535(a)(2),(3),(4),(5),(7),(8),(10),(12),(13),(14),(18),(19),(20),(22),(23); every OIG LEIE exclusion without a state waiver; California, New York and Texas Medicaid exclusion lists (rows carrying an NPI). Administrative revocations ((a)(1) noncompliance, (a)(6), (a)(9) alone, (a)(11), (a)(17), (a)(21)) are kept in the tables as tier B and excluded from the headline.
-
-**Headline.** 15,708 NPIs are on a tier-A list with an effective date inside the data window; 353 of them have Medicaid paid claims dated after the action, totalling $50.36M; 174 were paid in six or more months after the action ($45.38M). OIG's 2022 audit (A-05-19-00029 family) found $50.3M across 584 providers terminated elsewhere, so the order of magnitude is consistent.
-
-| source | tier | NPIs paid after | $M after | median $ per NPI | max months |
-|---|---|---|---|---|---|
-| NPPES_DEACTIVATED | B | 511 | 231.20 | 5,352.00 | 84 |
-| MEDICARE_REVOKED | A | 270 | 39.64 | 13,607.00 | 67 |
-| MEDICARE_REVOKED | B | 66 | 25.72 | 25,525.00 | 84 |
-| STATE_EXCL_CA | C | 14 | 23.38 | 27,660.00 | 46 |
-| OIG_LEIE | A | 14 | 8.07 | 67,706.00 | 55 |
-| STATE_EXCL_CA | A | 81 | 7.22 | 12,029.00 | 52 |
-| TMSIS_DECEASED | B | 20 | 4.02 | 40,210.00 | 81 |
-| STATE_EXCL_NY | A | 35 | 3.45 | 7,470.00 | 78 |
-| STATE_EXCL_TX | A | 6 | 2.33 | 54,286.00 | 33 |
-| STATE_EXCL_TX | B | 3 | 2.28 | 90,573.00 | 25 |
-| SAM_OPM | B | 5 | 0.11 | 2,266.00 | 27 |
-| STATE_EXCL_NY | C | 5 | 0.04 | 6,519.00 | 3 |
-| STATE_EXCL_TX | C | 1 | 0.01 | 13,635.00 | 7 |
-
-**Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). State-list rows whose name shares no token with the NPPES record for that NPI are set aside as tier C (the California list's provider-number field can carry an employer's NPI; 20 such rows, $23.43M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.
-
-**Still enrolled.** 2,763 NPIs revoked by Medicare (tier A) or excluded by OIG still hold an active Medicaid enrollment segment (T-MSIS status 02-06) more than 90 days after the action.
-
-| Medicaid state | NPIs |
-|---|---|
-| LA | 460 |
-| TX | 342 |
-| VA | 313 |
-| TN | 284 |
-| ID | 283 |
-| CA | 280 |
-| PA | 200 |
-| RI | 197 |
-| MI | 167 |
-| GA | 130 |
-
-**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organizations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: 0 NPIs, $0.00M paid after; tier B (no NPPES corroboration): 20 NPIs, $4.02M.
-
-**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organizations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: 6,361 NPIs (16,319 state pairs), 161 of them also on a federal or state exclusion list, 2,980 with Medicaid dollars after the termination ($1,484.95M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
-
-| code | reason | NPIs | $M after |
-|---|---|---|---|
-| 70 | TERM - LICENSE REVOKED | 4,703 | 944.84 |
-| 81 | TERM - STATE EXCLUSION/ DEBARMENT, ETC. | 948 | 429.19 |
-| 78 | TERM - ONSITE REVIEW/ PROVIDER IS NO LONGER OPERATIONAL | 431 | 101.29 |
-| 72 | TERM - MEDICARE/MEDICAID EXCLUSION | 217 | 4.91 |
-| 60 | TERM - ABUSE OF BILLING PRIVILEGES | 60 | 0.25 |
-| 65 | TERM - FALSE OR MISLEADING INFORMATION | 7 | 3.50 |
-| 66 | TERM - FEDERAL EXCLUSION/ DEBARMENT, ETC. | 4 | 0.97 |
-| 75 | TERM - MISUSE OF BILLING NUMBER | 2 | 0.00 |
-
-**NPI deactivation.** 511 NPIs deactivated in NPPES show Medicaid paid claims in later service months ($231.20M). Reported as tier B because states carry legacy identifiers.
-
-**Top 20 by dollars after the action (tier A lists).**
-
-| NPI | name (NPPES) | type | lists | first action | Medicaid state | months paid after | first | last | $ after | name agrees |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1982736492 | WE CARE TRANSPORTATION | 2 | OIG_LEIE | 2010-01-20 |  | 31 | 2018-01 | 2020-07 | 4,441,513.00 | 1 |
-| 1962546176 | MATIAS CLINICAL LABORATORY INC | 2 | MEDICARE_REVOKED | 2018-08-31 | MO | 44 | 2018-09 | 2022-04 | 3,846,471.00 | 1 |
-| 1548629520 | EMPIRE MEDICAL LLC | 2 | MEDICARE_REVOKED | 2020-07-31 | DE | 9 | 2020-08 | 2021-04 | 2,389,353.00 | 1 |
-| 1679896484 | BLAKES BLESSING HEALTH CARE INC. | 2 | STATE_EXCL_TX | 2022-01-19 | TX | 33 | 2022-02 | 2024-10 | 2,118,903.00 | 1 |
-| 1225242985 | KIUP KIM | 1 | STATE_EXCL_CA | 2018-12-10 | AZ | 52 | 2019-01 | 2023-08 | 2,046,769.00 | 1 |
-| 1861407637 | HEALTHSMART PACIFIC INC | 2 | OIG_LEIE | 2021-04-20 | MD | 34 | 2021-05 | 2024-02 | 1,639,221.00 | 1 |
-| 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | MEDICARE_REVOKED | 2021-11-19 | MD | 23 | 2021-12 | 2023-10 | 1,327,755.00 | 1 |
-| 1457414286 | DM OPTICAL INC | 2 | STATE_EXCL_NY | 2016-09-22 |  | 26 | 2018-01 | 2020-02 | 1,183,544.00 | 1 |
-| 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | STATE_EXCL_NY,MEDICARE_REVOKED | 2022-10-31 | LA | 7 | 2022-11 | 2023-05 | 1,043,387.00 | 1 |
-| 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | MEDICARE_REVOKED | 2020-03-02 | TX | 19 | 2021-04 | 2023-04 | 960,939.00 | 1 |
-| 1871571406 | MOHAMED ASWAD | 1 | OIG_LEIE,MEDICARE_REVOKED | 2016-01-20 | AZ | 55 | 2018-01 | 2022-07 | 901,321.00 | 1 |
-| 1407188543 | MERCRIS HOME HEALTH INC | 2 | MEDICARE_REVOKED | 2023-05-01 | TX | 17 | 2023-06 | 2024-10 | 899,287.00 | 1 |
-| 1831547868 | SHANONE CHATMAN-ASHLEY | 1 | OIG_LEIE,MEDICARE_REVOKED | 2020-10-23 | LA | 38 | 2020-11 | 2023-12 | 883,542.00 | 1 |
-| 1558706549 | JLJ MEDICAL LLC | 2 | MEDICARE_REVOKED | 2021-11-19 | MD | 33 | 2021-12 | 2024-09 | 882,532.00 | 0 |
-| 1417068511 |  |  | MEDICARE_REVOKED,OIG_LEIE | 2022-06-06 | CA | 12 | 2022-07 | 2023-06 | 844,467.00 | 0 |
-| 1740478270 | FIRST IDEAL ENTERPRISES INC. | 2 | MEDICARE_REVOKED | 2018-10-01 | MI | 38 | 2018-11 | 2021-12 | 843,035.00 | 1 |
-| 1518931856 | LINDA WARREN-WATSON | 1 | STATE_EXCL_CA | 2020-10-31 | CA | 16 | 2020-11 | 2022-06 | 828,250.00 | 1 |
-| 1609064153 | QUEENS OPTOMETRIC CARE PLLC | 2 | MEDICARE_REVOKED | 2023-10-25 | NY | 11 | 2023-11 | 2024-09 | 777,235.00 | 1 |
-| 1336486448 | QOL COMMUNICATION SERVICES, LLC | 2 | MEDICARE_REVOKED | 2024-06-12 | MD | 6 | 2024-07 | 2024-12 | 728,911.00 | 1 |
-| 1851702971 | NEW WAVE DIAGNOSTIC RADIOLOGY PLLC | 2 | MEDICARE_REVOKED | 2022-08-19 |  | 27 | 2022-09 | 2024-12 | 580,310.00 | 1 |
-
-Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_npi`, `d3_top`; app rows in `flags` (detector D3). Code: `detectors/d3_revoked_but_paid.py`.
-
 ## Detector 2: impossible days
 
 **Conversion.** For each rendering NPI, billing NPI, HCPCS code and service month in the T-MSIS spending file, implied clinician hours are computed three ways: a rate-free lower bound (each claim line is at least one unit, so `lines x minutes_per_unit`), a point estimate (`paid / rate_pt x minutes_per_unit`), and a conservative estimate (`paid / rate_cons` with `rate_cons = 1.5 x rate_pt`). Because the data-driven rate is itself an upper bound on the unit price, both dollar-based figures understate hours; the label `IMPOSSIBLE` therefore means impossible under every assumption the method makes. Group codes are divided by the assumed participant count. Minutes per unit come from `ingest/02_timecodes.csv` (CPT/HCPCS unit definitions; untimed session codes use the low end of the CPT time range).
@@ -428,56 +338,56 @@ Tables: `d2_rate`, `d2_rate_validation`, `d2_implied`, `d2_npi_month`, `d2_score
 
 **Identity resolution.** Owner persons are merged on the PECOS associate ID and on an exact key (last name, first three letters, ZIP5), then a Fellegi-Sunter model over six comparison fields (last name with Jaro-Winkler levels, first name with nickname and initial levels, middle initial, ZIP5/ZIP3, city, street number) is fitted by EM on 91,729 blocked candidate pairs (same state and last name, or same state, Soundex and first initial). Pairs are linked when the posterior match probability is at least 0.95 and at least one locational field agrees, so names alone never merge two people. EM fitted lambda = 0.0863, 24 pairs linked. Organizations merge on associate ID, on a normalized name (corporate suffixes stripped) plus state, and on token-set similarity of at least 94 within a state.
 
-**Communities.** Connected components of the hub-free graph, with Leiden (RB configuration, resolution 1.0) applied to components above 120 providers: 1,966 communities with two or more providers.
+**Communities.** Connected components of the hub-free graph, with Leiden (RB configuration, resolution 1.0) applied to components above 120 providers: 1,960 communities with two or more providers.
 
 **Features per community.** n_prov by type and distinct organizations; incorporation bursts over distinct organizations formed 2019 or later (most organizations incorporated inside any 90, 180 or 365 day window; NPPES enumeration date when the incorporation date is missing); for-profit share; share of members formed since 2021; largest number of members at one building and at one suite; phone, fax, authorised-official, mailing-address and EIN sharing; owners tied to three or more members; label links (member NPIs on LEIE, SAM, Medicare revocations, state exclusion lists, Medicaid for-cause terminations, NPI deactivations; owner-name links to LEIE and SAM at high (name + ZIP5) or medium (name + state) confidence); CMS Market Saturation providers per 10k FFS beneficiaries for the dominant county and service, as a robust z on the log scale across all counties; county moratorium flag; Medicaid 2024 and all-years dollars (billing NPI) and Medicare 2023 hospice/HHA payments (PAC PUF).
 
-**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organizations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3) + 1.5 enforcement adjudications (a member NPI, or an owner named as sentenced, convicted or pleaded guilty in a Department of Justice, HHS-OIG or state attorney general release, resolved by name at high confidence; cap 3) + 0.5 enforcement charges (indicted, charged or arrested, not yet adjudicated; cap 3). Enforcement releases reach the graph months before the exclusion list that will later cite them, and they reach every enrollment the named person owns. Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner (313 communities are scored but held out: consolidation is not a ghost network), at least three distinct organizations, at least one organization formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. 142 communities are eligible.
+**Score.** Each feature is converted to a robust z (median/MAD, capped at 5): structure = 1.5 z(burst_90 over distinct organizations, bursts of three or more only) + 1.5 z(address share/n) + 1.0 z(owner_multi/n) + 1.5 z(new ratio) + 0.5 z(phone or official share/n) + 0.5 z(log size); the for-profit share is recorded as a feature but not scored, because nearly every hospice and home health agency in Los Angeles, Houston, Phoenix and Las Vegas is for-profit; context = 0.8 z(saturation) + 0.5 moratorium; labels = 2.0 excluded links (member NPI on LEIE or SAM, owner name on LEIE or SAM at high 1.0 or medium 0.5 confidence, same suite as an excluded or revoked entity 1.0, same building 0.5; cap 3) + 1.0 z(Medicaid for-cause terminations/n, bulk-coded states suppressed) + 1.0 revoked (cap 3) + 0.5 state exclusions (cap 3) + 0.3 deactivations (cap 3) + 1.5 enforcement adjudications (a member NPI, or an owner named as sentenced, convicted or pleaded guilty in a Department of Justice, HHS-OIG or state attorney general release, resolved by name at high confidence; cap 3) + 0.5 enforcement charges (indicted, charged or arrested, not yet adjudicated; cap 3). Enforcement releases reach the graph months before the exclusion list that will later cite them, and they reach every enrollment the named person owns. Owner counts use ownership and managing-control roles only (5 percent direct or indirect owners, managing employees, operational control, administrators); boards, officers and trustees are recorded but not scored, so hospital systems with a shared board do not look like networks. Ranked list eligibility: no chain or private-equity owner (317 communities are scored but held out: consolidation is not a ghost network), at least three distinct organizations, at least one organization formed since 2021, and at least two independent evidence families (structure, label, context). Every ranked community is a referral candidate for records review, not a finding. 141 communities are eligible.
 
-**Evaluation.** The CMS enrollment files only contain providers that are still enrolled, so Medicare revocations cannot be held out as labels (only 0.0000 of communities contain a member revoked or excluded in 2023 or 2024: the revoked ones have already left the file). The structure-only score, which uses no label information, is instead evaluated against any label link (member NPI on LEIE, SAM, the revoked list, a state exclusion list or a for-cause Medicaid termination; owner name on LEIE or SAM; address shared with an excluded or revoked entity). Base rate 0.361; precision at K of the structure-only score among communities of three or more distinct organizations, chains excluded: P@10 = 0.60 (one-sided binomial p = 0.108), P@25 = 0.48 (one-sided binomial p = 0.151), P@50 = 0.52 (one-sided binomial p = 0.015), P@100 = 0.53 (one-sided binomial p = 0.000), P@250 = 0.47 (one-sided binomial p = 0.000). Read this honestly: the top-10 figure is ten items and is not statistically meaningful on its own; the label set is incomplete (it cannot contain providers that have already left the enrollment file) and it overlaps the inputs of the full risk score, so only the structure-only score is evaluated against it. 71,964 addresses of LEIE-excluded entities and revoked organizations were indexed for the address test.
+**Evaluation.** The CMS enrollment files only contain providers that are still enrolled, so Medicare revocations cannot be held out as labels (only 0.0000 of communities contain a member revoked or excluded in 2023 or 2024: the revoked ones have already left the file). The structure-only score, which uses no label information, is instead evaluated against any label link (member NPI on LEIE, SAM, the revoked list, a state exclusion list or a for-cause Medicaid termination; owner name on LEIE or SAM; address shared with an excluded or revoked entity). Base rate 0.361; precision at K of the structure-only score among communities of three or more distinct organizations, chains excluded: P@10 = 0.60 (one-sided binomial p = 0.108), P@25 = 0.48 (one-sided binomial p = 0.151), P@50 = 0.50 (one-sided binomial p = 0.030), P@100 = 0.55 (one-sided binomial p = 0.000), P@250 = 0.46 (one-sided binomial p = 0.001). Read this honestly: the top-10 figure is ten items and is not statistically meaningful on its own; the label set is incomplete (it cannot contain providers that have already left the enrollment file) and it overlaps the inputs of the full risk score, so only the structure-only score is evaluated against it. 71,964 addresses of LEIE-excluded entities and revoked organizations were indexed for the address test.
 
 | state | communities in top 200 | providers | Medicaid 2024 $M |
 |---|---|---|---|
-| CA | 59 | 2,970 | 128.70 |
-| TX | 21 | 1,218 | 266.50 |
-| FL | 12 | 356 | 432.60 |
-| OH | 9 | 305 | 126.10 |
-| IL | 7 | 259 | 9.70 |
-| MA | 4 | 103 | 16.20 |
-| MI | 3 | 18 | 0.00 |
-| NV | 3 | 71 | 0.00 |
-| CO | 2 | 83 | 0.00 |
-| PA | 2 | 56 | 4.90 |
+| CA | 59 | 2,997 | 168.70 |
+| TX | 16 | 937 | 254.90 |
+| FL | 13 | 298 | 472.40 |
+| OH | 9 | 368 | 179.20 |
+| IL | 7 | 254 | 4.20 |
+| NV | 4 | 122 | 0.00 |
+| MA | 4 | 139 | 21.60 |
+| MI | 4 | 86 | 7.30 |
+| AZ | 3 | 64 | 1.00 |
+| LA | 2 | 93 | 3.90 |
 
 **Top 25.**
 
 | cluster | n | hospice | HHA | SNF | city | score | burst90 | addr | owner_multi | phone | excl | revoked | Medicaid term | sat z | Medicaid 2024 $M | Medicare 2023 $M |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | D1-00001 | 3 | 0 | 3 | 0 | Van Nuys, CA | 18.73 | 3 | 1 | 1 | 2 | 1.50 | 0.00 | 0 | 1.20 | 0.00 | 0.00 |
-| D1-00002 | 6 | 0 | 6 | 0 | Burbank, CA | 16.61 | 3 | 5 | 0 | 1 | 2.50 | 0.00 | 0 | 1.20 | 0.00 | 1.67 |
-| D1-00003 | 5 | 0 | 5 | 0 | Glendale, CA | 16.59 | 4 | 2 | 1 | 1 | 1.50 | 0.00 | 0 | 1.20 | 0.00 | 2.72 |
-| D1-00004 | 27 | 6 | 21 | 0 | Glendale, CA | 15.65 | 7 | 10 | 0 | 1 | 6.50 | 0.00 | 0 | 1.20 | 0.05 | 13.73 |
-| D1-00005 | 7 | 0 | 7 | 0 | Glendale, CA | 14.75 | 4 | 5 | 1 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 0.38 |
-| D1-00006 | 10 | 0 | 10 | 0 | Glendale, CA | 13.48 | 3 | 7 | 0 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 2.10 |
-| D1-00007 | 34 | 6 | 28 | 0 | La Crescenta, CA | 13.43 | 7 | 5 | 3 | 1 | 8.00 | 0.00 | 0 | 1.20 | 0.00 | 11.92 |
-| D1-00008 | 21 | 15 | 6 | 0 | San Antonio, TX | 13.35 | 8 | 5 | 1 | 1 | 1.50 | 0.00 | 0 | 0.20 | 0.08 | 21.81 |
-| D1-00009 | 33 | 5 | 25 | 3 | Mission Hills, CA | 12.88 | 5 | 10 | 3 | 1 | 3.00 | 0.00 | 0 | 1.20 | 0.62 | 63.66 |
-| D1-00010 | 81 | 19 | 62 | 0 | Valley Village, CA | 12.87 | 12 | 9 | 12 | 3 | 9.00 | 0.00 | 0 | 1.20 | 2.15 | 31.93 |
-| D1-00011 | 60 | 21 | 31 | 8 | Glendale, CA | 12.82 | 9 | 11 | 9 | 2 | 14.00 | 0.00 | 0 | 1.20 | 2.34 | 50.24 |
-| D1-00012 | 88 | 35 | 53 | 0 | Burbank, CA | 12.81 | 18 | 8 | 13 | 2 | 17.50 | 0.00 | 0 | 1.20 | 0.72 | 47.36 |
-| D1-00013 | 52 | 18 | 34 | 0 | North Hollywood, CA | 12.73 | 6 | 7 | 5 | 2 | 6.50 | 0.00 | 0 | 1.20 | 0.86 | 39.64 |
-| D1-00014 | 85 | 17 | 68 | 0 | Van Nuys, CA | 12.55 | 10 | 17 | 7 | 2 | 15.50 | 0.00 | 0 | 1.20 | 1.99 | 61.03 |
-| D1-00015 | 34 | 6 | 28 | 0 | Glendale, CA | 12.46 | 4 | 7 | 4 | 1 | 7.50 | 0.00 | 0 | 1.20 | 0.00 | 12.89 |
-| D1-00016 | 27 | 8 | 19 | 0 | Glendale, CA | 12.43 | 5 | 3 | 6 | 1 | 6.50 | 0.00 | 0 | 1.20 | 0.42 | 38.73 |
-| D1-00017 | 47 | 12 | 35 | 0 | Encino, CA | 12.36 | 8 | 9 | 0 | 1 | 10.00 | 0.00 | 0 | 1.20 | 0.00 | 12.86 |
-| D1-00018 | 45 | 12 | 33 | 0 | Northridge, CA | 12.29 | 7 | 9 | 3 | 1 | 5.00 | 0.50 | 0 | 1.20 | 2.66 | 19.50 |
-| D1-00019 | 124 | 32 | 92 | 0 | Van Nuys, CA | 12.01 | 17 | 14 | 14 | 2 | 32.50 | 0.00 | 0 | 1.20 | 3.88 | 67.93 |
-| D1-00020 | 104 | 22 | 82 | 0 | Burbank, CA | 11.98 | 11 | 12 | 12 | 3 | 23.50 | 0.00 | 0 | 1.20 | 3.18 | 73.38 |
-| D1-00021 | 80 | 20 | 60 | 0 | Glendale, CA | 11.96 | 8 | 8 | 5 | 3 | 10.50 | 0.00 | 0 | 1.20 | 4.35 | 45.38 |
-| D1-00022 | 82 | 17 | 65 | 0 | Glendale, CA | 11.87 | 13 | 6 | 9 | 1 | 11.50 | 0.00 | 0 | 1.20 | 0.96 | 50.76 |
-| D1-00023 | 87 | 26 | 61 | 0 | Tarzana, CA | 11.83 | 10 | 11 | 17 | 2 | 18.00 | 0.00 | 0 | 1.20 | 7.79 | 58.93 |
-| D1-00024 | 23 | 1 | 22 | 0 | Las Vegas, NV | 11.81 | 4 | 5 | 3 | 1 | 2.50 | 0.00 | 0 | 1.20 | 0.02 | 12.50 |
-| D1-00025 | 61 | 20 | 41 | 0 | Glendale, CA | 11.61 | 9 | 5 | 6 | 1 | 12.50 | 0.00 | 0 | 1.20 | 0.21 | 32.17 |
+| D1-00002 | 14 | 2 | 12 | 0 | Glendale, CA | 18.62 | 5 | 9 | 0 | 1 | 6.00 | 0.00 | 0 | 1.20 | 0.05 | 1.89 |
+| D1-00003 | 12 | 0 | 12 | 0 | Burbank, CA | 17.40 | 5 | 6 | 1 | 1 | 3.00 | 0.00 | 0 | 1.20 | 0.00 | 3.10 |
+| D1-00004 | 35 | 2 | 1 | 32 | Suffolk, VA | 15.79 | 7 | 3 | 37 | 2 | 0.50 | 0.00 | 3 | 0.50 | 0.00 | 10.06 |
+| D1-00005 | 18 | 2 | 16 | 0 | Glendale, CA | 15.23 | 3 | 7 | 0 | 1 | 7.00 | 0.00 | 0 | 1.20 | 0.00 | 5.04 |
+| D1-00006 | 7 | 0 | 7 | 0 | Glendale, CA | 14.76 | 4 | 5 | 1 | 1 | 0.50 | 0.00 | 0 | 1.20 | 0.00 | 0.38 |
+| D1-00007 | 75 | 25 | 50 | 0 | Van Nuys, CA | 13.77 | 16 | 12 | 18 | 3 | 16.00 | 0.00 | 0 | 1.20 | 7.88 | 54.85 |
+| D1-00008 | 15 | 10 | 4 | 1 | Dallas, TX | 13.70 | 4 | 4 | 13 | 1 | 1.50 | 0.00 | 0 | -0.10 | 0.10 | 25.04 |
+| D1-00009 | 74 | 24 | 44 | 6 | Encino, CA | 13.36 | 14 | 14 | 11 | 1 | 23.00 | 0.00 | 0 | 1.20 | 2.68 | 24.74 |
+| D1-00010 | 33 | 5 | 25 | 3 | Mission Hills, CA | 13.03 | 5 | 10 | 3 | 1 | 3.00 | 0.00 | 0 | 1.20 | 0.62 | 63.66 |
+| D1-00011 | 52 | 18 | 34 | 0 | North Hollywood, CA | 12.83 | 6 | 7 | 5 | 2 | 6.50 | 0.00 | 0 | 1.20 | 0.86 | 39.64 |
+| D1-00012 | 89 | 30 | 59 | 0 | Glendale, CA | 12.79 | 17 | 8 | 12 | 2 | 20.50 | 0.00 | 0 | 1.20 | 0.50 | 44.38 |
+| D1-00013 | 77 | 19 | 58 | 0 | Glendale, CA | 12.76 | 16 | 6 | 8 | 2 | 12.50 | 0.00 | 0 | 1.20 | 1.99 | 50.44 |
+| D1-00014 | 27 | 8 | 19 | 0 | Van Nuys, CA | 12.60 | 5 | 3 | 6 | 1 | 6.50 | 0.00 | 0 | 1.20 | 0.42 | 38.73 |
+| D1-00015 | 119 | 34 | 85 | 0 | Woodland Hills, CA | 12.56 | 18 | 14 | 12 | 3 | 23.50 | 0.00 | 0 | 1.20 | 0.72 | 67.04 |
+| D1-00016 | 103 | 23 | 80 | 0 | Van Nuys, CA | 12.49 | 12 | 12 | 11 | 3 | 23.50 | 0.00 | 0 | 1.20 | 0.85 | 48.53 |
+| D1-00017 | 79 | 20 | 59 | 0 | Burbank, CA | 12.42 | 10 | 9 | 9 | 3 | 5.00 | 0.00 | 0 | 1.20 | 0.26 | 31.12 |
+| D1-00018 | 85 | 15 | 70 | 0 | Van Nuys, CA | 12.37 | 10 | 17 | 7 | 2 | 15.50 | 0.00 | 0 | 1.20 | 10.26 | 51.59 |
+| D1-00019 | 42 | 32 | 10 | 0 | San Antonio, TX | 12.37 | 10 | 7 | 5 | 2 | 2.00 | 0.00 | 0 | 0.20 | 11.63 | 48.87 |
+| D1-00020 | 59 | 13 | 46 | 0 | Glendale, CA | 12.32 | 7 | 8 | 3 | 2 | 9.00 | 0.00 | 0 | 1.20 | 4.35 | 30.89 |
+| D1-00021 | 82 | 19 | 63 | 0 | Tarzana, CA | 12.07 | 10 | 10 | 6 | 2 | 18.00 | 0.00 | 0 | 1.20 | 3.11 | 35.90 |
+| D1-00022 | 36 | 2 | 34 | 0 | Glendale, CA | 11.96 | 5 | 11 | 3 | 1 | 9.50 | 0.00 | 0 | 1.20 | 0.08 | 40.74 |
+| D1-00023 | 73 | 33 | 40 | 0 | Burbank, CA | 11.80 | 9 | 7 | 14 | 2 | 11.00 | 0.00 | 0 | 1.20 | 4.56 | 102.85 |
+| D1-00024 | 29 | 4 | 25 | 0 | Glendale, CA | 11.77 | 4 | 4 | 3 | 1 | 4.00 | 0.00 | 0 | 1.20 | 0.00 | 12.81 |
+| D1-00025 | 43 | 16 | 27 | 0 | Van Nuys, CA | 11.76 | 6 | 6 | 4 | 3 | 4.50 | 0.00 | 0 | 1.20 | 0.22 | 26.67 |
 
 Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_members`, `d1_persons`, `d1_orgs`, `d1_providers`. Code: `detectors/d1_ghost_networks.py`.
 
@@ -493,12 +403,13 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | MEDICARE_REVOKED | A | 260 | 30.52 | 13,096.00 | 67 |
 | MEDICARE_REVOKED | B | 62 | 24.11 | 25,525.00 | 84 |
 | STATE_EXCL_CA | C | 14 | 23.38 | 27,660.00 | 46 |
-| STATE_AG_ADMIN | B | 11 | 21.46 | 229,864.00 | 10 |
-| OIG_ADMIN | B | 46 | 20.23 | 52,899.00 | 10 |
+| STATE_AG_ADMIN | B | 12 | 21.79 | 278,578.00 | 10 |
+| DOJ_ADMIN | B | 46 | 12.43 | 36,023.00 | 9 |
+| OIG_ADMIN | B | 37 | 10.59 | 60,981.00 | 10 |
 | OIG_LEIE | A | 12 | 7.77 | 67,706.00 | 55 |
 | STATE_EXCL_CA | A | 81 | 7.22 | 12,029.00 | 52 |
 | OIG_ADJUDICATED | A | 1 | 6.47 | 6,465,610.00 | 11 |
-| TMSIS_DECEASED | B | 19 | 4.01 | 40,795.00 | 81 |
+| TMSIS_DECEASED | B | 20 | 4.04 | 40,210.00 | 81 |
 | STATE_EXCL_NY | A | 35 | 3.45 | 7,470.00 | 78 |
 | MEDICARE_REVOKED | C | 14 | 3.44 | 7,029.00 | 33 |
 | STATE_EXCL_KY | A | 25 | 2.71 | 16,320.00 | 41 |
@@ -508,28 +419,29 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | STATE_EXCL_WA | C | 1 | 1.68 | 1,677,349.00 | 28 |
 | STATE_EXCL_ND | A | 1 | 1.51 | 1,506,469.00 | 11 |
 | STATE_EXCL_WA | A | 6 | 1.11 | 68,330.00 | 83 |
+| DOJ_ADJUDICATED | A | 4 | 0.67 | 77,363.00 | 7 |
 | OIG_LEIE | C | 2 | 0.30 | 152,045.00 | 43 |
-| OIG_CHARGED | B | 2 | 0.28 | 139,377.00 | 9 |
+| DOJ_CHARGED | B | 4 | 0.29 | 5,536.00 | 9 |
 | STATE_AG_CHARGED | B | 2 | 0.25 | 126,314.00 | 3 |
 | STATE_EXCL_KY | C | 2 | 0.24 | 120,054.00 | 10 |
 | STATE_EXCL_MO | A | 8 | 0.19 | 4,761.00 | 69 |
 | STATE_EXCL_CO | A | 7 | 0.12 | 3,047.00 | 38 |
 | SAM_OPM | B | 4 | 0.11 | 11,467.00 | 27 |
 | STATE_EXCL_MD | A | 5 | 0.08 | 5,888.00 | 26 |
-| STATE_AG_ADJUDICATED | A | 1 | 0.06 | 59,903.00 | 4 |
-| STATE_EXCL_SC | C | 2 | 0.06 | 28,649.00 | 4 |
 | STATE_EXCL_AZ | A | 2 | 0.06 | 31,240.00 | 2 |
+| STATE_EXCL_SC | C | 2 | 0.06 | 28,649.00 | 4 |
+| STATE_AG_ADJUDICATED | A | 1 | 0.06 | 59,903.00 | 4 |
 | STATE_EXCL_CO | C | 1 | 0.05 | 47,488.00 | 1 |
 | STATE_EXCL_SC | A | 8 | 0.05 | 1,342.00 | 32 |
 | STATE_EXCL_NY | C | 5 | 0.04 | 6,519.00 | 3 |
 | STATE_EXCL_MI | C | 1 | 0.04 | 38,205.00 | 3 |
 | STATE_EXCL_TX | C | 1 | 0.01 | 13,635.00 | 7 |
-| STATE_EXCL_AZ | C | 1 | 0.00 | 3,150.00 | 10 |
-| STATE_EXCL_MS | A | 1 | 0.00 | 0.00 | 4 |
-| STATE_EXCL_MS | C | 1 | 0.00 | 0.00 | 8 |
-| STATE_EXCL_MI | A | 1 | 0.00 | 306.00 | 1 |
 | STATE_EXCL_MT | A | 1 | 0.00 | 100.00 | 1 |
 | SAM_OPM | C | 1 | 0.00 | 0.00 | 2 |
+| STATE_EXCL_MS | A | 1 | 0.00 | 0.00 | 4 |
+| STATE_EXCL_AZ | C | 1 | 0.00 | 3,150.00 | 10 |
+| STATE_EXCL_MI | A | 1 | 0.00 | 306.00 | 1 |
+| STATE_EXCL_MS | C | 1 | 0.00 | 0.00 | 8 |
 | STATE_EXCL_NH | A | 1 | 0.00 | 444.00 | 2 |
 
 **Identity checks.** Every NPI on every list must pass the NPI check digit (Luhn with the 80840 prefix). Rows on any list whose name shares no token with the NPPES record for that NPI are set aside as tier C, whatever the source (the California list's provider-number field can carry an employer's NPI, and a revocation can name a practice rather than the individual; 557 such rows, $260.43M, are excluded from every number above). Texas lists everyone ever excluded, so its rows use the reinstatement or eligible-to-reapply date as the window end and pre-2018 rows without either are tier B.
@@ -541,8 +453,8 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | exact_npi_name_conflict | C | 550 | 260.43 |
 | exact_npi_name_verified | A | 427 | 59.28 |
 | exact_npi_name_verified | B | 68 | 26.51 |
-| name_match_model_high | A | 2 | 6.53 |
-| name_match_model_high | B | 57 | 42.22 |
+| name_match_model_high | A | 6 | 7.19 |
+| name_match_model_high | B | 98 | 45.36 |
 
 **File dates.** "Excluded but still enrolled" is often an artefact of a stale enrollment file, so the headline never relies on enrollment status: it counts paid service months in T-MSIS after the action. The enrollment-segment figures below are reported separately and carry the file's own dates.
 
@@ -572,18 +484,18 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | MI | 157 |
 | GA | 120 |
 
-**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organizations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: 0 NPIs, $0.00M paid after; tier B (no NPPES corroboration): 19 NPIs, $4.01M.
+**Deceased.** T-MSIS status 80 (provider deceased) is applied by some states to organizations and to old records, so the test is restricted to individual NPIs whose latest status in that state is 80 and whose record starts 2015 or later. Tier A additionally requires NPPES to show the NPI deactivated. Tier A: 0 NPIs, $0.00M paid after; tier B (no NPPES corroboration): 20 NPIs, $4.04M.
 
-**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organizations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: 6,370 NPIs (16,337 state pairs), 208 of them also on a federal or state exclusion list, 2,987 with Medicaid dollars after the termination ($1,478.31M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
+**Cross-state.** Terminated for cause in one state (T-MSIS status 60, 65, 66, 67, 70, 72, 75, 78, 81; termination is the final status in that state; individuals or organizations enrolled in three or fewer states, so national chains with one mis-coded segment are excluded) and active in another state more than 90 days later: 6,370 NPIs (16,346 state pairs), 213 of them also on a federal or state exclusion list, 2,984 with Medicaid dollars after the termination ($1,484.68M). T-MSIS termination codes are state-coded and uneven, so this list is ranked with federally corroborated NPIs first and is presented as a screening queue, not a finding.
 
 | code | reason | NPIs | $M after |
 |---|---|---|---|
-| 70 | TERM - LICENSE REVOKED | 4,714 | 946.91 |
-| 81 | TERM - STATE EXCLUSION/ DEBARMENT, ETC. | 945 | 419.65 |
-| 78 | TERM - ONSITE REVIEW/ PROVIDER IS NO LONGER OPERATIONAL | 432 | 102.12 |
-| 72 | TERM - MEDICARE/MEDICAID EXCLUSION | 217 | 4.91 |
+| 70 | TERM - LICENSE REVOKED | 4,705 | 945.01 |
+| 81 | TERM - STATE EXCLUSION/ DEBARMENT, ETC. | 947 | 428.09 |
+| 78 | TERM - ONSITE REVIEW/ PROVIDER IS NO LONGER OPERATIONAL | 434 | 102.13 |
+| 72 | TERM - MEDICARE/MEDICAID EXCLUSION | 219 | 4.71 |
 | 60 | TERM - ABUSE OF BILLING PRIVILEGES | 60 | 0.25 |
-| 65 | TERM - FALSE OR MISLEADING INFORMATION | 7 | 3.50 |
+| 65 | TERM - FALSE OR MISLEADING INFORMATION | 10 | 3.51 |
 | 66 | TERM - FEDERAL EXCLUSION/ DEBARMENT, ETC. | 4 | 0.97 |
 | 75 | TERM - MISUSE OF BILLING NUMBER | 2 | 0.00 |
 
@@ -598,7 +510,7 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | 1548629520 | EMPIRE MEDICAL LLC | 2 | MEDICARE_REVOKED,STATE_EXCL_MD | 2020-07-31 | DE | 9 | 2020-08 | 2021-04 | 2,389,353.00 | 1 |
 | 1679896484 | BLAKES BLESSING HEALTH CARE INC. | 2 | STATE_EXCL_TX | 2022-01-19 | TX | 33 | 2022-02 | 2024-10 | 2,118,903.00 | 1 |
 | 1225242985 | KIUP KIM | 1 | STATE_EXCL_CA | 2018-12-10 | AZ | 52 | 2019-01 | 2023-08 | 2,046,769.00 | 1 |
-| 1619941614 | HISHAM SADEK | 1 | STATE_EXCL_IN,MEDICARE_REVOKED | 2015-07-15 | IL | 54 | 2020-05 | 2024-11 | 2,029,469.00 | 1 |
+| 1619941614 | HISHAM SADEK | 1 | MEDICARE_REVOKED,STATE_EXCL_IN | 2015-07-15 | IL | 54 | 2020-05 | 2024-11 | 2,029,469.00 | 1 |
 | 1861407637 | HEALTHSMART PACIFIC INC | 2 | OIG_LEIE | 2021-04-20 | MD | 34 | 2021-05 | 2024-02 | 1,639,221.00 | 1 |
 | 1447440359 | DOYLE'S YELLOW CHECKER CAB, INC | 2 | STATE_EXCL_ND | 2024-01-24 | MN | 11 | 2024-02 | 2024-12 | 1,506,469.00 | 1 |
 | 1215266267 | ADVANCED SPINE AND PAIN CENTERS, PLLC | 2 | MEDICARE_REVOKED | 2021-11-19 | MD | 23 | 2021-12 | 2023-10 | 1,327,755.00 | 1 |
@@ -608,7 +520,7 @@ Tables: `clusters` (features, score, rank, summary, graph JSON), `cluster_member
 | 1891703922 | COMMUNITY CARE MEDICAL CLINICS INC | 2 | MEDICARE_REVOKED | 2020-03-02 | TX | 19 | 2021-04 | 2023-04 | 960,939.00 | 1 |
 | 1871571406 | MOHAMED ASWAD | 1 | OIG_LEIE,MEDICARE_REVOKED | 2016-01-20 | AZ | 55 | 2018-01 | 2022-07 | 901,321.00 | 1 |
 | 1407188543 | MERCRIS HOME HEALTH INC | 2 | MEDICARE_REVOKED | 2023-05-01 | TX | 17 | 2023-06 | 2024-10 | 899,287.00 | 1 |
-| 1831547868 | SHANONE CHATMAN-ASHLEY | 1 | OIG_LEIE,MEDICARE_REVOKED | 2020-10-23 | LA | 38 | 2020-11 | 2023-12 | 883,542.00 | 1 |
+| 1831547868 | SHANONE CHATMAN-ASHLEY | 1 | MEDICARE_REVOKED,OIG_LEIE | 2020-10-23 | LA | 38 | 2020-11 | 2023-12 | 883,542.00 | 1 |
 | 1740478270 | FIRST IDEAL ENTERPRISES INC. | 2 | MEDICARE_REVOKED | 2018-10-01 | MI | 38 | 2018-11 | 2021-12 | 843,035.00 | 1 |
 | 1518931856 | LINDA WARREN-WATSON | 1 | STATE_EXCL_CA | 2020-10-31 | CA | 16 | 2020-11 | 2022-06 | 828,250.00 | 1 |
 | 1609064153 | QUEENS OPTOMETRIC CARE PLLC | 2 | MEDICARE_REVOKED | 2023-10-25 | NY | 11 | 2023-11 | 2024-09 | 777,235.00 | 1 |
@@ -622,35 +534,35 @@ Tables: `d3_events`, `d3_paid_after`, `d3_enrolled_after`, `d3_crossstate`, `d3_
 
 | tier | meaning | NPIs | $M at risk | reached by 2+ detectors |
 |---|---|---|---|---|
-| 1 | adjudicated in a public enforcement record | 152 | 80.48 | 0 |
-| 1 | documented action, then payment | 392 | 63.43 | 0 |
+| 1 | adjudicated in a public enforcement record | 289 | 85.56 | 0 |
+| 1 | documented action, then payment | 396 | 64.09 | 0 |
 | 2 | impossible volume with concurrency | 66 | 93.79 | 0 |
-| 3 | network structure with a list link | 6,342 | 1,020.95 | 0 |
-| 3 | charged in a public enforcement record | 151 | 60.34 | 0 |
-| 4 | structure or single-organization volume | 2,525 | 7,451.13 | 0 |
-| 5 | informational | 2,170 | 2,803.26 | 0 |
+| 3 | network structure with a list link | 6,280 | 1,156.38 | 0 |
+| 3 | charged in a public enforcement record | 237 | 75.53 | 0 |
+| 4 | structure or single-organization volume | 2,524 | 7,438.21 | 0 |
+| 5 | informational | 2,205 | 2,804.45 | 0 |
 
 0 NPIs were reached by two or more detectors independently; corroboration is the strongest signal the pipeline produces and it is weighted accordingly.
 
-**Enforcement feed.** Public enforcement releases (Department of Justice press releases through the DOJ API, the HHS-OIG enforcement actions listing, and the state attorney general actions it carries) are fetched daily and backfilled to January 2024, read into a schema by the model, and the parties resolved to NPIs by name at high confidence only. The spending file ends in December 2024, so an action after that has no observable months after it; the provider is still documented, and its dollars figure is forward exposure. 156 providers in this table are adjudicated in an enforcement record and 155 more are charged and not yet adjudicated (actions dated 2024-01-10 to 2026-09-03); 152 of the adjudicated providers appear on no exclusion or revocation list yet, which is the lead time the feed exists to provide. An enforcement record counts toward corroboration only when no list action already documents the provider, because an OIG exclusion follows the conviction it cites: that is one chain of evidence, not two.
+**Enforcement feed.** Public enforcement releases (Department of Justice press releases through the DOJ API, the HHS-OIG enforcement actions listing, and the state attorney general actions it carries) are fetched daily and backfilled to January 2024, read into a schema by the model, and the parties resolved to NPIs by name at high confidence only. The spending file ends in December 2024, so an action after that has no observable months after it; the provider is still documented, and its dollars figure is forward exposure. 301 providers in this table are adjudicated in an enforcement record and 245 more are charged and not yet adjudicated (actions dated 2024-01-09 to 2026-09-03); 289 of the adjudicated providers appear on no exclusion or revocation list yet, which is the lead time the feed exists to provide. An enforcement record counts toward corroboration only when no list action already documents the provider, because an OIG exclusion follows the conviction it cites: that is one chain of evidence, not two.
 
 **Top 25 referral candidates.**
 
 | rank | NPI | name | type | state | tier | score | detectors | $ at risk | reasons |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 1548629520 | EMPIRE MEDICAL LLC | 2 | DE | 1 | 100.00 | ['D3'] | 2,389,353.00 | Listed on the Medicare revocation list since July 31, 2020; Medicaid still paid claims in 9 later months, $2,389,353 in total; Medicaid dollars per patient on code 99214 ($117 per patient-month) sit in the top 5% of every provider billing that code |
-| 2 | 1780780031 | DAVID SMITH | 1 | NC | 1 | 100.00 | ['D3'] | 1,063,751.00 | Listed on the SC Medicaid exclusion list and the Medicare revocation list since August 30, 2021; Medicaid still paid claims in 7 later months, $1,063,751 in total; Medicaid dollars per patient on code 80307 ($557 per patient-month) sit in the top 5% of every provider billing that code |
-| 3 | 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | NJ | 1 | 100.00 | ['D3'] | 1,043,387.00 | Listed on the NY Medicaid exclusion list and the Medicare revocation list since October 31, 2022; Medicaid still paid claims in 7 later months, $1,043,387 in total; Medicaid dollars per patient on code U0005 ($390 per patient-month) sit in the top 5% of every provider billing that code |
+| 2 | 1780780031 | DAVID SMITH | 1 | NC | 1 | 100.00 | ['D3'] | 1,063,751.00 | Listed on the Medicare revocation list and the SC Medicaid exclusion list since August 30, 2021; Medicaid still paid claims in 7 later months, $1,063,751 in total; Medicaid dollars per patient on code 80307 ($557 per patient-month) sit in the top 5% of every provider billing that code |
+| 3 | 1851726731 | INFINITY DIAGNOSTICS LABORATORY, INC | 2 | NJ | 1 | 100.00 | ['D3'] | 1,043,387.00 | Listed on the Medicare revocation list and the NY Medicaid exclusion list since October 31, 2022; Medicaid still paid claims in 7 later months, $1,043,387 in total; Medicaid dollars per patient on code U0005 ($390 per patient-month) sit in the top 5% of every provider billing that code |
 | 4 | 1992766299 | PATRICK CHAU | 1 | IA | 1 | 100.00 | ['D3'] | 489,411.00 | Listed on the WA Medicaid exclusion list since May 26, 2006; Medicaid still paid claims in 41 later months, $489,411 in total; Medicaid dollars per patient on code T1015 ($730 per patient-month) sit in the top 5% of every provider billing that code; Medicare submitted charges on code 96127 are 3.3 times the typical charge-to-allowed ratio for that code |
 | 5 | 1851702971 | NEW WAVE DIAGNOSTIC RADIOLOGY PLLC | 2 | NY | 1 | 99.80 | ['D3'] | 580,310.00 | Listed on the Medicare revocation list since August 19, 2022; Medicaid still paid claims in 27 later months, $580,310 in total; Medicaid dollars per patient on code 93890 ($231 per patient-month) sit in the top 5% of every provider billing that code |
 | 6 | 1043256118 | IVAN ANTONEVICH | 1 | NY | 1 | 99.70 | ['D3'] | 460,209.00 | Listed on the CA Medicaid exclusion list since August 12, 2021; Medicaid still paid claims in 39 later months, $460,209 in total; Medicaid dollars per patient on code 20610 ($767 per patient-month) sit in the top 5% of every provider billing that code |
 | 7 | 1366879603 | PRESTIGE MEDICAL SUPPLY INC | 2 | AR | 1 | 99.70 | ['D3'] | 450,238.00 | Listed on the Medicare revocation list since September 14, 2023; Medicaid still paid claims in 14 later months, $450,238 in total; Medicaid dollars per patient on code A4259 ($82 per patient-month) sit in the top 5% of every provider billing that code |
-| 8 | 1154089241 | FAST LAB TECHNOLOGIES LLC | 2 | NY | 1 | 99.60 | ['D3'] | 3,896.00 | Listed on the SC Medicaid exclusion list since November 19, 2024; Medicaid still paid claims in 1 later months, $3,896 in total; Medicaid dollars per patient on code 87811 ($48 per patient-month) sit in the top 5% of every provider billing that code; Medicare submitted charges on code 87811 are 3.8 times the typical charge-to-allowed ratio for that code |
+| 8 | 1154089241 | FAST LAB TECHNOLOGIES LLC | 2 | NY | 1 | 99.60 | ['D3', 'ENF'] | 3,896.00 | Listed on the SC Medicaid exclusion list since November 19, 2024; Medicaid still paid claims in 1 later months, $3,896 in total; Charged (indicted) per a Department of Justice release dated July 31, 2025, not adjudicated; Medicaid paid $1,843,694 in the last 12 observed months; Medicaid dollars per patient on code 87811 ($48 per patient-month) sit in the top 5% of every provider billing that code; Medicare submitted charges on code 87811 are 3.8 times the typical charge-to-allowed ratio for that code |
 | 9 | 1093811341 | MOHAMMAD HOQUE | 1 | VA | 1 | 99.40 | ['D3'] | 241,391.00 | Listed on the Medicare revocation list since January 21, 2021; Medicaid still paid claims in 15 later months, $241,391 in total; Medicaid dollars per patient on code 99231 ($121 per patient-month) sit in the top 5% of every provider billing that code |
 | 10 | 1083799365 | LAKKARAJ RAJASEKHAR | 1 | OH | 1 | 99.40 | ['D3'] | 226,119.00 | Listed on the Medicare revocation list since September 30, 2020; Medicaid still paid claims in 45 later months, $226,119 in total; Medicaid dollars per patient on code 99214 ($229 per patient-month) sit in the top 5% of every provider billing that code |
 | 11 | 1275288862 | NORTHWEST MEDICAL LAB INC | 2 | IL | 1 | 99.30 | ['D3'] | 221,263.00 | Listed on the Medicare revocation list since May 23, 2024; Medicaid still paid claims in 5 later months, $221,263 in total; Medicaid dollars per patient on code 87637 ($303 per patient-month) sit in the top 5% of every provider billing that code |
 | 12 | 1790709111 | MICHAEL ADIX | 1 | NC | 1 | 99.20 | ['D3'] | 154,645.00 | Listed on the Medicare revocation list since April 18, 2023; Medicaid still paid claims in 11 later months, $154,645 in total; Medicaid dollars per patient on code 74177 ($693 per patient-month) sit in the top 5% of every provider billing that code |
-| 13 | 1851353866 | SAMIR WAHIB | 1 | IN | 1 | 99.20 | ['D3'] | 152,666.00 | Listed on the Medicare revocation list and the NY Medicaid exclusion list since June 7, 2023; Medicaid still paid claims in 12 later months, $152,666 in total; Medicaid dollars per patient on code 99213 ($187 per patient-month) sit in the top 5% of every provider billing that code |
+| 13 | 1851353866 | SAMIR WAHIB | 1 | IN | 1 | 99.20 | ['D3'] | 152,666.00 | Listed on the NY Medicaid exclusion list and the Medicare revocation list since June 7, 2023; Medicaid still paid claims in 12 later months, $152,666 in total; Medicaid dollars per patient on code 99213 ($187 per patient-month) sit in the top 5% of every provider billing that code |
 | 14 | 1649669771 | SWIFT MEDICAL TRANSPORT LLC | 2 | VA | 1 | 99.10 | ['D3'] | 140,338.00 | Listed on the Medicare revocation list since May 13, 2019; Medicaid still paid claims in 4 later months, $140,338 in total; Medicaid dollars per patient on code A0428 ($712 per patient-month) sit in the top 5% of every provider billing that code |
 | 15 | 1992888184 | HASIB SARIJ | 1 | NY | 1 | 99.10 | ['D3'] | 118,713.00 | Listed on the Medicare revocation list since February 16, 2024; Medicaid still paid claims in 10 later months, $118,713 in total; Medicaid dollars per patient on code J3490 ($127 per patient-month) sit in the top 5% of every provider billing that code |
 | 16 | 1700808243 | KELLY TURNER | 1 | TX | 1 | 98.90 | ['D3'] | 88,543.00 | Listed on the TX Medicaid exclusion list since October 22, 2018; Medicaid still paid claims in 14 later months, $88,543 in total; Medicaid dollars per patient on code 99284 ($319 per patient-month) sit in the top 5% of every provider billing that code |
