@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { serviceClient } from "@/lib/supabase";
-import { claude, claudeReady, cleanText } from "@/lib/claude";
+import { claude, claudeReady, cleanText, STYLE } from "@/lib/claude";
 import { readJson, subjectOk, str, chatHistory } from "@/lib/validate";
 
 // "Ask this case": a reviewer chat that can only call evidence tools over the serving tables. Every answer must cite tool rows.
@@ -34,10 +34,13 @@ export async function POST(req: Request) {
     betaZodTool({ name: "get_saturation", description: "CMS Market Saturation rows for the community's county: providers per 10k FFS beneficiaries by service type and year.", inputSchema: z.object({}), run: () => safe("get_saturation", async () => {
       const fips = subject_type === "cluster" ? (await sb.from("clusters").select("county_fips").eq("id", subject_id).maybeSingle()).data?.county_fips : (await sb.from("provider_risk").select("county_fips").eq("npi", subject_id).maybeSingle()).data?.county_fips;
       if (!fips) return "[]"; const { data } = await sb.from("saturation_county").select("reference_period,type_of_service,county,state,providers,ffs_beneficiaries,providers_per_10k_ffs,moratorium").eq("county_fips", String(fips).slice(-3)).eq("state", (await sb.from("county_risk").select("state").eq("county_fips", fips).maybeSingle()).data?.state ?? "").limit(40); return JSON.stringify(data); }) }),
-    betaZodTool({ name: "get_factor_desk", description: "Factor desk rows for the network: thirty factors with value, percentile among all networks (risky direction) and robust z, plus the momentum outlook.", inputSchema: z.object({}), run: () => safe("get_factor_desk", async () => {
+    betaZodTool({ name: "get_network_factors", description: "Measured factors for the network: each with its value, its percentile among all networks in the risky direction, and its robust z, plus the momentum outlook.", inputSchema: z.object({}), run: () => safe("get_network_factors", async () => {
       if (subject_type !== "cluster") return "[]"; const { data } = await sb.from("network_factors").select("factor,family,label,unit,value,percentile,z,outlook").eq("cluster_id", subject_id).order("percentile", { ascending: false }); return JSON.stringify(data ?? []); }) }),
   ];
-  const system = `You are the case assistant inside Verity, a provider-integrity console for health plan investigators. You may only answer from the tool results in this conversation. Every factual sentence must end with a bracketed citation naming the tool and the row, for example [get_payment_timeline: NPI 1234567893, 2022-11]. If the tools do not contain the answer, say so. Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Short paragraphs, plain English, no em dashes. Subject: ${subject_type} ${subject_id}.`;
+  const system = `You are the case assistant inside Verity, a provider-integrity console for health plan investigators. You may only answer from the tool results in this conversation. Every factual sentence must end with a bracketed citation naming the tool and the row, for example [get_payment_timeline: NPI 1234567893, 2022-11]. If the tools do not contain the answer, say so. Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Subject: ${subject_type} ${subject_id}.
+
+${STYLE}
+Keep paragraphs to three or four sentences. The bracketed citation goes at the end of each factual sentence, after the full stop's place, like this: Medicaid paid $2,389,353 after the action [get_payment_timeline: NPI 1548629520, 2020-08].`;
   const messages: any[] = [...history, { role: "user", content: question }];
   try {
     const runner = claude().beta.messages.toolRunner({ model: process.env.VERITY_CHAT_MODEL ?? "claude-sonnet-5", max_tokens: 3000, system, tools, messages, max_iterations: 6 });

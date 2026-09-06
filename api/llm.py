@@ -1,4 +1,4 @@
-"""Shared Anthropic client for Verity. Models: claude-opus-5 for drafting and adjudication, claude-haiku-4-5 only where the caller
+"""Shared Anthropic client for Verity. Models: claude-sonnet-5 for drafting and adjudication, claude-haiku-4-5 only where the caller
 asks for the cheap tier explicitly. Every helper strips em dashes from model text (house style) and never lets the model invent facts:
 callers pass evidence rows and the schemas force citations."""
 import json, os, re
@@ -7,7 +7,7 @@ import anthropic
 from pydantic import BaseModel
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
-MODEL = os.environ.get("VERITY_MODEL", "claude-opus-5")
+MODEL = os.environ.get("VERITY_MODEL", "claude-sonnet-5")
 MODEL_FAST = os.environ.get("VERITY_MODEL_FAST", "claude-haiku-4-5")
 T = TypeVar("T", bound=BaseModel)
 _client = None
@@ -17,6 +17,20 @@ def client() -> anthropic.Anthropic:
     return _client
 def ready() -> bool:
     k = os.environ.get("ANTHROPIC_API_KEY", ""); return k.startswith("sk-ant-")
+
+# The house style every model-written surface shares, mirroring web/lib/claude.ts. Packets are read by investigators and
+# quoted in case files, so the writing has to be plain and checkable: one fact to a sentence, a full stop after each.
+STYLE = """Write in short, plain sentences.
+- One fact per sentence. End every sentence with a full stop. Never run two facts together with "and that", "which together", "with", or a trailing "which".
+- Keep sentences under 25 words. If a sentence carries a date, a dollar figure and a citation, split it into two or three sentences.
+- Give each figure its own sentence when it needs context. Do not stack parentheses: at most one short parenthetical in a sentence, and never a parenthetical inside another.
+- Order the facts: what the record is, then the date, then the amount, then what follows from it.
+- No em dashes, no en dashes, no underscores, no semicolon chains, no code-like identifiers. Write list names and reasons in words.
+- Cite regulations as 42 CFR 424.535(a)(9), with lower-case subsection letters. Write dates as July 31, 2020. Write amounts as $2,389,353.
+Example of what to avoid: "Public records show X was placed on the list on July 31, 2020 under 42 CFR 424.535(A)(9) Failure To Report, with a bar to 2030, and that Medicaid paid $2,389,353 across 9 months after that date."
+Example of the same facts done right: "Medicare revoked this provider on July 31, 2020 under 42 CFR 424.535(a)(9), failure to report. The bar on re-enrolling runs to July 31, 2030. Delaware Medicaid then paid $2,389,353 across 9 service months, from August 2020 to April 2021."
+"""
+
 DASHES = {"—": ", ", "–": " to ", "‒": "-", "―": ", "}
 def clean_text(x):
     """Strip em and en dashes from any string, list or dict (house style: no dashes, not even in packets)."""

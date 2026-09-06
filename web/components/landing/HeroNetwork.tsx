@@ -44,13 +44,25 @@ export function HeroNetwork() {
       if (mouse.active) for (const p of nodes) { const d = Math.hypot(p.x - mouse.x, p.y - mouse.y); if (d < 170) { ctx.strokeStyle = `rgba(255,255,255,${(0.35 * (1 - d / 170)).toFixed(3)})`; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke(); } }
       for (const p of nodes) { ctx.fillStyle = p.hub ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.6)"; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); }
       if (mouse.active) { ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.fillRect(mouse.x - 2.5, mouse.y - 2.5, 5, 5); }
-      raf = requestAnimationFrame(draw);
+      if (running) raf = requestAnimationFrame(draw);
     };
     const onMove = (e: PointerEvent) => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.active = true; };
     const onLeave = () => { mouse.active = false; mouse.x = -1e4; mouse.y = -1e4; };
+    // The loop only runs while the hero is actually on screen and the tab is in front, so scrolling down the page or
+    // switching away costs nothing.
+    let running = false, visible = true, onScreen = true;
+    const play = () => { if (running || !visible || !onScreen) return; running = true; last = performance.now(); raf = requestAnimationFrame(draw); };
+    const stop = () => { running = false; cancelAnimationFrame(raf); };
+    const sync = () => (visible && onScreen ? play() : stop());
+    const io = new IntersectionObserver(es => { onScreen = es.some(e => e.isIntersecting); sync(); }, { threshold: 0 });
+    io.observe(canvas);
+    const onVis = () => { visible = document.visibilityState === "visible"; sync(); };
+    document.addEventListener("visibilitychange", onVis);
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(canvas);
     resize(); window.addEventListener("resize", resize); canvas.addEventListener("pointermove", onMove); canvas.addEventListener("pointerleave", onLeave);
-    raf = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); canvas.removeEventListener("pointermove", onMove); canvas.removeEventListener("pointerleave", onLeave); };
+    play();
+    return () => { stop(); io.disconnect(); ro.disconnect(); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); canvas.removeEventListener("pointermove", onMove); canvas.removeEventListener("pointerleave", onLeave); };
   }, []);
   return <canvas ref={ref} className="absolute inset-0 w-full h-full" aria-hidden="true" />;
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { publicClient } from "@/lib/supabase";
 import { CountyMap } from "@/components/app/CountyMap";
 import { Tier } from "@/components/app/Tier";
+import { Reasons } from "@/components/app/Reasons";
 import { withFallback } from "@/lib/fallback";
 import { money } from "@/lib/labels";
 export const revalidate = 120;
@@ -29,19 +30,19 @@ export default async function Overview() {
         <Link href="/app/methods" className="link text-[13px] shrink-0">How the numbers are made</Link>
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-px mb-6" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
-        {kpis.map(k => <Link key={k.l} href={k.href} className="block p-5 hover:bg-[var(--paper-2)]" style={{ background: "var(--paper)" }}><div className="eyebrow">{k.l}</div><div className="serif text-[44px] leading-none mt-3" style={{ color: "var(--blue)" }}>{k.v}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">{k.s}</div></Link>)}
+        {kpis.map(k => <Link key={k.l} href={k.href} className="kpi-card block p-5 hover:bg-[var(--paper-2)]" style={{ background: "var(--paper)" }}><div className="eyebrow">{k.l}</div><div className="serif text-[44px] leading-none mt-3" style={{ color: "var(--blue)" }}>{k.v}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">{k.s}</div></Link>)}
       </div>
       <div className="card p-2 mb-6"><CountyMap counties={(counties as any) ?? []} /></div>
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-6">
         <div className="card p-5 overflow-x-auto">
           <div className="flex justify-between items-center mb-3"><h2 className="serif text-[24px]">Providers to look at first</h2><Link href="/app/candidates" className="link text-[12px]">All providers</Link></div>
           <table className="table"><thead><tr><th>tier</th><th>provider</th><th>at stake</th></tr></thead>
-            <tbody>{top?.map(r => <tr key={r.npi}><td><Tier n={r.tier} /></td><td><Link href={`/app/providers/${r.npi}`} className="link">{r.name || r.npi}</Link><div className="text-[11.5px] text-[var(--ink-2)] max-w-[460px] leading-5">{r.reasons}</div></td><td>{money(r.dollars_at_risk)}</td></tr>)}</tbody></table>
+            <tbody className="rows-in">{top?.map(r => <tr key={r.npi}><td><Tier n={r.tier} /></td><td><Link href={`/app/providers/${r.npi}`} className="link">{r.name || r.npi}</Link><div className="text-[11.5px] text-[var(--ink-2)] max-w-[460px] leading-5 mt-1"><Reasons text={r.reasons} compact max={3} /></div></td><td>{money(r.dollars_at_risk)}</td></tr>)}</tbody></table>
         </div>
         <div className="card p-5">
           <div className="flex justify-between items-center mb-3"><h2 className="serif text-[24px]">Networks to look at first</h2><Link href="/app/clusters" className="link text-[12px]">All networks</Link></div>
           {clusters?.map(c => { const f = (typeof c.features === "string" ? JSON.parse(c.features) : c.features) ?? {}; const facts: string[] = f.facts ?? []; return (
-            <Link key={c.id} href={`/app/clusters/${c.id}`} className="block py-3 rule hover:bg-[var(--paper-2)]">
+            <Link key={c.id} href={`/app/clusters/${c.id}`} className="block py-3 rule hover:bg-[var(--paper-2)] transition-colors">
               <div className="flex justify-between text-[13px]"><span className="serif text-[17px]">{c.summary}</span><span style={{ color: "var(--blue)" }}>{Number(c.score).toFixed(0)}</span></div>
               <div className="text-[11.5px] text-[var(--ink-2)] mt-1 line-clamp-2">{facts.slice(0, 2).join(" ")}</div>
               <div className="text-[11px] text-[var(--ink-3)] mt-1">{c.id}, {money(c.dollars_at_risk)} Medicaid 2024</div>

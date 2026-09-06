@@ -27,15 +27,16 @@ export function ForceGraph({ graph, height = 520 }: { graph: { nodes: any[]; edg
     return () => { sim.stop(); };
   }, [graph, height]);
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden">
       <svg ref={ref} className="w-full" style={{ height }} />
-      <div className="absolute top-2 left-2 flex gap-3 text-[10px] text-[var(--ink-3)] bg-white/90 px-2 py-1">
+      {/* The legend wraps inside the frame; as a single row it was wider than a phone and pushed the whole page sideways. */}
+      <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[var(--ink-3)] bg-white/90 px-2 py-1">
         {Object.entries({ provider: "provider", person: "owner (person)", org: "owner (org)", addr: "address", phone: "phone", ein: "EIN" }).map(([k, v]) => <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 inline-block" style={{ background: COLOR[k], border: `1px solid ${STROKE[k]}` }} />{v}</span>)}
         <span className="flex items-center gap-1"><span className="w-2 h-2 inline-block border-2 border-dashed border-black" />on a list</span>
         <span>dashed: hub held out</span>
       </div>
       {sel && (
-        <div className="absolute right-2 top-2 bg-white border border-[var(--ink)] p-3 text-[12px] max-w-xs">
+        <div className="absolute right-2 top-2 bg-white border border-[var(--ink)] p-3 text-[12px] max-w-[min(20rem,calc(100%-1rem))]">
           <div className="font-medium">{sel.label || sel.id}</div>
           <div className="text-[var(--ink-3)]">{sel.kind}{sel.ptype ? `, ${sel.ptype}` : ""}{sel.city ? `, ${sel.city}, ${sel.state}` : ""}{sel.inc_date ? `, inc ${sel.inc_date}` : ""}{sel.prov_degree ? `, ${sel.prov_degree} providers` : ""}</div>
           {sel.labels?.length ? <div className="text-[var(--danger)] mt-1">{sel.labels.join(", ")}</div> : null}

@@ -1,5 +1,5 @@
 import { Nav } from "@/components/landing/Nav";
-import { Hero, WhatWeDo, Stats, Detectors, Hierarchy, WhoWeServe, HowItWorks, Security, CTA } from "@/components/landing/Sections";
+import { Hero, WhatWeDo, Stats, Detectors, Hierarchy, WhoWeServe, HowItWorks, Security, CTA, ScrollProgress, BackToTop } from "@/components/landing/Sections";
 import { Footer } from "@/components/landing/Footer";
 import { publicClient } from "@/lib/supabase";
 import { withFallback } from "@/lib/fallback";
@@ -17,6 +17,7 @@ export default async function Landing() {
   }));
   return (
     <div className="min-h-screen bg-white">
+      <ScrollProgress />
       <Nav />
       <Hero />
       <WhatWeDo />
@@ -28,6 +29,7 @@ export default async function Landing() {
       <Security />
       <CTA />
       <Footer />
+      <BackToTop />
     </div>
   );
 }

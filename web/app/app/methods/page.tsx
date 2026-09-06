@@ -14,7 +14,8 @@ export default async function Methods() {
   const t = S.totals ?? {}; const d1 = S.d1_summary ?? {}; const d2 = S.d2_summary ?? {}; const d3 = S.d3_summary ?? {};
   const prec: [string, number][] = Object.entries(d1.precision ?? {}).map(([k, v]) => [`top ${k}`, Number(v)]);
   const pv: Record<string, number> = d1.precision_pvalues ?? {};
-  const d2tiers: [string, number, string][] = (d2.tiers ?? []).map((r: any[]) => [`tier ${r[0]}`, Number(r[2]), `${num(r[1])} months`]);
+  // d2.tiers rows are [tier, NPI-months, NPIs, $ millions]: the chart is dollars, the caption carries the counts
+  const d2tiers: [string, number, string][] = (d2.tiers ?? []).map((r: any[]) => [`tier ${r[0]}`, Number(r[3]), `${num(r[2])} providers, ${num(r[1])} months`]);
   const d2labels: [string, number][] = (d2.labels ?? []).slice(0, 6).map((r: any[]) => [labelName(r[0]).split(",")[0].slice(0, 34), Number(r[2])]);
   const denom: any[] = d2.denominator ?? [];
   const idm: any[] = d3.id_match ?? []; const fileDates: any[] = d3.file_dates ?? []; const byYear: [string, number][] = (d3.by_year ?? []).filter((r: any[]) => Number(r[0]) >= 2015).map((r: any[]) => [r[0], Number(r[2])]);

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { titleCase } from "@/lib/labels";
 type Hit = { npi: string; name: string; city?: string; state?: string; entity_type?: string; tier?: number | null; source: string };
 const NAV = [["Home", "/", "Landing page"], ["Overview", "/app", "Tiers, map, top providers and networks"], ["Providers", "/app/candidates", "Every flagged provider, ranked"], ["Networks", "/app/clusters", "Groups of providers that belong together"], ["Addresses hosting many providers", "/app/plazas", "Office plazas and shared suites"], ["Paid after a list action", "/app/flags?detector=D3", "Detail view"], ["Hours per day", "/app/flags?detector=D2", "Detail view"], ["Methods", "/app/methods", "How the numbers are made"], ["Terms, privacy and security", "/legal", ""]];
 export function CommandPalette() {
@@ -18,7 +19,7 @@ export function CommandPalette() {
   }, [q]);
   const nav = NAV.filter(([n,, d]) => !q.trim() || `${n} ${d}`.toLowerCase().includes(q.trim().toLowerCase()));
   const items: { label: string; sub: string; href: string; tier?: number | null; kind: "nav" | "provider" }[] = [
-    ...hits.map(h => ({ label: h.name || h.npi, sub: `${h.npi}, ${h.entity_type === "2" ? "organization" : "individual"}${h.city ? `, ${h.city}, ${h.state}` : h.state ? `, ${h.state}` : ""}${h.source === "nppes" ? ", national registry" : ""}`, href: `/app/providers/${h.npi}`, tier: h.tier, kind: "provider" as const })),
+    ...hits.map(h => ({ label: h.name || h.npi, sub: `${h.npi}, ${h.entity_type === "2" ? "organization" : "individual"}${h.city ? `, ${titleCase(h.city)}, ${h.state}` : h.state ? `, ${h.state}` : ""}${h.source === "nppes" ? ", national registry" : ""}`, href: `/app/providers/${h.npi}`, tier: h.tier, kind: "provider" as const })),
     ...(/^\d{10}$/.test(q.trim()) && !hits.some(h => h.npi === q.trim()) ? [{ label: `Open NPI ${q.trim()}`, sub: "Look up this number in the registry", href: `/app/providers/${q.trim()}`, kind: "provider" as const }] : []),
     ...nav.map(([n, h, d]) => ({ label: n, sub: d, href: h, kind: "nav" as const })),
   ];

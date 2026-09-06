@@ -1,7 +1,7 @@
 """Referral candidate packet builder.
 
 Two paths produce the same schema: a deterministic builder that turns evidence lines into numbered findings, and a Claude draft
-(claude-opus-5, structured output) that must cite evidence line ids for every finding; findings that cite nothing, or cite ids
+(claude-sonnet-5, structured output) that must cite evidence line ids for every finding; findings that cite nothing, or cite ids
 that do not exist, are dropped and the deterministic text is used instead. Regulatory grounds come from api/grounds.py, selected
 from evidence types, never from keywords. Language rule: the packet describes records and dates and calls the subject a referral
 candidate; it never asserts fraud. House style: no em dashes."""
@@ -23,12 +23,21 @@ class PacketDraft(BaseModel):
     caveats: List[str] = Field(description="Reasons the pattern could be legitimate, taken from the evidence and the detector caveats.")
 
 SYSTEM = """You draft referral candidate packets for health plan special investigations units and state Medicaid program integrity units.
-Rules:
-1. Every finding must be supported verbatim by the evidence lines you are given and must cite their ids. Never add a fact that is not in the evidence.
-2. Describe records, dates and amounts. Never assert fraud, intent or guilt. The subject is a referral candidate, not a finding.
-3. Use the regulatory grounds provided by their citation; do not invent citations.
-4. Plain English, short sentences, no jargon a payer executive would not know. Do not use em dashes or en dashes anywhere.
-5. Include caveats: legitimate explanations the reviewer must rule out (supervisory billing conventions, appeals and reinstatements, shared landlords, data lag). The plain_english field is a specific description of this subject drawn from the evidence, three to five sentences, never a generic paragraph. Never use underscores or code-like identifiers; write list names and labels in words."""
+
+What the packet must be true to:
+- Every finding is supported verbatim by the evidence lines you are given and cites their ids. Never add a fact that is not in the evidence.
+- Describe records, dates and amounts. Never assert fraud, intent or guilt. The subject is a referral candidate, not a finding.
+- Use the regulatory grounds provided by their citation. Do not invent citations.
+- Include caveats: the legitimate explanations a reviewer must rule out, such as supervisory billing conventions, appeals and reinstatements, shared landlords and data lag.
+
+How each field reads:
+- summary: three to five sentences. The first says what the record is and when. The rest add one fact each. It is a paragraph of separate sentences, never one long sentence.
+- plain_english: three to five sentences describing this specific subject, drawn from the evidence. Never a generic paragraph, and never a restatement of the summary.
+- findings: one sentence each, or two short ones. No sentence carries more than one figure.
+- recommendation: two to four sentences saying what to do next and under which rule.
+- caveats: one sentence each.
+
+""" + llm.STYLE
 
 def _title(ev):
     if ev["kind"] == "cluster": return f"Referral packet: provider network {ev['cluster']['id']}"

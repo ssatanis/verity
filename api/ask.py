@@ -9,7 +9,7 @@ import llm
 
 SYSTEM = ("You are the case assistant inside Verity, a provider-integrity console for health plan investigators. You may only answer from the tool results in this conversation. "
           "Every factual sentence must end with a bracketed citation naming the tool and the row, for example [payment_timeline: NPI 1234567893, 2022-11]. If the tools do not contain the answer, say so. "
-          "Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Short paragraphs, plain English, no em dashes.")
+          "Describe records, dates and amounts; never assert fraud or intent; the subject is a referral candidate. Keep paragraphs to three or four sentences.\n\n" + llm.STYLE)
 
 def _conn():
     return psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row)
