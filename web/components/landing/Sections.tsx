@@ -15,7 +15,7 @@ export function Hero() {
           <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Integrity Before<br />the Payment<br />Goes Out</h1></Rise>
         </div>
         <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16" style={{ pointerEvents: "none" }}>
-          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">The public record already carries the signals that a payment should not go out. Verity reads it before the payment clears, ranks every Medicare and Medicaid provider on the strength of the evidence, and hands investigators a packet in which every sentence cites the record behind it.</p></Rise>
+          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">Before a payment goes out, Verity reads the whole public record, so that every dollar a health plan pays is a dollar it can defend.</p></Rise>
         </div>
       </div>
     </section>
@@ -27,7 +27,7 @@ export function WhatWeDo() {
       <div className={`${W} py-24 grid md:grid-cols-[1fr_3fr] gap-12`}>
         <div className="text-[17px]" style={{ color: "var(--blue)" }}>What we do</div>
         <div className="lrule pl-10">
-          <Reveal><p className="serif text-[28px] md:text-[36px] leading-[1.22]" style={{ color: "var(--blue)" }}>Our ambition is that every dollar a health plan pays a provider is a dollar it can defend. We bring public enrollment, ownership, exclusion and spending records together into one picture, so that investigators see the pattern before the payment clears.</p>
+          <Reveal><p className="serif text-[28px] md:text-[36px] leading-[1.22]" style={{ color: "var(--blue)" }}>Our ambition is that no health plan pays a provider the public record has already warned it about. We bring public enrollment, ownership, exclusion and spending records together into one picture, so that investigators see the pattern before the payment clears.</p>
           <Link href="/app" className="btn mt-12">Explore the Console</Link></Reveal>
         </div>
       </div>
