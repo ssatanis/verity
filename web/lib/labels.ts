@@ -37,7 +37,7 @@ export function revocationReason(raw?: string | null): string {
     .replace(/\((\w)\)/g, (_, c) => `(${String(c).toLowerCase()})`)
     // keep the citation itself upright, sentence-case the ground that follows it
     .replace(/^(\d[\d.]*(?:\([a-z0-9]\))*)\s+(.*)$/, (_, cite, rest) => `${cite} ${rest}`)
-  ).filter(Boolean).join("; ");
+  ).filter(Boolean).join(" and ");
 }
 
 // The reasons column arrives as one semicolon-joined string, which reads as a run-on wherever it is printed whole.
@@ -70,3 +70,17 @@ export function titleCase(raw?: string | null): string {
     return w[0].toUpperCase() + w.slice(1);
   });
 }
+
+// Dates arrive from the warehouse as 2020-07-31 and months as 2020-08. One system for the whole console: written out in
+// prose, abbreviated in table cells, and never the raw ISO string.
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function parts(v: unknown) {
+  const m = String(v ?? "").trim().match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+  if (!m) return null;
+  const i = Number(m[2]) - 1;
+  return { y: m[1], i, day: m[3] ? Number(m[3]) : null };
+}
+export const dateLong = (v: unknown) => { const p = parts(v); if (!p) return String(v ?? ""); const mo = MONTHS_LONG[p.i] ?? ""; return p.day ? `${mo} ${p.day}, ${p.y}` : `${mo} ${p.y}`; };
+export const dateShort = (v: unknown) => { const p = parts(v); if (!p) return String(v ?? ""); const mo = MONTHS_SHORT[p.i] ?? ""; return p.day ? `${mo} ${p.day}, ${p.y}` : `${mo} ${p.y}`; };
+export const monthShort = (v: unknown) => dateShort(String(v ?? "").slice(0, 7));

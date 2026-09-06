@@ -47,7 +47,12 @@ export async function POST(req: Request) {
         const ok = d.findings.filter(f => f.evidence_ids.length && f.evidence_ids.every(i => i >= 0 && i < n));
         packet = cleanText({ ...packet, model: MODEL, summary: d.summary || packet.summary, plain_english: d.plain_english || packet.plain_english, findings: ok.length ? ok : packet.findings, recommendation: d.recommendation || packet.recommendation, caveats: d.caveats?.length ? d.caveats : packet.caveats, findings_dropped: d.findings.length - ok.length });
       }
-    } catch (e: any) { packet = { ...packet, model: `deterministic (model unavailable: ${String(e?.message ?? e).slice(0, 80)})` }; }
+    } catch (e: any) {
+      // The deterministic packet still stands on its own, so a model outage degrades the draft rather than failing it.
+      const raw = String(e?.message ?? e);
+      console.error("packet draft fell back to the deterministic builder:", raw.slice(0, 200));
+      packet = { ...packet, model: `deterministic (${/401|authentication|api key/i.test(raw) ? "no valid Anthropic API key" : "the model was unavailable"})` };
+    }
   }
   const { data, error } = await sb.from("packets").insert({ subject_type, subject_id, status: "draft", packet, created_by, title: packet.title, cluster_id: subject_type === "cluster" ? subject_id : null, npi: subject_type === "provider" ? subject_id : null, model: packet.model }).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

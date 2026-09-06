@@ -1,10 +1,12 @@
 // Referral candidate packet: evidence lines from the serving tables, grounds from the evidence-type mapping (never keyword matching), deterministic draft when no model is configured.
 import { SupabaseClient } from "@supabase/supabase-js";
 import { CFR, evidenceTypes, groundsFor } from "./grounds";
-import { sourceName as srcName, labelName, ordinal, revocationReason } from "./labels";
+import { sourceName as srcName, labelName, ordinal, revocationReason, reasonList, titleCase, dateLong } from "./labels";
 export { CFR };
 const J = (x: any) => (typeof x === "string" ? JSON.parse(x) : x) ?? {};
 const $ = (v: any) => `$${Number(v ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+const D = dateLong;
+const place = (city: any, state: any) => [titleCase(city), state].filter(Boolean).join(", ");
 export type Line = [string, string];
 export async function evidenceLines(sb: SupabaseClient, kind: "cluster" | "provider", id: string): Promise<{ lines: Line[]; types: string[]; procedures: any[] }> {
   const L: Line[] = []; let procedures: any[] = [];
@@ -14,7 +16,7 @@ export async function evidenceLines(sb: SupabaseClient, kind: "cluster" | "provi
     const npis = (members ?? []).map(m => m.npi).filter(Boolean);
     const [{ data: rev }, { data: leie }, { data: flags }, { data: factors }] = await Promise.all([sb.from("revoked").select("*").in("npi", npis), sb.from("leie").select("*").in("npi", npis), sb.from("flags").select("*").in("npi", npis).order("score", { ascending: false }).limit(20), sb.from("network_factors").select("*").eq("cluster_id", id)]);
     const kinds = [[c.n_hospice, "hospice", "hospices"], [c.n_hha, "home health agency", "home health agencies"], [c.n_snf, "nursing facility", "nursing facilities"]].filter(k => Number(k[0]) > 0).map(k => `${k[0]} ${Number(k[0]) === 1 ? k[1] : k[2]}`).join(", ");
-    L.push(["clusters", `Provider network ${c.id}: ${c.n_providers} providers around ${c.city}, ${c.state} (${kinds}); network score ${Number(c.score).toFixed(0)} of 100, ranked ${c.rank} nationally.`]);
+    L.push(["clusters", `Provider network ${c.id} holds ${c.n_providers} providers around ${place(c.city, c.state)}. It is made up of ${kinds}. Its network score is ${Number(c.score).toFixed(0)} of 100, ranked ${c.rank} nationally.`]);
     for (const x of (f.facts ?? []) as string[]) L.push(["network facts", x]);
     const fx = (factors ?? []) as any[]; const mom = fx.find(r => r.factor === "momentum");
     for (const r of fx.filter(r => r.factor !== "momentum" && r.percentile != null && r.percentile >= 90).sort((a, b) => b.percentile - a.percentile).slice(0, 6)) L.push(["network factors", `${r.label}: ${r.unit === "$" ? $(r.value) : r.unit === "share" ? `${Math.round(r.value * 100)}%` : r.unit === "years" ? `${Number(r.value).toFixed(1)} years` : Number.isInteger(r.value) ? r.value : Number(r.value).toFixed(1)}, in the top ${Math.max(1, Math.round(100 - r.percentile))}% of networks in the risky direction.`]);
@@ -23,27 +25,30 @@ export async function evidenceLines(sb: SupabaseClient, kind: "cluster" | "provi
     for (const h of f.owner_hits ?? []) L.push([srcName(h[1]), `An owner named ${String(h[0]).replace(/\b\w/g, ch => ch.toUpperCase())} matches ${srcName(h[1])} at ${h[2]} confidence (action dated ${h[3]}).`]);
     if (f.sat_per_10k != null) L.push(["CMS market saturation", `The county has ${Number(f.sat_per_10k).toFixed(1)} providers of this kind per 10,000 Medicare fee-for-service beneficiaries, ${Number(f.sat_z ?? 0) > 0 ? "above" : "below"} the national norm.`]);
     L.push(["T-MSIS provider spending 2024", Number(c.dollars_at_risk) > 0 ? `The providers billed Medicaid ${$(c.dollars_at_risk)} in 2024${c.dollars_medicare ? ` and received ${$(c.dollars_medicare)} in Medicare hospice and home health payments in 2023` : ""}.` : c.dollars_medicare ? `The providers received ${$(c.dollars_medicare)} in Medicare hospice and home health payments in 2023 and billed no Medicaid in 2024.` : `The providers billed no Medicaid in 2024 and no Medicare hospice or home health payments are recorded for 2023.`]);
-    for (const m of members ?? []) { const labs = (J(m.labels) as string[]) ?? []; const kind = m.ptype === "HHA" ? "Home health agency" : m.ptype === "SNF" ? "Nursing facility" : "Hospice"; L.push(["network members", `${kind} ${m.org_name} (NPI ${m.npi}, ${m.city}, ${m.state})${m.inc_date ? `, incorporated ${m.inc_date}` : ""}${Number(m.medicaid_2024) > 0 ? `, billed Medicaid ${$(m.medicaid_2024)} in 2024` : ", no Medicaid billing in 2024"}${labs.length ? `, on ${labs.map(srcName).join(" and ")}` : ""}.`]); }
-    for (const r of rev ?? []) L.push(["Medicare revocation list", `NPI ${r.npi} was revoked on ${r.revoked_dt} under ${revocationReason(r.revocation_rsn)}, barred from re-enrolling until ${r.reenroll_bar_dt}.`]);
-    for (const r of leie ?? []) L.push(["OIG exclusion list", `NPI ${r.npi} was excluded on ${r.excl_dt} under section 1128 ${r.excltype}.`]);
-    for (const fl of flags ?? []) { const e = J(fl.evidence); if (fl.detector === "D3") L.push(["paid after a list action", `NPI ${fl.npi}: after the ${srcName(e.source)} action of ${e.event_dt}, Medicaid paid ${$(e.paid_after)} across ${e.months_paid_after} later months.`]); else L.push(["hours per day", `NPI ${fl.npi}: ${labelName(e.label)} in ${String(fl.month).slice(0, 7)}, ${Number(fl.value).toFixed(1)} hours per day, ${$(fl.dollars)} paid.`]); }
+    for (const m of members ?? []) { const labs = (J(m.labels) as string[]) ?? []; const kind = m.ptype === "HHA" ? "Home health agency" : m.ptype === "SNF" ? "Nursing facility" : "Hospice"; L.push(["network members", `${kind} ${m.org_name} (NPI ${m.npi}) is in ${place(m.city, m.state)}.${m.inc_date ? ` It was incorporated on ${D(m.inc_date)}.` : ""} ${Number(m.medicaid_2024) > 0 ? `It billed Medicaid ${$(m.medicaid_2024)} in 2024.` : "It billed no Medicaid in 2024."}${labs.length ? ` It appears on ${labs.map(srcName).join(" and ")}.` : ""}`]); }
+    for (const r of rev ?? []) L.push(["Medicare revocation list", `NPI ${r.npi} was revoked on ${D(r.revoked_dt)} under 42 CFR ${revocationReason(r.revocation_rsn)}. The bar on re-enrolling runs to ${D(r.reenroll_bar_dt)}.`]);
+    for (const r of leie ?? []) L.push(["OIG exclusion list", `NPI ${r.npi} was excluded on ${D(r.excl_dt)} under section 1128 ${r.excltype}.`]);
+    for (const fl of flags ?? []) { const e = J(fl.evidence); if (fl.detector === "D3") L.push(["paid after a list action", `NPI ${fl.npi} was named by ${srcName(e.source)} on ${D(e.event_dt)}. Medicaid then paid ${$(e.paid_after)} across ${e.months_paid_after} later ${Number(e.months_paid_after) === 1 ? "month" : "months"}.`]); else L.push(["hours per day", `NPI ${fl.npi} shows ${labelName(e.label).toLowerCase()} in ${D(String(fl.month).slice(0, 7))}. That is ${Number(fl.value).toFixed(1)} hours per day, on ${$(fl.dollars)} paid.`]); }
     return { lines: L, types: evidenceTypes("cluster", f, flags ?? [], rev ?? [], leie ?? []), procedures };
   }
   const [{ data: p }, { data: flags }, { data: rev }, { data: leie }, { data: enr }, { data: cm }, { data: risk }, { data: codes }, { data: mcodes }] = await Promise.all([sb.from("providers").select("*").eq("npi", id).maybeSingle(), sb.from("flags").select("*").eq("npi", id).order("score", { ascending: false }), sb.from("revoked").select("*").eq("npi", id), sb.from("leie").select("*").eq("npi", id), sb.from("enrollments").select("*").eq("npi", id), sb.from("cluster_members").select("cluster_id, clusters(id,rank,score,summary,features)").eq("npi", id), sb.from("provider_risk").select("*").eq("npi", id).maybeSingle(), sb.from("provider_codes").select("*").eq("npi", id).order("rk").limit(6), sb.from("provider_codes_medicare").select("*").eq("npi", id).order("rk").limit(4)]);
   if (!p && !(flags ?? []).length && !risk) return { lines: L, types: [], procedures };
   procedures = [...((codes ?? []) as any[]).map(c => ({ program: "Medicaid", code: c.hcpcs, description: c.description, paid: Number(c.paid), share: Number(c.share), per_patient_month: c.dpm, percentile: c.dpm_pct, typical: c.dpm_median, high_vector: !!c.high_vector })), ...((mcodes ?? []) as any[]).map(c => ({ program: "Medicare 2024", code: c.hcpcs, description: c.description, paid: Number(c.paid), share: Number(c.share), charge_ratio: c.charge_ratio, peer_ratio: c.peer_ratio_median }))];
   const who = p?.name ?? risk?.name ?? `NPI ${id}`; const entityKind = (p?.entity_type ?? risk?.entity_type) === "2" ? "an organization" : "an individual";
-  L.push(["national provider registry", `${who} (NPI ${id}) is ${entityKind} in ${p?.city ?? risk?.city ?? "an unstated city"}, ${p?.state ?? risk?.state ?? ""}${(p?.taxonomy ?? risk?.taxonomy) ? `, taxonomy ${p?.taxonomy ?? risk?.taxonomy}` : ""}${(p?.medicaid_state ?? risk?.medicaid_state) ? `, enrolled in Medicaid in ${p?.medicaid_state ?? risk?.medicaid_state}` : ""}.`]);
-  if (risk) L.push(["Verity risk tier", `Evidence tier ${risk.tier}, ${risk.tier_label}. ${risk.reasons}. Dollars at stake ${$(risk.dollars_at_risk)}, taken from the detector that set the tier.`]);
-  for (const r of rev ?? []) L.push(["Medicare revocation list", `Medicare revoked billing privileges effective ${r.revoked_dt} under ${revocationReason(r.revocation_rsn)}, with a re-enrollment bar until ${r.reenroll_bar_dt}.`]);
-  for (const r of leie ?? []) L.push(["OIG exclusion list", `The OIG excluded this provider on ${r.excl_dt} under section 1128 ${r.excltype}${r.general ? ` (${r.general})` : ""}${r.rein_dt ? `, reinstated ${r.rein_dt}` : ""}.`]);
+  L.push(["national provider registry", `${who} (NPI ${id}) is ${entityKind} in ${place(p?.city ?? risk?.city, p?.state ?? risk?.state) || "an unstated place"}.${(p?.taxonomy ?? risk?.taxonomy) ? ` The registry taxonomy is ${p?.taxonomy ?? risk?.taxonomy}.` : ""}${(p?.medicaid_state ?? risk?.medicaid_state) ? ` It is enrolled in Medicaid in ${p?.medicaid_state ?? risk?.medicaid_state}.` : ""}`]);
+  if (risk) {
+    L.push(["Verity risk tier", `Evidence tier ${risk.tier}: ${risk.tier_label}. Dollars at stake are ${$(risk.dollars_at_risk)}, taken from the detector that set the tier.`]);
+    for (const r of reasonList(risk.reasons)) L.push(["Verity risk tier", r]);
+  }
+  for (const r of rev ?? []) L.push(["Medicare revocation list", `Medicare revoked billing privileges on ${D(r.revoked_dt)} under 42 CFR ${revocationReason(r.revocation_rsn)}. The bar on re-enrolling runs to ${D(r.reenroll_bar_dt)}.`]);
+  for (const r of leie ?? []) L.push(["OIG exclusion list", `The OIG excluded this provider on ${D(r.excl_dt)} under section 1128 ${r.excltype}.${r.general ? ` The listed ground is ${titleCase(r.general)}.` : ""}${r.rein_dt ? ` The provider was reinstated on ${D(r.rein_dt)}.` : ""}`]);
   for (const fl of flags ?? []) { const e = J(fl.evidence);
-    if (fl.detector === "D3") L.push(["paid after a list action", `After the ${srcName(e.source)} action of ${e.event_dt}, Medicaid paid ${$(e.paid_after)} across ${e.months_paid_after} later months (${e.first_month_after} to ${e.last_month_after})${e.window_end ? `, until the window closed on ${e.window_end}` : ""}. In the 12 months before the action Medicaid paid ${$(e.paid_before_12m)}.`]);
-    else if (fl.metric === "growth_and_concentration") L.push(["growth and concentration", `In ${String(fl.month).slice(0, 4)} this new billing organization was paid ${$(fl.dollars)}, ${Math.round(Number(e.concentration ?? 0) * 100)}% of it on code ${e.dominant_code}, with dollars per patient in the top ${Math.round((1 - Number(e.intensity_pct ?? 0)) * 100)}% nationally.`]);
-    else L.push(["hours per day", `In ${String(fl.month).slice(0, 7)}: ${labelName(e.label)}. Conservative estimate ${Number(fl.value).toFixed(1)} hours per ${e.test_basis ?? "day"} (rate-free lower bound ${Number(e.hours_lb_per_day ?? 0).toFixed(1)}), ${$(e.paid)} paid on codes ${(e.codes ?? []).join(" ")}, billed through ${e.n_billing_orgs} organization${Number(e.n_billing_orgs) === 1 ? "" : "s"}.`]); }
-  for (const c of (codes ?? []) as any[]) L.push(["procedures billed, Medicaid", `Code ${c.hcpcs}${c.description ? ` (${c.description})` : ""}: ${$(c.paid)} paid over ${c.months} months, ${Math.round(Number(c.share) * 100)}% of this provider's Medicaid dollars${c.dpm != null ? `, ${$(c.dpm)} per patient-month` : ""}${c.dpm_pct != null ? ` which ranks at the ${ordinal(Number(c.dpm_pct) * 100)} percentile of all providers billing this code (typical ${$(c.dpm_median)})` : ""}${c.high_vector ? "; this code family has a history of abuse" : ""}.`]);
-  for (const c of (mcodes ?? []) as any[]) L.push(["procedures billed, Medicare 2024", `Code ${c.hcpcs} (${c.description}): ${Number(c.services).toLocaleString()} services for ${Number(c.beneficiaries).toLocaleString()} beneficiaries, ${$(c.paid)} paid; submitted ${$(c.avg_submitted)} per service against ${$(c.avg_allowed)} allowed, a ratio of ${Number(c.charge_ratio ?? 0).toFixed(1)}x${c.peer_ratio_median != null ? ` where the usual ratio for this code is ${Number(c.peer_ratio_median).toFixed(1)}x` : ""}.`]);
-  for (const en of enr ?? []) L.push(["Medicare enrollment", `Enrolled in Medicare as ${en.ptype === "HHA" ? "a home health agency" : en.ptype === "SNF" ? "a nursing facility" : "a hospice"}, ${en.org_name}${en.inc_date ? `, incorporated ${en.inc_date}` : ""}, ${en.city}, ${en.state}.`]);
+    if (fl.detector === "D3") L.push(["paid after a list action", `The ${srcName(e.source)} action is dated ${D(e.event_dt)}. Medicaid then paid ${$(e.paid_after)} across ${e.months_paid_after} later ${Number(e.months_paid_after) === 1 ? "month" : "months"}, from ${D(e.first_month_after)} to ${D(e.last_month_after)}.${e.window_end ? ` The screening window closes on ${D(e.window_end)}.` : ""} In the 12 months before the action Medicaid paid ${$(e.paid_before_12m)}.`]);
+    else if (fl.metric === "growth_and_concentration") L.push(["growth and concentration", `In ${String(fl.month).slice(0, 4)} this new billing organization was paid ${$(fl.dollars)}. ${Math.round(Number(e.concentration ?? 0) * 100)}% of that went to code ${e.dominant_code}. Its dollars per patient sit in the top ${Math.round((1 - Number(e.intensity_pct ?? 0)) * 100)}% nationally.`]);
+    else L.push(["hours per day", `In ${D(String(fl.month).slice(0, 7))} the billing implies ${labelName(e.label).toLowerCase()}. The conservative estimate is ${Number(fl.value).toFixed(1)} hours per ${e.test_basis ?? "day"}, against a rate-free lower bound of ${Number(e.hours_lb_per_day ?? 0).toFixed(1)}. Medicaid paid ${$(e.paid)} that month on codes ${(e.codes ?? []).join(", ")}, billed through ${e.n_billing_orgs} ${Number(e.n_billing_orgs) === 1 ? "organization" : "organizations"}.`]); }
+  for (const c of (codes ?? []) as any[]) L.push(["procedures billed, Medicaid", `Code ${c.hcpcs}${c.description ? `, ${c.description},` : ""} was paid ${$(c.paid)} over ${c.months} ${Number(c.months) === 1 ? "month" : "months"}. That is ${Math.round(Number(c.share) * 100)}% of this provider's Medicaid dollars.${c.dpm != null ? ` It runs at ${$(c.dpm)} per patient-month.` : ""}${c.dpm_pct != null ? ` That ranks at the ${ordinal(Number(c.dpm_pct) * 100)} percentile of all providers billing this code, where the typical figure is ${$(c.dpm_median)}.` : ""}${c.high_vector ? " This code family has a history of abuse." : ""}`]);
+  for (const c of (mcodes ?? []) as any[]) L.push(["procedures billed, Medicare 2024", `Code ${c.hcpcs}, ${c.description}, covered ${Number(c.services).toLocaleString()} services for ${Number(c.beneficiaries).toLocaleString()} beneficiaries, and Medicare paid ${$(c.paid)}. The provider submitted ${$(c.avg_submitted)} per service against ${$(c.avg_allowed)} allowed, a ratio of ${Number(c.charge_ratio ?? 0).toFixed(1)} times.${c.peer_ratio_median != null ? ` The usual ratio for this code is ${Number(c.peer_ratio_median).toFixed(1)} times.` : ""}`]);
+  for (const en of enr ?? []) L.push(["Medicare enrollment", `Enrolled in Medicare as ${en.ptype === "HHA" ? "a home health agency" : en.ptype === "SNF" ? "a nursing facility" : "a hospice"} under the name ${en.org_name}, in ${place(en.city, en.state)}.${en.inc_date ? ` It was incorporated on ${D(en.inc_date)}.` : ""}`]);
   const feats = (cm ?? []).map((c: any) => J(c.clusters?.features));
   for (const c of cm ?? []) L.push(["provider network", `Part of provider network ${(c as any).clusters?.id}, ranked ${(c as any).clusters?.rank}: ${(c as any).clusters?.summary}`]);
   const types = new Set(evidenceTypes("provider", {}, flags ?? [], rev ?? [], leie ?? [])); for (const f of feats) for (const t of evidenceTypes("cluster", f, [], [], [])) types.add(t);
@@ -67,17 +72,43 @@ const CAVEATS: Record<string, string> = {
   NETWORK_OWNER_ON_LEIE: "An owner match to the LEIE or SAM is a name match at the stated confidence; confirm identity with date of birth or address before relying on it.",
   NETWORK_MEMBER_ON_LIST: "A list hit on one member does not extend to the other members without a records review.",
 };
+// The deterministic packet has to read as prose too, since it is what the console shows whenever the model is not
+// reachable. Both of these assemble whole sentences from the evidence lines and never repeat the same line twice.
+const sentences = (text: string) => String(text).split(/(?<=\.)\s+/).map(x => x.trim()).filter(Boolean);
+const joinUnique = (parts: string[], max: number) => {
+  const out: string[] = []; const seen = new Set<string>();
+  for (const p of parts) for (const one of sentences(p)) {
+    const key = one.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key); out.push(one);
+    if (out.length >= max) return out.join(" ");
+  }
+  return out.join(" ");
+};
+// The opening paragraph: who the subject is, then the strongest thing the record says about them.
+function summarise(lines: Line[]) {
+  const first = lines.find(l => l[0] === "national provider registry" || l[0] === "clusters")?.[1];
+  const strongest = ["Medicare revocation list", "OIG exclusion list", "paid after a list action", "hours per day", "network facts", "Verity risk tier"]
+    .flatMap(src => lines.filter(l => l[0] === src).map(l => l[1]));
+  return joinUnique([first, ...strongest].filter(Boolean) as string[], 5);
+}
+// The description: what a reader who has not opened the tables needs, in the order the case is made.
+function describe(lines: Line[]) {
+  const order = ["Verity risk tier", "network facts", "Medicare revocation list", "OIG exclusion list", "paid after a list action", "hours per day", "procedures billed, Medicaid", "network members"];
+  const parts = order.flatMap(src => lines.filter(l => l[0] === src).map(l => l[1]));
+  return joinUnique(parts.length ? parts : lines.map(l => l[1]), 6);
+}
 export function deterministicPacket(kind: "cluster" | "provider", id: string, lines: Line[], types: string[], name?: string, procedures: any[] = []) {
   const gs = groundsFor(types);
   return {
     title: kind === "cluster" ? `Referral packet: provider network ${id}` : `Referral packet: ${name ?? `NPI ${id}`}`,
     subject_type: kind, subject_id: id, generated_at: new Date().toISOString(), model: "deterministic", evidence_types: types,
-    summary: lines[0]?.[1] ?? "", findings: lines.slice(1, 31).map((l, i) => ({ text: l[1], evidence_ids: [i + 1] })),
+    summary: summarise(lines), findings: lines.slice(1, 31).map((l, i) => ({ text: l[1], evidence_ids: [i + 1] })),
     grounds: gs,
     recommendation: "Route to the health plan special investigations unit, and to the state Medicaid program integrity unit where the payer is a Medicaid managed care plan, for a records request and a screening check under 42 CFR 455.436. Consider a pre-payment review pending that check; a payment suspension under 42 CFR 455.23 requires the state's own credible-allegation determination. Verify every fact against the cited rows before any action. This packet is a screening product, not a finding.",
     caveats: [...new Set(types.map(t => CAVEATS[t]).filter(Boolean))],
     evidence: lines.map((l, i) => ({ id: i, source: l[0], statement: l[1] })),
     procedures: procedures,
-    plain_english: lines.filter(l => l[0] === "network facts" || l[0] === "Verity risk tier" || l[0] === "paid after a list action" || l[0] === "hours per day").slice(0, 4).map(l => l[1]).join(" ") || lines[0]?.[1] || "",
+    plain_english: describe(lines),
   };
 }

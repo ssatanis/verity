@@ -9,7 +9,10 @@ export const revalidate = 120;
 const num = (v: any) => Number(v ?? 0).toLocaleString("en-US");
 export default async function Overview() {
   const sb = publicClient();
-  let rising = 0; try { const r = await sb.from("network_factors").select("cluster_id", { count: "exact", head: true }).eq("factor", "momentum").eq("outlook", "rising fast"); rising = r.count ?? 0; } catch {}
+  // A failed count is not a count of zero: keep it null so the tile can say the figure is unavailable instead of
+  // reporting that no network has momentum.
+  let rising: number | null = null;
+  try { const r = await sb.from("network_factors").select("cluster_id", { count: "exact", head: true }).eq("factor", "momentum").eq("outlook", "rising fast"); if (!r.error) rising = r.count ?? 0; } catch {}
   const [summ, counties, clusters, top] = await Promise.all([
     withFallback<any[]>("summary", () => sb.from("summary").select("key,value").eq("key", "totals"), rows => rows.filter((r: any) => r.key === "totals")),
     withFallback<any[]>("county_risk", () => sb.from("county_risk").select("*").order("dollars_at_risk", { ascending: false }).limit(3200)),
@@ -20,7 +23,7 @@ export default async function Overview() {
   const kpis = [
     { l: "On a public list, still paid afterwards", v: num(t.risk_tier1), s: `${money(t.d3_dollars_after)} paid after the action`, href: "/app/candidates?tier=1" },
     { l: "More hours than a day holds, across organizations", v: num(t.risk_tier2), s: `${num(t.d2_npis_impossible)} clinicians with at least one such month`, href: "/app/candidates?tier=2" },
-    { l: "Networks with momentum rising fast", v: num(rising), s: `formation, ownership and billing all accelerating; ${num(t.risk_corroborated)} providers flagged by two detectors`, href: "/app/clusters" },
+    { l: "Networks with momentum rising fast", v: rising == null ? "not available" : num(rising), s: `formation, ownership and billing all accelerating; ${num(t.risk_corroborated)} providers flagged by two detectors`, href: "/app/clusters" },
     { l: "Provider networks ranked", v: num(t.d1_clusters_eligible), s: `${money(t.d1_dollars_top200)} Medicaid 2024 in the top 200`, href: "/app/clusters" },
   ];
   return (
@@ -30,7 +33,7 @@ export default async function Overview() {
         <Link href="/app/methods" className="link text-[13px] shrink-0">How the numbers are made</Link>
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-px mb-6" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>
-        {kpis.map(k => <Link key={k.l} href={k.href} className="kpi-card block p-5 hover:bg-[var(--paper-2)]" style={{ background: "var(--paper)" }}><div className="eyebrow">{k.l}</div><div className="serif text-[44px] leading-none mt-3" style={{ color: "var(--blue)" }}>{k.v}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">{k.s}</div></Link>)}
+        {kpis.map(k => <Link key={k.l} href={k.href} className="kpi-card block p-5 hover:bg-[var(--paper-2)]" style={{ background: "var(--paper)" }}><div className="eyebrow">{k.l}</div><div className={`serif leading-none mt-3 ${k.v === "not available" ? "text-[22px] text-[var(--ink-3)]" : "text-[44px]"}`} style={{ color: k.v === "not available" ? undefined : "var(--blue)" }}>{k.v}</div><div className="text-[11px] text-[var(--ink-3)] mt-2">{k.s}</div></Link>)}
       </div>
       <div className="card p-2 mb-6"><CountyMap counties={(counties as any) ?? []} /></div>
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-6">

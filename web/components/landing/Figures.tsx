@@ -16,7 +16,15 @@ function SvgCount({ value, fmt, delay = 0, ...rest }: { value: number; fmt: (n: 
   useEffect(() => {
     const el = ref.current; if (!el) return;
     if (reduce) { el.textContent = fmt(value); return; }
-    if (!seen) { el.textContent = fmt(0); return; }
+    if (!seen) {
+      // Same rule as the headline figures: zero only where it cannot be read, the real number everywhere else.
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      // A viewport that cannot be measured is not evidence the element is off screen, so it gets the real number too.
+      const offscreen = vh > 0 && (r.bottom <= 0 || r.top >= vh);
+      el.textContent = fmt(offscreen ? 0 : value);
+      return;
+    }
     const c = animate(0, value, { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1], onUpdate: v => { el.textContent = fmt(v); }, onComplete: () => { el.textContent = fmt(value); } });
     return () => c.stop();
   }, [seen, value, reduce, delay, fmt]);
@@ -71,7 +79,7 @@ export function PaidAfterFigure({ rows }: { rows: [string, number, number][] }) 
                 <text x={x + bw / 2} y={top + plotH + 31} textAnchor="middle" fontFamily="Open Sans, Helvetica, Arial, sans-serif" fontSize="10" fill={INK3}>{n} NPIs</text>
               </g>); })}
           </svg>
-          <figcaption className="text-[12px] leading-5 mt-3 max-w-2xl" style={{ color: INK3 }}>Medicaid dollars paid to a provider after the exclusion, revocation or state action, grouped by the year of the action, with the number of providers under each bar. The spending file ends in December 2024, so recent actions have had less time to accumulate payments.</figcaption>
+          <figcaption className="text-[12px] leading-5 mt-3 max-w-2xl" style={{ color: INK3 }}>Medicaid dollars paid to a provider after the exclusion, revocation or state action, grouped by the year of the action, with the number of providers under each bar. The chart covers actions dated 2010 onward, so it holds a little less than the headline figure. The spending file ends in December 2024, so recent actions have had less time to accumulate payments.</figcaption>
         </div>
       </div>
     </figure>

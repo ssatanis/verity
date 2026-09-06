@@ -1,5 +1,7 @@
 // Small, dependency-free bar chart in the three-color palette.
 export function Bars({ rows, unit = "", max, height = 180 }: { rows: [string, number, string?][]; unit?: string; max?: number; height?: number }) {
+  // With no rows there is nothing to draw, and an empty frame the height of a chart reads as a broken chart.
+  if (!rows?.length) return <div className="text-[12px] text-[var(--ink-3)] py-6">This figure needs the summary tables, which are not loaded.</div>;
   const m = max ?? Math.max(...rows.map(r => r[1]), 1);
   return (
     <div className="flex items-end gap-3" style={{ height }}>

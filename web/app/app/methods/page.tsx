@@ -1,15 +1,22 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { publicClient } from "@/lib/supabase";
+import { withFallback } from "@/lib/fallback";
 import { Eq, M } from "@/components/app/Math";
 import { Bars } from "@/components/app/Bars";
 import { idMatchName, labelName, money } from "@/lib/labels";
 export const revalidate = 300;
 const num = (v: any) => Number(v ?? 0).toLocaleString("en-US");
+// A rate below half a percent is not "0%", and a p-value that underflows to zero is not "0.0e+0": both are floors.
+const pct1 = (v: any) => { const n = Number(v) * 100; if (!Number.isFinite(n)) return "not measured"; if (n > 0 && n < 0.1) return "under 0.1%"; return `${n < 10 ? n.toFixed(1) : Math.round(n)}%`; };
+const pval = (v: any) => { const n = Number(v); if (!Number.isFinite(n)) return "not measured"; if (n <= 0) return "below 1e-16, the smallest this arithmetic resolves"; if (n < 0.001) return n.toExponential(1); return n.toFixed(3); };
 const clean = (s: string) => s.replace(/—/g, ", ").replace(/–/g, " to ").replace(/`([^`]+)`/g, "$1").replace(/\b(docs|ingest|detectors|scripts|api|data)\/[\w./-]+/g, "the pipeline code").replace(/\b([a-z0-9]+_){1,}[a-z0-9]+\b/g, m => m.replace(/_/g, " "));
 export default async function Methods() {
   const sb = publicClient();
-  const [{ data }, { data: trends }] = await Promise.all([sb.from("summary").select("key,value"), sb.from("procedure_trends").select("*").gte("n_all", 200).order("lift", { ascending: false }).limit(15)]);
+  const [data, trends] = await Promise.all([
+    withFallback<any[]>("summary", () => sb.from("summary").select("key,value")),
+    (async () => { try { const r = await sb.from("procedure_trends").select("*").gte("n_all", 200).order("lift", { ascending: false }).limit(15); return r.data; } catch { return null; } })(),
+  ]);
   const S: Record<string, any> = Object.fromEntries((data ?? []).map((r: any) => [r.key, r.value]));
   const t = S.totals ?? {}; const d1 = S.d1_summary ?? {}; const d2 = S.d2_summary ?? {}; const d3 = S.d3_summary ?? {};
   const prec: [string, number][] = Object.entries(d1.precision ?? {}).map(([k, v]) => [`top ${k}`, Number(v)]);
@@ -40,7 +47,7 @@ export default async function Methods() {
         <p className="text-[14px] leading-7">The score adds structure, list and context terms. A network is ranked only when it has three or more separate companies, at least one formed since 2021, two independent kinds of evidence, and fewer than half its members in a known chain. On the site the score is shown on a 0 to 100 scale within the ranked networks.</p>
         <div className="card p-5 mt-5"><div className="eyebrow mb-3">How often a highly ranked network already touches a public list</div>
           <Bars rows={prec.map(([k, v]) => [k, Math.round(v * 100), ""])} unit="%" max={100} />
-          <p className="text-[12px] text-[var(--ink-3)] mt-3 leading-5">Precision at the top of the ranking, using the structure score only and excluding chains, against public labels (revocations, exclusions, state terminations). The base rate across all networks is {Math.round(Number(d1.base_rate ?? 0) * 100)}%. The p-value for the top 50 is {Number(pv["50"] ?? 0).toExponential(1)} and for the top 250 is {Number(pv["250"] ?? 0).toExponential(1)}; the top 10 alone is not statistically distinguishable from chance ({Number(pv["10"] ?? 0).toFixed(2)}). The labels are incomplete and partly overlap the score, so these figures are a sanity check, not a measured accuracy.</p></div>
+          <p className="text-[12px] text-[var(--ink-3)] mt-3 leading-5">Precision at the top of the ranking, using the structure score only and excluding chains, against public labels (revocations, exclusions, state terminations).{d1.base_rate != null ? ` The base rate across all networks is ${pct1(d1.base_rate)}.` : ""}{pv["50"] != null && pv["250"] != null ? <> The p-value for the top 50 is {pval(pv["50"])} and for the top 250 is {pval(pv["250"])}.</> : null}{pv["10"] != null ? ` The top 10 alone is not statistically distinguishable from chance, at ${pval(pv["10"])}.` : ""} The labels are incomplete and partly overlap the score, so these figures are a sanity check, not a measured accuracy.</p></div>
       </section>
 
       <section className="mt-12">

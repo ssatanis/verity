@@ -5,7 +5,7 @@ import { publicClient } from "@/lib/supabase";
 import { withFallback } from "@/lib/fallback";
 export const revalidate = 300;
 export default async function Landing() {
-  const rows = await withFallback<any[]>("summary", () => publicClient().from("summary").select("key,value").eq("key", "totals"), r => [{ key: "totals", value: r }]);
+  const rows = await withFallback<any[]>("summary", () => publicClient().from("summary").select("key,value").eq("key", "totals"), r => r.filter((x: any) => x.key === "totals"));
   const stats = (rows?.[0]?.value as Record<string, any>) ?? {};
   // Dollars paid after the action by year of the action (Detector 3 summary), from 2010 on
   const d3 = await withFallback<any[]>("summary", () => publicClient().from("summary").select("key,value").eq("key", "d3_summary"), r => r.filter((x: any) => x.key === "d3_summary"));

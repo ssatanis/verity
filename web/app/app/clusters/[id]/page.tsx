@@ -3,7 +3,7 @@ import { publicClient } from "@/lib/supabase";
 import { ForceGraph } from "@/components/app/ForceGraph";
 import { PacketPanel } from "@/components/app/PacketPanel";
 import { AskCase } from "@/components/app/AskCase";
-import { money, titleCase } from "@/lib/labels";
+import { money, titleCase, dateShort } from "@/lib/labels";
 export const revalidate = 60;
 export default async function Cluster({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const sb = publicClient();
@@ -31,14 +31,14 @@ export default async function Cluster({ params }: { params: Promise<{ id: string
         <div className="space-y-6 min-w-0">
           <div className="card p-5 overflow-x-auto"><h2 className="serif text-[24px] mb-3">By the numbers</h2>
             <table className="table"><tbody>{feats.filter(([, v]) => v != null && v !== 0 && v !== "0%").map(([k, v]) => <tr key={k}><td className="text-[var(--ink-2)]">{k}</td><td className="text-right">{String(v)}</td></tr>)}</tbody></table>
-            {f.burst_90_span && <div className="text-[11px] text-[var(--ink-3)] mt-2">Formation window {f.burst_90_span[0]} to {f.burst_90_span[1]}</div>}
+            {f.burst_90_span && <div className="text-[11px] text-[var(--ink-3)] mt-2">Formation window {dateShort(f.burst_90_span[0])} to {dateShort(f.burst_90_span[1])}</div>}
           </div>
           <PacketPanel subjectType="cluster" subjectId={c.id} existing={packets ?? []} />
           <AskCase subjectType="cluster" subjectId={c.id} />
         </div>
         <div className="card p-5 overflow-x-auto min-w-0"><h2 className="serif text-[24px] mb-3">Providers in this network</h2>
           <table className="table"><thead><tr><th>type</th><th>organization</th><th>where</th><th>incorporated</th><th>on a list</th><th>Medicaid 2024</th></tr></thead>
-            <tbody>{members?.map(m => { const labels = ((typeof m.labels === "string" ? JSON.parse(m.labels) : m.labels) ?? []).map((l: string) => l === "OIG_LEIE" ? "OIG exclusion" : l === "MEDICARE_REVOKED" ? "Medicare revocation" : l === "MEDICAID_TERM" ? "state termination" : l === "NPI_DEACTIVATED" ? "NPI deactivated" : l.replace(/_/g, " ").toLowerCase()); return <tr key={m.enrollment_id}><td>{m.ptype === "HHA" ? "home health" : m.ptype === "SNF" ? "nursing facility" : "hospice"}</td><td><Link href={`/app/providers/${m.npi}`} className="link">{m.org_name}</Link><div className="text-[11px] text-[var(--ink-3)]">{m.npi}</div></td><td>{titleCase(m.city)}, {m.state}</td><td>{m.inc_date ?? ""}</td><td className="text-[11px] font-semibold">{labels.join(", ")}</td><td>{money(m.medicaid_2024)}</td></tr>; })}</tbody></table>
+            <tbody>{members?.map(m => { const labels = ((typeof m.labels === "string" ? JSON.parse(m.labels) : m.labels) ?? []).map((l: string) => l === "OIG_LEIE" ? "OIG exclusion" : l === "MEDICARE_REVOKED" ? "Medicare revocation" : l === "MEDICAID_TERM" ? "state termination" : l === "NPI_DEACTIVATED" ? "NPI deactivated" : l.replace(/_/g, " ").toLowerCase()); return <tr key={m.enrollment_id}><td>{m.ptype === "HHA" ? "home health" : m.ptype === "SNF" ? "nursing facility" : "hospice"}</td><td><Link href={`/app/providers/${m.npi}`} className="link">{m.org_name}</Link><div className="text-[11px] text-[var(--ink-3)]">{m.npi}</div></td><td>{titleCase(m.city)}, {m.state}</td><td className="whitespace-nowrap">{m.inc_date ? dateShort(m.inc_date) : ""}</td><td className="text-[11px] font-semibold">{labels.join(", ")}</td><td>{money(m.medicaid_2024)}</td></tr>; })}</tbody></table>
         </div>
       </div>
     </div>

@@ -150,3 +150,6 @@ a.tag:active, button.tag:active { transform: translateY(1px); }
   .table td, .table th { padding: 13px 10px; }
   button, a, summary { touch-action: manipulation; }
 }
+
+/* The "reading the evidence tables" pip while the case assistant is working. */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }

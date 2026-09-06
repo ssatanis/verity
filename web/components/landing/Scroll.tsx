@@ -93,7 +93,17 @@ export function CountUp({ value, format = "count", duration = 1.5, className, st
     const el = ref.current; if (!el) return;
     const fmt = formatter(format, safe);
     if (reduce) { el.textContent = fmt(safe); return; }
-    if (!seen) { el.textContent = fmt(0); return; }
+    if (!seen) {
+      // The figure is the point of this element, so it is never left reading zero by a client that did not run. Prime at
+      // zero only when the element is measurably off screen, where nobody can read it; anywhere else show the real number
+      // and let the animation take over from zero if and when it starts.
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      // A viewport that cannot be measured is not evidence the element is off screen, so it gets the real number too.
+      const offscreen = vh > 0 && (r.bottom <= 0 || r.top >= vh);
+      el.textContent = fmt(offscreen ? 0 : safe);
+      return;
+    }
     const controls = animate(0, safe, { duration, ease: [0.16, 1, 0.3, 1], onUpdate: v => { el.textContent = fmt(v); }, onComplete: () => { el.textContent = fmt(safe); } });
     return () => controls.stop();
   }, [seen, safe, reduce, duration, format]);

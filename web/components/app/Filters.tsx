@@ -44,10 +44,11 @@ export function Filters({ groups, query, path, resetTo, note }: { groups: { name
         {groups.map((g, gi) => (
           <span key={g.name} className="contents">
             {gi > 0 && <span aria-hidden className="self-stretch w-px mx-2 my-1" style={{ background: "var(--line)" }} />}
-            {g.chips.map(c => {
+            {g.chips.map((c, ci) => {
               const sel = on(c);
               return (
-                <button key={`${c.key}:${c.value ?? "all"}`} type="button" title={c.title} aria-pressed={sel}
+                // The index is part of the key: a group can hold both a "clear" chip and a valued chip on the same key.
+                <button key={`${g.name}:${c.key}:${c.value ?? ""}:${ci}`} type="button" title={c.title} aria-pressed={sel}
                   onClick={() => { if (sel && c.required) return; go({ [c.key]: sel && c.value != null ? undefined : c.value }); }}
                   className={`tag ${sel ? (c.accent ? "tag-accent" : "tag-ink") : ""}`}>
                   {c.label}{c.count != null && <span className="opacity-60"> {c.count.toLocaleString()}</span>}

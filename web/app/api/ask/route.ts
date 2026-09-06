@@ -47,5 +47,17 @@ Keep paragraphs to three or four sentences. The bracketed citation goes at the e
     const final: any = await Promise.race([runner.runUntilDone(), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 140000))]);
     const text = cleanText(final.content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n"));
     return NextResponse.json({ answer: text || "The evidence tables hold nothing that answers this question.", stop_reason: final.stop_reason, tools_used: [...new Set(used)] });
-  } catch (e: any) { const msg = String(e?.message ?? "model error"); return NextResponse.json({ error: msg === "timeout" ? "The assistant took too long. Ask a narrower question." : msg.slice(0, 200), tools_used: [...new Set(used)] }, { status: msg === "timeout" ? 504 : 500 }); }
+  } catch (e: any) {
+    // Never pass a provider error through to the console: it is unreadable, and it can carry request detail.
+    const raw = String(e?.message ?? "model error");
+    const timeout = raw === "timeout";
+    const auth = /401|authentication|invalid x-api-key|api key/i.test(raw);
+    const rate = /429|rate.?limit|overloaded|529/i.test(raw);
+    const error = timeout ? "The assistant took too long. Ask a narrower question, about one provider or one date."
+      : auth ? "The investigator agent is not configured on this server. The Anthropic API key is missing or was rejected."
+      : rate ? "The assistant is busy right now. Try again in a moment."
+      : "The assistant could not answer. The evidence tables on this page are unaffected.";
+    if (!auth && !timeout && !rate) console.error("ask failed:", raw);
+    return NextResponse.json({ error, tools_used: [...new Set(used)] }, { status: timeout ? 504 : auth ? 503 : rate ? 429 : 500 });
+  }
 }
