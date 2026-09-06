@@ -6,7 +6,10 @@ import { serviceClient } from "@/lib/supabase";
 import { UUID_RE } from "@/lib/validate";
 import { dateLong } from "@/lib/labels";
 export const runtime = "nodejs";
-const F = (p: string) => path.join(process.cwd(), "node_modules/@fontsource", p);
+// Fonts are located from the packages themselves rather than the working directory, which differs between a local
+// server and a serverless function.
+const PKG = (name: string) => { try { return path.dirname(require.resolve(`${name}/package.json`)); } catch { return path.join(process.cwd(), "node_modules", name); } };
+const F = (p: string) => { const [pkg, ...rest] = p.split("/"); return path.join(PKG(`@fontsource/${pkg}`), ...rest); };
 let registered = false;
 function fonts() {
   if (registered) return; registered = true;

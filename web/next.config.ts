@@ -11,7 +11,9 @@ const security = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The static fallback JSON is read with fs at request time, so it must ride along in every serverless function bundle.
-  outputFileTracingIncludes: { "/**": ["./public/fallback/**"] },
+  // The PDF route loads the Garamond and Open Sans files from @fontsource at render time; nothing imports them, so the tracer
+  // must be told to ship them with that function or the route fails in production with ENOENT.
+  outputFileTracingIncludes: { "/**": ["./public/fallback/**"], "/api/packets/[id]/pdf": ["./node_modules/@fontsource/eb-garamond/files/*", "./node_modules/@fontsource/open-sans/files/*", "./node_modules/pdfkit/js/**", "./node_modules/@react-pdf/**"] },
   async headers() { return [{ source: "/(.*)", headers: security }]; },
 };
 export default nextConfig;
