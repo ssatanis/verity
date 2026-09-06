@@ -15,7 +15,7 @@ export function Hero() {
           <Rise><h1 className="display serif text-white" style={{ lineHeight: 1.04, fontSize: "clamp(48px, 7vw, 104px)", pointerEvents: "none" }}>Integrity Before<br />the Payment<br />Goes Out</h1></Rise>
         </div>
         <div className="hero-band absolute left-0 right-0 bottom-0 px-8 md:px-[74px] py-16" style={{ pointerEvents: "none" }}>
-          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">Fourteen public datasets. Every Medicare and Medicaid provider. One ranked queue, and a packet in which every sentence cites the record behind it.</p></Rise>
+          <Rise delay={0.25}><p className="text-white text-[19px] leading-9 max-w-2xl">The public record already carries the signals that a payment should not go out. Verity reads it before the payment clears, ranks every Medicare and Medicaid provider on the strength of the evidence, and hands investigators a packet in which every sentence cites the record behind it.</p></Rise>
         </div>
       </div>
     </section>
@@ -93,7 +93,7 @@ export function WhoWeServe() {
   );
 }
 export function HowItWorks() {
-  const steps = [["Gather", "Fourteen public datasets: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardize addresses, and work out which owner records are the same person with a probabilistic model fitted on the records, its merge rule checked against a sample a model adjudicated."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject each packet. The decisions re-weight the evidence families behind the network score, so the ranking adjusts to what investigators confirm."]];
+  const steps = [["Gather", "Public federal and state records: Medicaid spending and enrollment, Medicare enrollments and owners, the national provider registry, exclusion and revocation lists, market saturation, quality data, Census geography, state lists and fee schedules."], ["Resolve", "Validate every provider number, repair encodings, standardize addresses, and work out which owner records are the same person with a probabilistic model fitted on the records, its merge rule checked against a sample a model adjudicated."], ["Detect", "Three detectors with conservative assumptions and explicit tiers, evaluated against public labels with the uncertainty stated."], ["Explain", "An investigator agent drafts the packet from the evidence rows only, cites a record for every finding, and names the regulation each one relates to."], ["Learn", "Reviewers accept or reject each packet. The decisions re-weight the evidence families behind the network score, so the ranking adjusts to what investigators confirm."]];
   return (
     <section id="how" style={{ background: "var(--paper-2)" }}>
       <div className={`${W} py-24`}>

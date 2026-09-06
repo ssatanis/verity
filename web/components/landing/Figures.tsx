@@ -74,7 +74,7 @@ export function DetectorGlyph({ kind }: { kind: "network" | "clock" | "list" }) 
 
 // The pipeline: public records in, a defensible packet out, with the reviewer's decision feeding back.
 export function PipelineFigure() {
-  const boxes = [["Public records", "14 datasets"], ["Warehouse", "one NPI key"], ["Three detectors", "D1 · D2 · D3"], ["One hierarchy", "tiers 1 to 5"], ["Packet", "every line cited"], ["Reviewer", "accept or reject"]];
+  const boxes = [["Public records", "federal and state"], ["Warehouse", "one NPI key"], ["Three detectors", "D1 · D2 · D3"], ["One hierarchy", "tiers 1 to 5"], ["Packet", "every line cited"], ["Reviewer", "accept or reject"]];
   const w = 1080, h = 150, bw = 150, bh = 62, gap = (w - boxes.length * bw) / (boxes.length - 1), y = 28;
   return (
     <figure className="mt-16">

@@ -28,7 +28,7 @@ export default async function Methods() {
 
       <section className="mt-12">
         <h2 className="serif text-[32px]" style={{ color: "var(--blue)" }}>The data</h2>
-        <p className="text-[14px] leading-7 mt-3">Fourteen public datasets: Medicaid provider spending and enrollment for every state ({num(t.spend_rows)} spending rows, 2018 to 2024), Medicare enrollments and their owners, the national provider registry ({num(t.nppes)} providers), the OIG exclusion list, SAM.gov exclusions, Medicare revocations, market saturation, quality data, Census geography, state exclusion lists and state fee schedules. Every provider number is validated with its check digit, addresses are standardized, and names are parsed before anything is joined.</p>
+        <p className="text-[14px] leading-7 mt-3">Public federal and state datasets: Medicaid provider spending and enrollment for every state ({num(t.spend_rows)} spending rows, 2018 to 2024), Medicare enrollments and their owners, the national provider registry ({num(t.nppes)} providers), the OIG exclusion list, SAM.gov exclusions, Medicare revocations, market saturation, quality data, Census geography, state exclusion lists and state fee schedules. Every provider number is validated with its check digit, addresses are standardized, and names are parsed before anything is joined.</p>
       </section>
 
       <section className="mt-12">
