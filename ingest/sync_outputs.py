@@ -4,6 +4,9 @@ detector touches), county_risk rollups, and the summary the home page reads. Ide
 import io, json, os, sys, time, duckdb, psycopg
 from dotenv import load_dotenv
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROOT); load_dotenv()
+# `python ingest/sync_outputs.py enforcement` syncs just the named tables (and skips the summary); no arguments syncs everything.
+ONLY = {a for a in sys.argv[1:] if not a.startswith("-")}
+def want(table): return not ONLY or table in ONLY
 DB = os.environ["DATABASE_URL"]
 con = duckdb.connect(os.environ.get("VERITY_DUCKDB", "data/verity.duckdb"), read_only=True)
 pg = psycopg.connect(DB, autocommit=False)
@@ -11,6 +14,7 @@ with pg.cursor() as cur: cur.execute(open("ingest/supabase_schema.sql").read())
 pg.commit(); print("schema applied")
 os.makedirs("demo/cache", exist_ok=True)
 def copy(table, cols, sql, truncate=True):
+    if not want(table): return 0
     t = time.time(); tmp = f"demo/cache/out_{table}.csv"
     con.execute(f"COPY ({sql}) TO '{tmp}' (FORMAT CSV, HEADER false, NULL '', QUOTE '\"', ESCAPE '\"')")
     # row count from the query itself: re-sniffing the exported CSV can fail on long JSON and prose columns, and a count must never stop the load
@@ -76,6 +80,16 @@ counts["county_risk"] = copy("county_risk", "county_fips, state, county_name, la
               u AS (SELECT county_fips FROM pr UNION SELECT county_fips FROM cl)
         SELECT u.county_fips, cc.state, cc.county_name, cc.lat, cc.lon, COALESCE(cl.n_clusters, 0), COALESCE(pr.n_prov, 0), COALESCE(pr.d, 0), COALESCE(pr.d1, 0), COALESCE(pr.d2, 0), COALESCE(pr.d3, 0), cl.top_id, cl.top_score
         FROM u LEFT JOIN pr USING (county_fips) LEFT JOIN cl USING (county_fips) LEFT JOIN county_centroid cc ON cc.county_fips = u.county_fips""") if "provider_risk" in have else 0
+# enforcement releases: one row per release the extraction step judged relevant to health care claims, newest first
+if "enforcement_raw" in have and "enforcement_actions" in have:
+    counts["enforcement"] = copy("enforcement", "id, source, title, published, url, district, state, action_type, tier, programs, scheme, dollars_alleged, dollars_ordered, action_date, body, npis",
+        """WITH a AS (SELECT * FROM enforcement_actions WHERE relevant QUALIFY row_number() OVER (PARTITION BY source_id ORDER BY confidence DESC NULLS LAST, extracted_at DESC) = 1),
+                m AS (SELECT source_id, to_json(list(DISTINCT npi ORDER BY npi)) AS npis FROM enforcement_npi_matches WHERE same_entity AND confidence = 'high' AND npi IS NOT NULL GROUP BY 1)
+           -- Postgres text cannot hold a NUL byte, and a few scraped bodies carry one
+           SELECT r.source_id, r.source, replace(r.title, chr(0), ''), r.published, r.url, r.district, COALESCE(a.event_state, a.state, r.state), a.action_type, a.tier, a.programs, replace(a.scheme, chr(0), ''),
+                  a.dollars_alleged, a.dollars_ordered, TRY_CAST(a.action_date AS DATE), replace(r.body, chr(0), ''), m.npis
+           FROM enforcement_raw r JOIN a USING (source_id) LEFT JOIN m USING (source_id)
+           WHERE r.title IS NOT NULL AND r.published IS NOT NULL ORDER BY r.published DESC""")
 # summary
 summ = {}
 for f in ("d1_summary", "d2_summary", "d3_summary"):
@@ -99,6 +113,7 @@ summ["totals"] = dict(
     nppes=con.execute("SELECT COUNT(*) FROM nppes").fetchone()[0], generated_at=time.strftime("%Y-%m-%dT%H:%M:%S"))
 if os.path.exists("docs/methods.md"): summ["methods_md"] = {"text": open("docs/methods.md").read(), "updated": time.strftime("%Y-%m-%d %H:%M")}
 with pg.cursor() as cur:
+    if ONLY and "summary" not in ONLY: summ = {}
     for k, v in summ.items():
         cur.execute("INSERT INTO public.summary (key, value, updated_at) VALUES (%s, %s, now()) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()", (k, json.dumps(v, default=str)))
     for t, n in counts.items():

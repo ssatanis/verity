@@ -243,3 +243,16 @@ drop policy if exists "public read provider_codes" on public.provider_codes; cre
 drop policy if exists "public read provider_codes_medicare" on public.provider_codes_medicare; create policy "public read provider_codes_medicare" on public.provider_codes_medicare for select using (true);
 drop policy if exists "public read procedure_trends" on public.procedure_trends; create policy "public read procedure_trends" on public.procedure_trends for select using (true);
 alter table public.provider_risk add column if not exists procedure_points int; alter table public.provider_risk add column if not exists procedure_reason text;
+
+-- Enforcement releases the daily feed has fetched: DOJ press releases and HHS-OIG enforcement actions, one row per release,
+-- with the fields the extraction step read out of each and the NPIs the matching step tied to it at high confidence.
+-- The console's News tab and the "recent enforcement in this area" section on every provider read this table.
+create table if not exists public.enforcement (
+  id text primary key, source text not null, title text not null, published date, url text, district text, state text,
+  action_type text, tier text, programs text, scheme text, dollars_alleged numeric, dollars_ordered numeric, action_date date,
+  body text, npis jsonb, image_url text, updated_at timestamptz default now()
+);
+create index if not exists enforcement_published_idx on public.enforcement (published desc);
+create index if not exists enforcement_state_idx on public.enforcement (state, published desc);
+alter table public.enforcement enable row level security;
+drop policy if exists "public read" on public.enforcement; create policy "public read" on public.enforcement for select using (true);

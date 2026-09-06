@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 export function Footer({ narrow = false }: { narrow?: boolean } = {}) {
-  const cols = [["Main", [["Home", "/"], ["What We Do", "/#what"], ["Console", "/app"], ["Methods", "/app/methods"]]], ["Company", [["Contact", "mailto:ss4497@cornell.edu"], ["Terms Conditions", "/legal#terms"], ["Privacy Policy", "/legal#privacy"], ["Security", "/legal#security"]]]] as const;
+  const cols = [["Main", [["Home", "/"], ["What We Do", "/#what"], ["Console", "/app"], ["News", "/app/news"], ["Methods", "/app/methods"]]], ["Company", [["Contact", "mailto:ss4497@cornell.edu"], ["Terms Conditions", "/legal#terms"], ["Privacy Policy", "/legal#privacy"], ["Security", "/legal#security"]]]] as const;
   return (
     <footer className="footer">
       <div className={`${narrow ? "max-w-[1280px] px-4 md:px-6" : "max-w-[1860px] px-8 md:px-[72px]"} mx-auto py-16`}>

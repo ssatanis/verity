@@ -10,7 +10,7 @@ import { useScrolled, useScrollSpy } from "./Scroll";
 // geometry and shows its own section links, with the provider search where the Console link was. On the landing page the header
 // tightens and takes a rule once the reader leaves the hero, and the section link for the section they are in is marked.
 const landingLinks: [string, string][] = [["What We Do", "/#what"], ["Who We Serve", "/#who"], ["How It Works", "/#how"], ["Methods", "/app/methods"]];
-const consoleLinks: [string, string][] = [["Overview", "/app"], ["Providers", "/app/candidates"], ["Networks", "/app/clusters"], ["Methods", "/app/methods"]];
+const consoleLinks: [string, string][] = [["Overview", "/app"], ["Providers", "/app/candidates"], ["Networks", "/app/clusters"], ["News", "/app/news"], ["Methods", "/app/methods"]];
 // Only the sections that have a link in the header: the mark then stays on the last link the reader passed, rather
 // than going out whenever they are in a section with no link of its own.
 const SPY_IDS = ["what", "who", "how"];

@@ -4,13 +4,16 @@ import { CountyMap } from "@/components/app/CountyMap";
 import { Tier } from "@/components/app/Tier";
 import { Reasons } from "@/components/app/Reasons";
 import { withFallback } from "@/lib/fallback";
-import { money } from "@/lib/labels";
+import { money, dateLong } from "@/lib/labels";
 export const revalidate = 120;
 const num = (v: any) => Number(v ?? 0).toLocaleString("en-US");
 export default async function Overview() {
   const sb = publicClient();
   // A failed count is not a count of zero: keep it null so the tile can say the figure is unavailable instead of
   // reporting that no network has momentum.
+  // The newest enforcement release the feed has matched to a provider. It is what makes the daily refresh visible.
+  let lastEnf: string | null = null;
+  try { const r = await sb.from("provider_risk").select("enf_first_event").not("enf_first_event", "is", null).order("enf_first_event", { ascending: false }).limit(1); if (!r.error) lastEnf = r.data?.[0]?.enf_first_event ?? null; } catch {}
   let rising: number | null = null;
   try { const r = await sb.from("network_factors").select("cluster_id", { count: "exact", head: true }).eq("factor", "momentum").eq("outlook", "rising fast"); if (!r.error) rising = r.count ?? 0; } catch {}
   const [summ, counties, clusters, top] = await Promise.all([
@@ -29,7 +32,7 @@ export default async function Overview() {
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-        <div><div className="eyebrow">Overview</div><h1 className="display serif text-[34px] md:text-[44px] mt-2">Who to look at first, and why.</h1><p className="text-[13px] text-[var(--ink-3)] mt-3">Medicaid spending 2018 to 2024 for every state, Medicare enrollments as of July 2026, exclusion lists as of September 2026. {num(t.spend_rows)} spending rows scanned.</p></div>
+        <div><div className="eyebrow">Overview</div><h1 className="display serif text-[34px] md:text-[44px] mt-2">Who to look at first, and why.</h1><p className="text-[13px] text-[var(--ink-3)] mt-3">Medicaid spending 2018 to 2024 for every state, across {num(t.spend_rows)} rows, with Medicare enrollments and exclusion lists to September 2026. Department of Justice and HHS-OIG enforcement records refresh every day{lastEnf ? `, the latest dated ${dateLong(lastEnf)}` : ""}.</p></div>
         <Link href="/app/methods" className="link text-[13px] shrink-0">How the numbers are made</Link>
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-px mb-6" style={{ background: "var(--line)", border: "1px solid var(--line)" }}>

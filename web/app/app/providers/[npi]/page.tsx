@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { publicClient } from "@/lib/supabase";
+import { withFallback } from "@/lib/fallback";
 import { PacketPanel } from "@/components/app/PacketPanel";
 import { AskCase } from "@/components/app/AskCase";
 import { Tier } from "@/components/app/Tier";
@@ -7,6 +8,7 @@ import { Reasons } from "@/components/app/Reasons";
 import { sourceName, labelName, idMatchName, money, revocationReason, titleCase, dateLong, dateShort, monthShort } from "@/lib/labels";
 import { nppesLookup } from "@/lib/nppes";
 import { Procedures } from "@/components/app/Procedures";
+import { AreaContext } from "@/components/app/AreaContext";
 export const revalidate = 60;
 const ev = (x: any) => (typeof x === "string" ? JSON.parse(x) : x) ?? {};
 const API = process.env.VERITY_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
@@ -31,6 +33,8 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
   const name = nppes?.name || p?.name || risk?.name || reg?.name || flags?.[0]?.name || npi;
   const entity = nppes?.entity_type ?? p?.entity_type ?? risk?.entity_type ?? reg?.entity_type; const city = nppes?.city ?? p?.city ?? risk?.city ?? reg?.city; const state = nppes?.state ?? p?.state ?? risk?.state ?? reg?.state; const tax = nppes?.taxonomies?.find(t => t.primary)?.desc ?? p?.taxonomy ?? risk?.taxonomy ?? reg?.taxonomy;
   const nothing = !d3.length && !d2.length && !growth.length && !members?.length && !rev?.length && !leie?.length;
+  const fips = risk?.county_fips ?? p?.county_fips ?? null;
+  const countyName = fips ? ((await withFallback<any[]>("county_risk", () => sb.from("county_risk").select("county_name").eq("county_fips", fips).limit(1), rows => rows.filter((r: any) => r.county_fips === fips)))?.[0]?.county_name ?? null) : null;
   return (
     <div>
       <Link href="/app/candidates" className="eyebrow">Providers</Link>
@@ -75,6 +79,7 @@ export default async function Provider({ params }: { params: Promise<{ npi: stri
             </tbody></table>
           </div> : null}
           <Procedures medicaid={(codes as any) ?? []} medicare={(mcodes as any) ?? []} fallback={reg?.medicaid_top_codes} />
+          <AreaContext npi={npi} state={state} city={city} countyFips={risk?.county_fips ?? p?.county_fips ?? null} countyName={countyName} />
           {(reg?.spend_by_year?.length || reg?.medicare_by_year?.length) ? <div className="card p-5 overflow-x-auto"><h2 className="serif text-[24px] mb-1">Billing history</h2><p className="text-[12px] text-[var(--ink-3)] mb-3">Public payment files: Medicaid from T-MSIS (all states, 2018 to 2024), Medicare Part B, Part D, DME referrals and post-acute care from the CMS provider utilization files. Figures are what the programs paid, not what was billed.</p>
             <div className="grid md:grid-cols-2 gap-6">
               {reg?.spend_by_year?.length ? <div><div className="eyebrow mb-1">Medicaid paid by year{reg.medicaid_roles ? ` (billing ${money(reg.medicaid_roles.billing ?? 0)}, rendering ${money(reg.medicaid_roles.servicing ?? 0)} over all years)` : ""}</div><table className="table"><thead><tr><th>year</th><th>paid</th><th>months with claims</th></tr></thead><tbody>{reg.spend_by_year.map((r: any) => <tr key={r.year}><td>{r.year}</td><td>{money(r.paid)}</td><td>{r.months}</td></tr>)}</tbody></table></div> : null}

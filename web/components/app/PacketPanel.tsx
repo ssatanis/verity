@@ -15,7 +15,7 @@ export function PacketPanel({ subjectType, subjectId, existing }: { subjectType:
     setResult(await r.json()); setPacket({ ...packet, status: decision === "accept" ? "accepted" : decision === "reject" ? "rejected" : "needs_info" }); setBusy(false);
   }
   const p = packet?.packet ?? packet;
-  const drafted = p?.model ? (String(p.model).startsWith("claude") ? "Drafted by the investigator agent from the evidence rows" : String(p.model).startsWith("deterministic") ? "Assembled from the evidence rows without a model" : String(p.model)) : "";
+  const cited = p?.evidence?.length ?? 0;
   const status: Record<string, string> = { draft: "Awaiting review", accepted: "Accepted by reviewer", rejected: "Rejected by reviewer", needs_info: "Records requested" };
   return (
     <div className="card p-5">
@@ -26,7 +26,7 @@ export function PacketPanel({ subjectType, subjectId, existing }: { subjectType:
       {!packet && <p className="text-[13px] text-[var(--ink-2)] mt-2 leading-6">The packet is a draft for a reviewer. It reads every public record behind this case, states what the records show with a citation for each finding, names the regulation each finding relates to, and lists the ordinary explanations to rule out first. It never asserts intent.</p>}
       {p && (
         <div className="mt-4 text-[13.5px]">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]"><span className="tag">{drafted}</span><span className={`tag ${packet.status === "accepted" ? "tag-accent" : packet.status === "rejected" ? "tag-danger" : ""}`}>{status[packet.status ?? "draft"] ?? packet.status}</span>{p.findings_dropped ? <span className="tag tag-danger">{p.findings_dropped} unsupported statement(s) removed</span> : null}</div>
+          <div className="flex flex-wrap items-center gap-2 text-[11px]"><span className="tag">{cited} public record{cited === 1 ? "" : "s"} cited</span><span className={`tag ${packet.status === "accepted" ? "tag-accent" : packet.status === "rejected" ? "tag-danger" : ""}`}>{status[packet.status ?? "draft"] ?? packet.status}</span>{p.findings_dropped ? <span className="tag tag-danger">{p.findings_dropped} unsupported statement(s) removed</span> : null}</div>
           <h3 className="serif text-[22px] mt-3">{p.title}</h3>
           <p className="mt-2 leading-6">{p.summary}</p>
           <div className="mt-4"><div className="eyebrow mb-1">Description</div><p className="leading-6">{p.plain_english}</p></div>
